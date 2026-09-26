@@ -1,0 +1,6 @@
+{
+  "name": "15 Seconds for Allah",
+  "description": "A quiet, premium space for mindful 15-second dhikr, Quranic reflections, and daily spiritual consistency.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

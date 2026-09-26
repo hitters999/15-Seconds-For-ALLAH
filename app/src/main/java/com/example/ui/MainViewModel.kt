@@ -1,0 +1,348 @@
+package com.example.ui
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.data.AppDatabase
+import com.example.data.DhikrCatalog
+import com.example.data.DhikrItem
+import com.example.data.DhikrRepository
+import com.example.data.MomentLogEntity
+import com.example.data.UserSettingsEntity
+import com.example.util.SoundAndHaptics
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+
+sealed class Screen(val route: String) {
+  object Splash : Screen("splash")
+  object Home : Screen("home")
+  object Moment : Screen("moment")
+  object Library : Screen("library")
+  object Insights : Screen("insights")
+  object Profile : Screen("profile")
+}
+
+data class DayActivity(
+  val dateKey: String,
+  val dayOfMonth: Int,
+  val dayOfWeek: Int, // 1 = Sunday, 2 = Monday, etc.
+  val count: Int,
+  val isToday: Boolean
+)
+
+data class MomentTimerUiState(
+  val totalSeconds: Int = 15,
+  val remainingSeconds: Float = 15f,
+  val isRunning: Boolean = false,
+  val isCompleted: Boolean = false,
+  val repeatTarget: Int = 1,
+  val currentCycle: Int = 1
+)
+
+class MainViewModel(application: Application) : AndroidViewModel(application) {
+
+  private val database = AppDatabase.getDatabase(application)
+  private val repository = DhikrRepository(database.momentDao())
+  private val soundAndHaptics = SoundAndHaptics(application)
+
+  private val _currentScreen = MutableStateFlow<Screen>(Screen.Home)
+  val currentScreen: StateFlow<Screen> = _currentScreen.asStateFlow()
+
+  val userSettings: StateFlow<UserSettingsEntity> = repository.userSettings
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UserSettingsEntity())
+
+  val allItems: StateFlow<List<DhikrItem>> = repository.allItems
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DhikrCatalog.items)
+
+  val todayLogs: StateFlow<List<MomentLogEntity>> = repository.getTodayLogs()
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+  val allLogs: StateFlow<List<MomentLogEntity>> = repository.allLogs
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+  val recentLogs: StateFlow<List<MomentLogEntity>> = repository.getRecentLogs(10)
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+  // Search & Filters in Library
+  private val _searchQuery = MutableStateFlow("")
+  val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+  private val _selectedCategory = MutableStateFlow("All")
+  val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
+
+  // Active Moment State
+  private val _selectedDhikr = MutableStateFlow(DhikrCatalog.items.first())
+  val selectedDhikr: StateFlow<DhikrItem> = _selectedDhikr.asStateFlow()
+
+  private val _timerState = MutableStateFlow(MomentTimerUiState())
+  val timerState: StateFlow<MomentTimerUiState> = _timerState.asStateFlow()
+
+  private var timerJob: Job? = null
+
+  // Streak & Statistics calculation
+  val streakCount: StateFlow<Int> = allLogs.combine(todayLogs) { logs, today ->
+    calculateStreak(logs)
+  }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 21)
+
+  val totalMomentsCount: StateFlow<Int> = repository.totalMomentsCount
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 340)
+
+  // 35-day activity grid (5 weeks) for the heatmap
+  val activityGrid: StateFlow<List<DayActivity>> = allLogs.combine(todayLogs) { logs, _ ->
+    calculateActivityGrid(logs)
+  }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+  init {
+    viewModelScope.launch {
+      val existingLogs = repository.allLogs.first()
+      if (existingLogs.isEmpty()) {
+        repository.seedInitialDataIfEmpty()
+      }
+    }
+  }
+
+  fun navigateTo(screen: Screen) {
+    _currentScreen.value = screen
+  }
+
+  fun setSearchQuery(query: String) {
+    _searchQuery.value = query
+  }
+
+  fun setSelectedCategory(cat: String) {
+    _selectedCategory.value = cat
+  }
+
+  fun selectDhikrForMoment(item: DhikrItem, startImmediately: Boolean = true) {
+    _selectedDhikr.value = item
+    _timerState.value = MomentTimerUiState(
+      totalSeconds = item.defaultDurationSeconds,
+      remainingSeconds = item.defaultDurationSeconds.toFloat(),
+      isRunning = false,
+      isCompleted = false,
+      repeatTarget = 1,
+      currentCycle = 1
+    )
+    navigateTo(Screen.Moment)
+    if (startImmediately) {
+      startTimer()
+    }
+  }
+
+  fun toggleTimer() {
+    if (_timerState.value.isRunning) {
+      pauseTimer()
+    } else {
+      if (_timerState.value.isCompleted) {
+        resetTimer()
+      }
+      startTimer()
+    }
+  }
+
+  fun startTimer() {
+    timerJob?.cancel()
+    _timerState.value = _timerState.value.copy(isRunning = true)
+
+    timerJob = viewModelScope.launch {
+      val stepMs = 100L
+      while (_timerState.value.remainingSeconds > 0 && _timerState.value.isRunning) {
+        delay(stepMs)
+        val newRemaining = (_timerState.value.remainingSeconds - (stepMs / 1000f)).coerceAtLeast(0f)
+        _timerState.value = _timerState.value.copy(remainingSeconds = newRemaining)
+      }
+
+      if (_timerState.value.remainingSeconds <= 0f) {
+        onTimerComplete()
+      }
+    }
+  }
+
+  fun pauseTimer() {
+    timerJob?.cancel()
+    _timerState.value = _timerState.value.copy(isRunning = false)
+  }
+
+  fun resetTimer() {
+    timerJob?.cancel()
+    val total = _selectedDhikr.value.defaultDurationSeconds
+    _timerState.value = MomentTimerUiState(
+      totalSeconds = total,
+      remainingSeconds = total.toFloat(),
+      isRunning = false,
+      isCompleted = false,
+      repeatTarget = _timerState.value.repeatTarget,
+      currentCycle = 1
+    )
+  }
+
+  private fun onTimerComplete() {
+    _timerState.value = _timerState.value.copy(
+      isRunning = false,
+      isCompleted = true,
+      remainingSeconds = 0f
+    )
+
+    if (userSettings.value.hapticsEnabled) {
+      soundAndHaptics.triggerCelebrationHaptic()
+    }
+    if (userSettings.value.soundEnabled) {
+      soundAndHaptics.playChime()
+    }
+
+    viewModelScope.launch {
+      repository.logCompletedMoment(_selectedDhikr.value, _timerState.value.totalSeconds)
+    }
+  }
+
+  fun nextDhikr() {
+    val items = allItems.value
+    val currentIndex = items.indexOfFirst { it.id == _selectedDhikr.value.id }
+    val nextIndex = if (currentIndex >= 0 && currentIndex < items.size - 1) currentIndex + 1 else 0
+    selectDhikrForMoment(items[nextIndex], startImmediately = false)
+  }
+
+  fun previousDhikr() {
+    val items = allItems.value
+    val currentIndex = items.indexOfFirst { it.id == _selectedDhikr.value.id }
+    val prevIndex = if (currentIndex > 0) currentIndex - 1 else items.size - 1
+    selectDhikrForMoment(items[prevIndex], startImmediately = false)
+  }
+
+  fun toggleBookmark(dhikrId: String) {
+    viewModelScope.launch {
+      val item = allItems.value.firstOrNull { it.id == dhikrId } ?: return@launch
+      repository.toggleBookmark(dhikrId, item.isBookmarked)
+    }
+  }
+
+  fun updateUserName(name: String) {
+    viewModelScope.launch {
+      val current = userSettings.value
+      repository.updateSettings(current.copy(userName = name.trim()))
+    }
+  }
+
+  fun updateDailyGoal(goal: Int) {
+    viewModelScope.launch {
+      val current = userSettings.value
+      repository.updateSettings(current.copy(dailyGoal = goal))
+    }
+  }
+
+  fun updateReminderInterval(interval: String) {
+    viewModelScope.launch {
+      val current = userSettings.value
+      repository.updateSettings(current.copy(reminderInterval = interval))
+    }
+  }
+
+  fun toggleHaptics(enabled: Boolean) {
+    viewModelScope.launch {
+      val current = userSettings.value
+      repository.updateSettings(current.copy(hapticsEnabled = enabled))
+      if (enabled) soundAndHaptics.triggerHapticFeedback()
+    }
+  }
+
+  fun toggleSound(enabled: Boolean) {
+    viewModelScope.launch {
+      val current = userSettings.value
+      repository.updateSettings(current.copy(soundEnabled = enabled))
+      if (enabled) soundAndHaptics.playSoftTick()
+    }
+  }
+
+  fun setDarkModePreference(isDark: Boolean?) {
+    viewModelScope.launch {
+      val current = userSettings.value
+      repository.updateSettings(current.copy(isDarkMode = isDark))
+    }
+  }
+
+  fun clearAllHistory() {
+    viewModelScope.launch {
+      repository.clearHistory()
+    }
+  }
+
+  private fun calculateStreak(logs: List<MomentLogEntity>): Int {
+    if (logs.isEmpty()) return 0
+    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    val datesSet = logs.map { it.dateKey }.toSet()
+
+    val cal = Calendar.getInstance()
+    var streak = 0
+    val todayKey = dateFormat.format(cal.time)
+
+    // Check if today has at least one completion
+    if (!datesSet.contains(todayKey)) {
+      // Check yesterday
+      cal.add(Calendar.DAY_OF_YEAR, -1)
+      val yesterdayKey = dateFormat.format(cal.time)
+      if (!datesSet.contains(yesterdayKey)) {
+        return 0
+      }
+    }
+
+    // Traverse backwards
+    while (true) {
+      val key = dateFormat.format(cal.time)
+      if (datesSet.contains(key)) {
+        streak++
+        cal.add(Calendar.DAY_OF_YEAR, -1)
+      } else {
+        break
+      }
+    }
+    return streak.coerceAtLeast(1)
+  }
+
+  private fun calculateActivityGrid(logs: List<MomentLogEntity>): List<DayActivity> {
+    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    val countsByDate = logs.groupingBy { it.dateKey }.eachCount()
+
+    val cal = Calendar.getInstance()
+    val todayKey = dateFormat.format(cal.time)
+
+    // Generate 35 days (5 weeks of 7 days) ending today
+    // Shift cal back 34 days
+    cal.add(Calendar.DAY_OF_YEAR, -34)
+
+    val grid = mutableListOf<DayActivity>()
+    for (i in 0 until 35) {
+      val key = dateFormat.format(cal.time)
+      val dayOfMonth = cal.get(Calendar.DAY_OF_MONTH)
+      val dayOfWeek = cal.get(Calendar.DAY_OF_WEEK)
+      val count = countsByDate[key] ?: 0
+      grid.add(
+        DayActivity(
+          dateKey = key,
+          dayOfMonth = dayOfMonth,
+          dayOfWeek = dayOfWeek,
+          count = count,
+          isToday = (key == todayKey)
+        )
+      )
+      cal.add(Calendar.DAY_OF_YEAR, 1)
+    }
+    return grid
+  }
+
+  override fun onCleared() {
+    super.onCleared()
+    timerJob?.cancel()
+  }
+}
