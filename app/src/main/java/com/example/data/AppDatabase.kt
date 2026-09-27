@@ -6,8 +6,13 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-  entities = [MomentLogEntity::class, UserSettingsEntity::class, BookmarkEntity::class],
-  version = 1,
+  entities = [
+    MomentLogEntity::class,
+    BookmarkEntity::class,
+    UserSettingsEntity::class,
+    UserAccountEntity::class
+  ],
+  version = 2,
   exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -22,10 +27,10 @@ abstract class AppDatabase : RoomDatabase() {
         val instance = Room.databaseBuilder(
           context.applicationContext,
           AppDatabase::class.java,
-          "fifteen_seconds_db"
+          "dhikr_database"
         )
-        .fallbackToDestructiveMigration()
-        .build()
+          .fallbackToDestructiveMigration()
+          .build()
         INSTANCE = instance
         instance
       }

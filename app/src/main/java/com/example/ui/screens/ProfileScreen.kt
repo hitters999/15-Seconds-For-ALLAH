@@ -27,12 +27,12 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkRemove
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Login
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
@@ -42,16 +42,18 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -71,11 +73,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.DhikrItem
-import com.example.data.MomentLogEntity
 import com.example.notification.FloatingPopupManager
 import com.example.ui.MainViewModel
 import com.example.ui.Screen
-import com.example.ui.components.BismillahCalligraphyHeader
 import com.example.ui.components.ParchmentBackground
 import com.example.ui.theme.ArabicFontFamily
 import com.example.ui.theme.BronzeGold
@@ -89,9 +89,6 @@ import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSoft
 import com.example.ui.theme.UrduFontFamily
 import com.example.util.ShareHelper
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun ProfileScreen(
@@ -102,19 +99,20 @@ fun ProfileScreen(
   val totalMoments by viewModel.totalMomentsCount.collectAsState()
   val streak by viewModel.streakCount.collectAsState()
   val bookmarkedItems by viewModel.bookmarkedItems.collectAsState()
-  val recentLogs by viewModel.recentLogs.collectAsState()
+  val registeredAccounts by viewModel.registeredAccounts.collectAsState()
   val scrollState = rememberScrollState()
   val context = LocalContext.current
 
+  var showAuthDialog by remember { mutableStateOf(false) }
   var showNameDialog by remember { mutableStateOf(false) }
   var showIntervalDialog by remember { mutableStateOf(false) }
   var showGoalDialog by remember { mutableStateOf(false) }
   var showClearDialog by remember { mutableStateOf(false) }
-  var showAuthDialog by remember { mutableStateOf(false) }
   var tempName by remember { mutableStateOf("") }
-  var tempEmail by remember { mutableStateOf("") }
+  var tempIdentifier by remember { mutableStateOf("") }
+  var selectedAuthTab by remember { mutableIntStateOf(0) } // 0: Google, 1: Mobile, 2: Email
 
-  ParchmentBackground(modifier = modifier) {
+  ParchmentBackground(modifier = modifier, showMadinahBackdrop = false) {
     Column(
       modifier = Modifier
         .fillMaxSize()
@@ -127,15 +125,13 @@ fun ProfileScreen(
     ) {
       Spacer(modifier = Modifier.height(14.dp))
 
-      // 1. Google Account & Profile Header Banner
+      // 1. Google / Email / Mobile Account Header
       Card(
         shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(containerColor = InkTeal),
         border = BorderStroke(1.5.dp, BronzeGoldLight),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-        modifier = Modifier
-          .fillMaxWidth()
-          .testTag("account_profile_card")
+        modifier = Modifier.fillMaxWidth()
       ) {
         Column(
           modifier = Modifier
@@ -149,7 +145,7 @@ fun ProfileScreen(
             verticalAlignment = Alignment.CenterVertically
           ) {
             Surface(
-              shape = RoundedCornerShape(12.dp),
+              shape = RoundedCornerShape(10.dp),
               color = Color(0x33B8863B),
               border = BorderStroke(1.dp, BronzeGoldLight.copy(alpha = 0.5f))
             ) {
@@ -165,7 +161,10 @@ fun ProfileScreen(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                  text = if (userSettings.isSignedIn) "گوگل سے محفوظ شدہ ✓" else "مہمان موڈ (Guest)",
+                  text = when {
+                    userSettings.isSignedIn -> "${userSettings.authProvider} اکاؤنٹ منسلک ✓"
+                    else -> "مہمان موڈ (Guest)"
+                  },
                   fontFamily = FontFamily.SansSerif,
                   fontSize = 11.sp,
                   color = ParchmentSurface
@@ -174,16 +173,15 @@ fun ProfileScreen(
             }
 
             Surface(
-              shape = RoundedCornerShape(12.dp),
+              shape = RoundedCornerShape(10.dp),
               color = if (userSettings.isSignedIn) Color(0xFF1B5E20) else BronzeGold,
               modifier = Modifier
-                .clip(RoundedCornerShape(12.dp))
+                .clip(RoundedCornerShape(10.dp))
                 .clickable {
                   tempName = userSettings.userName
-                  tempEmail = userSettings.userEmail
+                  tempIdentifier = if (userSettings.userPhone.isNotBlank()) userSettings.userPhone else userSettings.userEmail
                   showAuthDialog = true
                 }
-                .testTag("google_auth_btn")
             ) {
               Row(
                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
@@ -197,7 +195,7 @@ fun ProfileScreen(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                  text = if (userSettings.isSignedIn) "Google Profile" else "Google Sign-In",
+                  text = if (userSettings.isSignedIn) "اکاؤنٹ تبدیل کریں" else "لاگ ان / سائن اپ",
                   fontFamily = FontFamily.SansSerif,
                   fontWeight = FontWeight.Bold,
                   fontSize = 11.sp,
@@ -209,7 +207,7 @@ fun ProfileScreen(
 
           Spacer(modifier = Modifier.height(14.dp))
 
-          // Avatar / Brand Logo
+          // Avatar
           Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -220,7 +218,7 @@ fun ProfileScreen(
           ) {
             Image(
               painter = painterResource(id = R.drawable.app_brand_logo),
-              contentDescription = "Official Logo",
+              contentDescription = "Avatar",
               modifier = Modifier.size(72.dp),
               contentScale = ContentScale.Fit
             )
@@ -228,7 +226,7 @@ fun ProfileScreen(
 
           Spacer(modifier = Modifier.height(10.dp))
 
-          // User Name & Email
+          // User Name
           Text(
             text = userSettings.userName,
             fontFamily = FontFamily.Serif,
@@ -236,8 +234,15 @@ fun ProfileScreen(
             fontWeight = FontWeight.Bold,
             color = Color.White
           )
+
+          // Email or Phone Identifier
+          val identifierDisplay = when {
+            userSettings.userPhone.isNotBlank() -> "📱 ${userSettings.userPhone}"
+            userSettings.userEmail.isNotBlank() -> "✉ ${userSettings.userEmail}"
+            else -> "مہمان صارف"
+          }
           Text(
-            text = userSettings.userEmail,
+            text = identifierDisplay,
             fontFamily = FontFamily.SansSerif,
             fontSize = 12.sp,
             color = BronzeGoldLight
@@ -276,14 +281,12 @@ fun ProfileScreen(
 
       Spacer(modifier = Modifier.height(16.dp))
 
-      // 2. Spiritual Score & Milestone System Card
+      // 2. Spiritual Score & Milestone Card
       Card(
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = ParchmentCard),
         border = BorderStroke(1.2.dp, BronzeGold),
-        modifier = Modifier
-          .fillMaxWidth()
-          .testTag("score_system_card")
+        modifier = Modifier.fillMaxWidth()
       ) {
         Column(modifier = Modifier.padding(16.dp)) {
           Row(
@@ -316,7 +319,7 @@ fun ProfileScreen(
                   color = InkTeal
                 )
                 Text(
-                  text = "ہر 15 سیکنڈ کے ذکر پر 10 حسنات / پوائنٹس",
+                  text = "ہر 15 سیکنڈ ذکر پر 10 حسنات / پوائنٹس",
                   fontFamily = FontFamily.SansSerif,
                   fontSize = 10.5.sp,
                   color = TextSoft
@@ -342,91 +345,27 @@ fun ProfileScreen(
 
           Spacer(modifier = Modifier.height(12.dp))
 
-          // Progress bar toward next rank
-          val nextRankThreshold = when {
-            userSettings.totalScore < 800 -> 800
-            userSettings.totalScore < 2000 -> 2000
-            userSettings.totalScore < 5000 -> 5000
-            else -> 10000
-          }
-          val progress = (userSettings.totalScore.toFloat() / nextRankThreshold).coerceIn(0f, 1f)
-
-          Column(modifier = Modifier.fillMaxWidth()) {
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-              Text(
-                text = "اگلا درجہ (Next Rank):",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 10.sp,
-                color = TextSoft
-              )
-              Text(
-                text = "${userSettings.totalScore} / $nextRankThreshold pts",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 10.sp,
-                color = BronzeGold,
-                fontWeight = FontWeight.SemiBold
-              )
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            LinearProgressIndicator(
-              progress = { progress },
-              modifier = Modifier
-                .fillMaxWidth()
-                .height(6.dp)
-                .clip(RoundedCornerShape(3.dp)),
-              color = BronzeGold,
-              trackColor = ParchmentBorder
-            )
-          }
-
-          Spacer(modifier = Modifier.height(14.dp))
-
           // 4-Metric Score Grid
           Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
           ) {
-            ScoreTile(
-              title = "مستقل مزاجی",
-              value = "$streak دن",
-              subtitle = "Streak",
-              modifier = Modifier.weight(1f)
-            )
-            ScoreTile(
-              title = "مکمل اذکار",
-              value = "$totalMoments",
-              subtitle = "Moments",
-              modifier = Modifier.weight(1f)
-            )
-            ScoreTile(
-              title = "محفوظ آیات",
-              value = "${bookmarkedItems.size}",
-              subtitle = "Saved",
-              modifier = Modifier.weight(1f)
-            )
-            ScoreTile(
-              title = "کلاؤڈ سنک",
-              value = if (userSettings.isSignedIn) "محفوظ ✓" else "آف لائن",
-              subtitle = "Cloud",
-              modifier = Modifier.weight(1f)
-            )
+            ScoreTile(title = "مستقل مزاجی", value = "$streak دن", subtitle = "Streak", modifier = Modifier.weight(1f))
+            ScoreTile(title = "مکمل اذکار", value = "$totalMoments", subtitle = "Moments", modifier = Modifier.weight(1f))
+            ScoreTile(title = "محفوظ آیات", value = "${bookmarkedItems.size}", subtitle = "Saved", modifier = Modifier.weight(1f))
+            ScoreTile(title = "کلاؤڈ سنک", value = if (userSettings.isSignedIn) "فعال ✓" else "آف لائن", subtitle = "Cloud", modifier = Modifier.weight(1f))
           }
         }
       }
 
-      Spacer(modifier = Modifier.height(18.dp))
+      Spacer(modifier = Modifier.height(16.dp))
 
-      // 3. Saved Ayaat & Duas Section (محفوظ آیات)
+      // 3. Saved Ayaat Section
       Card(
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.2.dp, BronzeGold),
-        modifier = Modifier
-          .fillMaxWidth()
-          .testTag("saved_ayaat_card")
+        modifier = Modifier.fillMaxWidth()
       ) {
         Column(modifier = Modifier.padding(16.dp)) {
           Row(
@@ -435,183 +374,29 @@ fun ProfileScreen(
             verticalAlignment = Alignment.CenterVertically
           ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-              Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                  .size(34.dp)
-                  .clip(CircleShape)
-                  .background(Color(0x221B4E48))
-              ) {
-                Icon(
-                  imageVector = Icons.Filled.Bookmark,
-                  contentDescription = null,
-                  tint = InkTeal,
-                  modifier = Modifier.size(19.dp)
-                )
-              }
-              Spacer(modifier = Modifier.width(10.dp))
-              Column {
-                Text(
-                  text = "محفوظ شدہ آیات و اذکار (Saved Ayaat)",
-                  fontFamily = FontFamily.Serif,
-                  fontWeight = FontWeight.Bold,
-                  fontSize = 14.5.sp,
-                  color = InkTeal
-                )
-                Text(
-                  text = "آپ کی پسندیدہ قرآنی آیات اور دعائیں",
-                  fontFamily = FontFamily.SansSerif,
-                  fontSize = 10.5.sp,
-                  color = TextSoft
-                )
-              }
-            }
-
-            Surface(
-              shape = RoundedCornerShape(10.dp),
-              color = InkTeal
-            ) {
+              Icon(Icons.Filled.Bookmark, contentDescription = null, tint = InkTeal, modifier = Modifier.size(20.dp))
+              Spacer(modifier = Modifier.width(8.dp))
               Text(
-                text = "${bookmarkedItems.size} آیات",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 11.sp,
+                text = "محفوظ شدہ آیات (${bookmarkedItems.size})",
+                fontFamily = FontFamily.Serif,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                fontSize = 14.5.sp,
+                color = InkTeal
               )
-            }
-          }
-
-          Spacer(modifier = Modifier.height(12.dp))
-
-          if (bookmarkedItems.isEmpty()) {
-            Surface(
-              shape = RoundedCornerShape(12.dp),
-              color = ParchmentSubtle,
-              modifier = Modifier.fillMaxWidth()
-            ) {
-              Column(
-                modifier = Modifier.padding(14.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-              ) {
-                Text(
-                  text = "ابھی تک کوئی آیت محفوظ نہیں کی گئی",
-                  fontFamily = FontFamily.SansSerif,
-                  fontSize = 12.sp,
-                  color = TextSoft
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Surface(
-                  shape = RoundedCornerShape(8.dp),
-                  color = BronzeGold,
-                  modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .clickable { viewModel.navigateTo(Screen.Library) }
-                ) {
-                  Text(
-                    text = "30ویں سپارے سے آیات محفوظ کریں",
-                    fontFamily = FontFamily.SansSerif,
-                    fontSize = 11.sp,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                  )
-                }
-              }
-            }
-          } else {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-              bookmarkedItems.take(5).forEach { item ->
-                SavedAyahItemRow(
-                  item = item,
-                  onRead = { viewModel.selectDhikrForMoment(item, startImmediately = true) },
-                  onShare = { ShareHelper.shareDhikr(context, item) },
-                  onRemove = { viewModel.toggleBookmark(item.id) }
-                )
-              }
-
-              if (bookmarkedItems.size > 5) {
-                TextButton(
-                  onClick = { viewModel.navigateTo(Screen.Library) },
-                  modifier = Modifier.align(Alignment.CenterHorizontally)
-                ) {
-                  Text(
-                    text = "تمام ${bookmarkedItems.size} محفوظ آیات دیکھیں (View All in Library)",
-                    fontFamily = FontFamily.SansSerif,
-                    fontSize = 11.5.sp,
-                    color = BronzeGold,
-                    fontWeight = FontWeight.Bold
-                  )
-                }
-              }
-            }
-          }
-        }
-      }
-
-      Spacer(modifier = Modifier.height(18.dp))
-
-      // 4. Recent Presence History (تازہ ترین ہسٹری)
-      Card(
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = ParchmentCard),
-        border = BorderStroke(1.dp, ParchmentBorder),
-        modifier = Modifier
-          .fillMaxWidth()
-          .testTag("presence_history_card")
-      ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-          ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-              Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                  .size(34.dp)
-                  .clip(CircleShape)
-                  .background(Color(0x22B8863B))
-              ) {
-                Icon(
-                  imageVector = Icons.Filled.History,
-                  contentDescription = null,
-                  tint = BronzeGold,
-                  modifier = Modifier.size(20.dp)
-                )
-              }
-              Spacer(modifier = Modifier.width(10.dp))
-              Column {
-                Text(
-                  text = "اذکار کی ہسٹری (Recent Moments)",
-                  fontFamily = FontFamily.Serif,
-                  fontWeight = FontWeight.Bold,
-                  fontSize = 14.5.sp,
-                  color = InkTeal
-                )
-                Text(
-                  text = "آپ کے مکمل کردہ 15 سیکنڈ کے اذکار",
-                  fontFamily = FontFamily.SansSerif,
-                  fontSize = 10.5.sp,
-                  color = TextSoft
-                )
-              }
             }
 
             Surface(
               shape = RoundedCornerShape(8.dp),
-              color = BronzeGold,
+              color = ParchmentSubtle,
               modifier = Modifier
                 .clip(RoundedCornerShape(8.dp))
-                .clickable { viewModel.navigateTo(Screen.Insights) }
+                .clickable { viewModel.navigateTo(Screen.Library) }
             ) {
               Text(
-                text = "مکمل ریکارڈ",
+                text = "مزید تلاش کریں",
                 fontFamily = FontFamily.SansSerif,
                 fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = BronzeGold,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
               )
             }
@@ -619,16 +404,146 @@ fun ProfileScreen(
 
           Spacer(modifier = Modifier.height(10.dp))
 
-          val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
-          recentLogs.take(4).forEach { log ->
+          if (bookmarkedItems.isEmpty()) {
+            Text(
+              text = "ابھی تک کوئی آیت محفوظ نہیں ہوئی۔ لائبریری سے اپنی پسندیدہ آیات محفوظ کریں۔",
+              fontFamily = FontFamily.SansSerif,
+              fontSize = 11.5.sp,
+              color = TextSoft,
+              textAlign = TextAlign.Center,
+              modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp)
+            )
+          } else {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+              bookmarkedItems.take(4).forEach { item ->
+                Surface(
+                  shape = RoundedCornerShape(12.dp),
+                  color = ParchmentSurface,
+                  border = BorderStroke(1.dp, ParchmentBorder),
+                  modifier = Modifier.fillMaxWidth()
+                ) {
+                  Column(modifier = Modifier.padding(10.dp)) {
+                    Row(
+                      modifier = Modifier.fillMaxWidth(),
+                      horizontalArrangement = Arrangement.SpaceBetween,
+                      verticalAlignment = Alignment.CenterVertically
+                    ) {
+                      Text(item.source, fontFamily = FontFamily.SansSerif, fontSize = 10.sp, color = BronzeGold)
+                      Row {
+                        IconButton(
+                          onClick = { ShareHelper.shareDhikrPoster(context, item) },
+                          modifier = Modifier.size(26.dp)
+                        ) {
+                          Icon(Icons.Filled.Share, contentDescription = "Share", tint = InkTeal, modifier = Modifier.size(15.dp))
+                        }
+                        IconButton(
+                          onClick = { viewModel.toggleBookmark(item.id) },
+                          modifier = Modifier.size(26.dp)
+                        ) {
+                          Icon(Icons.Filled.BookmarkRemove, contentDescription = "Remove", tint = Color(0xFFA83232), modifier = Modifier.size(15.dp))
+                        }
+                      }
+                    }
+                    Text(
+                      text = item.arabic,
+                      fontFamily = ArabicFontFamily,
+                      fontSize = 16.sp,
+                      color = InkTeal,
+                      maxLines = 2,
+                      overflow = TextOverflow.Ellipsis,
+                      textAlign = TextAlign.Right,
+                      modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Surface(
+                      shape = RoundedCornerShape(6.dp),
+                      color = InkTeal,
+                      modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(6.dp))
+                        .clickable { viewModel.selectDhikrForMoment(item, startImmediately = true) }
+                    ) {
+                      Row(
+                        modifier = Modifier.padding(vertical = 5.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                      ) {
+                        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(13.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("15 سیکنڈ ذکر شروع کریں", fontFamily = FontFamily.SansSerif, fontSize = 10.5.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      Spacer(modifier = Modifier.height(16.dp))
+
+      // 4. Viewers & Community Directory Card (ڈیٹا بیس اور ناظرین کا ریکارڈ)
+      Card(
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = ParchmentCard),
+        border = BorderStroke(1.dp, ParchmentBorder),
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Icon(Icons.Filled.Groups, contentDescription = null, tint = InkTeal, modifier = Modifier.size(20.dp))
+              Spacer(modifier = Modifier.width(8.dp))
+              Column {
+                Text(
+                  text = "رجسٹرڈ صارفین کا ریکارڈ (Viewers Database)",
+                  fontFamily = FontFamily.Serif,
+                  fontWeight = FontWeight.Bold,
+                  fontSize = 14.sp,
+                  color = InkTeal
+                )
+                Text(
+                  text = "ایپ میں محفوظ شدہ ناظرین و اراکین",
+                  fontFamily = FontFamily.SansSerif,
+                  fontSize = 10.5.sp,
+                  color = TextSoft
+                )
+              }
+            }
+
+            Surface(
+              shape = RoundedCornerShape(6.dp),
+              color = InkTeal
+            ) {
+              Text(
+                text = "${registeredAccounts.size} رجسٹرڈ",
+                fontFamily = FontFamily.SansSerif,
+                fontSize = 10.sp,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+              )
+            }
+          }
+
+          Spacer(modifier = Modifier.height(10.dp))
+
+          registeredAccounts.take(3).forEach { account ->
             Row(
               modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 6.dp),
+                .padding(vertical = 4.dp),
               horizontalArrangement = Arrangement.SpaceBetween,
               verticalAlignment = Alignment.CenterVertically
             ) {
-              Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+              Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                   modifier = Modifier
                     .size(8.dp)
@@ -637,192 +552,19 @@ fun ProfileScreen(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Column {
-                  Text(
-                    text = log.title,
-                    fontFamily = FontFamily.Serif,
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = TextPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                  )
-                  Text(
-                    text = "${log.category} • ${timeFormat.format(Date(log.timestamp))}",
-                    fontFamily = FontFamily.SansSerif,
-                    fontSize = 10.sp,
-                    color = TextSoft
-                  )
+                  Text(account.displayName, fontFamily = FontFamily.SansSerif, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                  Text("${account.accountType} • ${account.identifier}", fontFamily = FontFamily.SansSerif, fontSize = 10.sp, color = TextSoft)
                 }
               }
-
-              Surface(
-                shape = RoundedCornerShape(6.dp),
-                color = Color(0xFFE8F5E9)
-              ) {
-                Text(
-                  text = "+10 pts",
-                  fontFamily = FontFamily.SansSerif,
-                  fontSize = 10.sp,
-                  fontWeight = FontWeight.Bold,
-                  color = Color(0xFF2E7D32),
-                  modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                )
-              }
+              Text("${account.totalScore} pts", fontFamily = FontFamily.SansSerif, fontSize = 11.sp, color = BronzeGold, fontWeight = FontWeight.Bold)
             }
           }
         }
       }
 
-      Spacer(modifier = Modifier.height(18.dp))
+      Spacer(modifier = Modifier.height(16.dp))
 
-      // 5. Social Sharing Hub (WhatsApp, X, Facebook)
-      Card(
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.2.dp, BronzeGold),
-        modifier = Modifier
-          .fillMaxWidth()
-          .testTag("social_share_hub_card")
-      ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-          Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-              contentAlignment = Alignment.Center,
-              modifier = Modifier
-                .size(34.dp)
-                .clip(CircleShape)
-                .background(Color(0x221B4E48))
-            ) {
-              Icon(
-                imageVector = Icons.Filled.Share,
-                contentDescription = null,
-                tint = InkTeal,
-                modifier = Modifier.size(19.dp)
-              )
-            }
-            Spacer(modifier = Modifier.width(10.dp))
-            Column {
-              Text(
-                text = "شیئر کریں • صدقہ جاریہ (Share & Earn)",
-                fontFamily = FontFamily.Serif,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.5.sp,
-                color = InkTeal
-              )
-              Text(
-                text = "قرآنی آیات اور اذکار دوستوں اور احباب سے شیئر کریں",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 10.5.sp,
-                color = TextSoft
-              )
-            }
-          }
-
-          Spacer(modifier = Modifier.height(14.dp))
-
-          // App / Ayah Share Buttons Row
-          val featuredItem = viewModel.allItems.collectAsState().value.firstOrNull() ?: bookmarkedItems.firstOrNull()
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-          ) {
-            ShareAppButton(
-              title = "WhatsApp",
-              color = Color(0xFF25D366),
-              onClick = {
-                featuredItem?.let { ShareHelper.shareToWhatsApp(context, it) }
-              },
-              modifier = Modifier.weight(1f)
-            )
-            ShareAppButton(
-              title = "X (Twitter)",
-              color = Color(0xFF000000),
-              onClick = {
-                featuredItem?.let { ShareHelper.shareToTwitter(context, it) }
-              },
-              modifier = Modifier.weight(1f)
-            )
-            ShareAppButton(
-              title = "Facebook",
-              color = Color(0xFF1877F2),
-              onClick = {
-                featuredItem?.let { ShareHelper.shareToFacebook(context, it) }
-              },
-              modifier = Modifier.weight(1f)
-            )
-          }
-        }
-      }
-
-      Spacer(modifier = Modifier.height(18.dp))
-
-      // 6. Test Notification Card
-      Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.2.dp, BronzeGold),
-        modifier = Modifier
-          .fillMaxWidth()
-          .clickable { viewModel.sendTestNotificationNow() }
-          .testTag("test_notification_btn")
-      ) {
-        Row(
-          modifier = Modifier.padding(16.dp),
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-          Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-              contentAlignment = Alignment.Center,
-              modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(InkTeal)
-            ) {
-              Icon(
-                imageVector = Icons.Filled.NotificationsActive,
-                contentDescription = null,
-                tint = BronzeGoldLight,
-                modifier = Modifier.size(20.dp)
-              )
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-              Text(
-                text = "نوٹیفکیشن اور پاپ اپ چیک کریں",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 13.5.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = InkTeal
-              )
-              Text(
-                text = "فوری 5s فلوٹنگ ونڈو اور بیپ ٹیسٹ کریں",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 11.sp,
-                color = TextSoft
-              )
-            }
-          }
-
-          Surface(
-            shape = RoundedCornerShape(8.dp),
-            color = BronzeGold
-          ) {
-            Text(
-              text = "ٹیسٹ 5s",
-              fontFamily = FontFamily.SansSerif,
-              fontSize = 11.sp,
-              fontWeight = FontWeight.Bold,
-              color = Color.White,
-              modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-            )
-          }
-        }
-      }
-
-      Spacer(modifier = Modifier.height(18.dp))
-
-      // 7. Settings Card
+      // 5. App Settings Card
       Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = ParchmentCard),
@@ -851,7 +593,7 @@ fun ProfileScreen(
             onClick = { showGoalDialog = true }
           )
 
-          // Overlay Permission Row for 5s Floating Window
+          // Floating window permission
           val hasOverlay = FloatingPopupManager.canDrawOverlays(context)
           Row(
             modifier = Modifier
@@ -866,18 +608,8 @@ fun ProfileScreen(
             verticalAlignment = Alignment.CenterVertically
           ) {
             Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-              Text(
-                text = "فلوٹنگ ونڈو (Floating Over Apps)",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 13.5.sp,
-                color = TextPrimary
-              )
-              Text(
-                text = "یوٹیوب یا کال کے دوران 5 سیکنڈ کا پرسکون پاپ اپ",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 11.sp,
-                color = TextSoft
-              )
+              Text("فلوٹنگ ونڈو (Floating Over Apps)", fontFamily = FontFamily.SansSerif, fontSize = 13.5.sp, color = TextPrimary)
+              Text("کال یا ویڈیو کے دوران 5s پرسکون پاپ اپ", fontFamily = FontFamily.SansSerif, fontSize = 11.sp, color = TextSoft)
             }
             Surface(
               shape = RoundedCornerShape(8.dp),
@@ -895,7 +627,7 @@ fun ProfileScreen(
           }
           DividerLine()
 
-          // Toggle: Gentle Haptics
+          // Vibration toggle
           Row(
             modifier = Modifier
               .fillMaxWidth()
@@ -903,33 +635,16 @@ fun ProfileScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
           ) {
-            Column {
-              Text(
-                text = "وائبریشن (Gentle Vibration)",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 13.5.sp,
-                color = TextPrimary
-              )
-              Text(
-                text = "مکمل ہونے پر ہلکی لرزش",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 11.sp,
-                color = TextSoft
-              )
-            }
+            Text("وائبریشن (Gentle Vibration)", fontFamily = FontFamily.SansSerif, fontSize = 13.5.sp, color = TextPrimary)
             Switch(
               checked = userSettings.hapticsEnabled,
               onCheckedChange = { viewModel.toggleHaptics(it) },
-              colors = SwitchDefaults.colors(
-                checkedThumbColor = InkTeal,
-                checkedTrackColor = BronzeGoldLight,
-                uncheckedTrackColor = ParchmentBorder
-              )
+              colors = SwitchDefaults.colors(checkedThumbColor = InkTeal, checkedTrackColor = BronzeGoldLight)
             )
           }
           DividerLine()
 
-          // Toggle: Chime Sound
+          // Sound toggle
           Row(
             modifier = Modifier
               .fillMaxWidth()
@@ -937,83 +652,21 @@ fun ProfileScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
           ) {
-            Column {
-              Text(
-                text = "آواز (Completion Bell)",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 13.5.sp,
-                color = TextPrimary
-              )
-              Text(
-                text = "15 سیکنڈ ختم ہونے پر گھنٹی کی آواز",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 11.sp,
-                color = TextSoft
-              )
-            }
+            Text("گھنٹی اور بیپ (Beep & Chime)", fontFamily = FontFamily.SansSerif, fontSize = 13.5.sp, color = TextPrimary)
             Switch(
               checked = userSettings.soundEnabled,
               onCheckedChange = { viewModel.toggleSound(it) },
-              colors = SwitchDefaults.colors(
-                checkedThumbColor = InkTeal,
-                checkedTrackColor = BronzeGoldLight,
-                uncheckedTrackColor = ParchmentBorder
-              )
-            )
-          }
-          DividerLine()
-
-          // Dark Ink Theme Toggle
-          Row(
-            modifier = Modifier
-              .fillMaxWidth()
-              .padding(vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-          ) {
-            Column {
-              Text(
-                text = "رات کی تھیم (Night Ink Theme)",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 13.5.sp,
-                color = TextPrimary
-              )
-              Text(
-                text = "گہرا سبز نیلا اور سنہری رنگ",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 11.sp,
-                color = TextSoft
-              )
-            }
-            Switch(
-              checked = userSettings.isDarkMode == true,
-              onCheckedChange = { viewModel.setDarkModePreference(if (it) true else null) },
-              colors = SwitchDefaults.colors(
-                checkedThumbColor = InkTeal,
-                checkedTrackColor = BronzeGoldLight,
-                uncheckedTrackColor = ParchmentBorder
-              )
+              colors = SwitchDefaults.colors(checkedThumbColor = InkTeal, checkedTrackColor = BronzeGoldLight)
             )
           }
         }
       }
 
       Spacer(modifier = Modifier.height(20.dp))
-
-      Text(
-        text = "تاریخ ری سیٹ کریں (Reset Presence Logs)",
-        fontFamily = FontFamily.SansSerif,
-        fontSize = 12.sp,
-        color = Color(0xFFA83232),
-        modifier = Modifier
-          .clip(RoundedCornerShape(8.dp))
-          .clickable { showClearDialog = true }
-          .padding(8.dp)
-      )
     }
   }
 
-  // Dialog: Google Sign In / Account Setup
+  // Multi-Mode Account Setup Dialog (Google, Mobile Number, Email)
   if (showAuthDialog) {
     AlertDialog(
       onDismissRequest = { showAuthDialog = false },
@@ -1021,131 +674,137 @@ fun ProfileScreen(
         Row(verticalAlignment = Alignment.CenterVertically) {
           Icon(Icons.Filled.AccountCircle, contentDescription = null, tint = InkTeal)
           Spacer(modifier = Modifier.width(8.dp))
-          Text("Google Account Setup", fontFamily = FontFamily.Serif, color = InkTeal)
+          Text("اکاؤنٹ سیٹ اپ (Connect Account)", fontFamily = FontFamily.Serif, color = InkTeal)
         }
       },
       text = {
         Column {
-          Text(
-            text = "اپنے گوگل اکاؤنٹ سے سائن ان کریں تاکہ آپ کی محفوظ کردہ آیات، ہسٹری اور روحانی اسکور ہر وقت کلاؤڈ پر محفوظ رہیں:",
-            fontFamily = FontFamily.SansSerif,
-            fontSize = 12.5.sp,
-            color = TextPrimary
-          )
-          Spacer(modifier = Modifier.height(12.dp))
-
-          // 1-Tap Google Quick Options
-          Surface(
-            shape = RoundedCornerShape(10.dp),
-            color = Color(0xFFF1F5F9),
-            border = BorderStroke(1.dp, Color(0xFFCBD5E1)),
-            modifier = Modifier
-              .fillMaxWidth()
-              .clickable {
-                viewModel.updateAccountProfile("محمد عمر (Muhammad Umer)", "umerm1992@gmail.com")
-                showAuthDialog = false
-              }
-          ) {
-            Row(
-              modifier = Modifier.padding(10.dp),
-              verticalAlignment = Alignment.CenterVertically
-            ) {
-              Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                  .size(28.dp)
-                  .clip(CircleShape)
-                  .background(BronzeGold)
-              ) {
-                Text("G", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-              }
-              Spacer(modifier = Modifier.width(10.dp))
-              Column {
-                Text(
-                  text = "Continue as umerm1992@gmail.com",
-                  fontFamily = FontFamily.SansSerif,
-                  fontWeight = FontWeight.SemiBold,
-                  fontSize = 12.sp,
-                  color = InkTeal
-                )
-                Text(
-                  text = "1-Tap Google Sign-In",
-                  fontFamily = FontFamily.SansSerif,
-                  fontSize = 10.sp,
-                  color = TextSoft
-                )
-              }
-            }
+          TabRow(selectedTabIndex = selectedAuthTab) {
+            Tab(selected = selectedAuthTab == 0, onClick = { selectedAuthTab = 0 }, text = { Text("Google", fontSize = 11.sp) })
+            Tab(selected = selectedAuthTab == 1, onClick = { selectedAuthTab = 1 }, text = { Text("موبائل نمبر", fontSize = 11.sp) })
+            Tab(selected = selectedAuthTab == 2, onClick = { selectedAuthTab = 2 }, text = { Text("Email", fontSize = 11.sp) })
           }
 
-          Spacer(modifier = Modifier.height(12.dp))
-          Text(
-            text = "یا دوسرا اکاؤنٹ درج کریں:",
-            fontFamily = FontFamily.SansSerif,
-            fontSize = 11.sp,
-            color = TextSoft
-          )
-          Spacer(modifier = Modifier.height(6.dp))
-          OutlinedTextField(
-            value = tempName,
-            onValueChange = { tempName = it },
-            singleLine = true,
-            label = { Text("User Name") },
-            modifier = Modifier.fillMaxWidth()
-          )
-          Spacer(modifier = Modifier.height(8.dp))
-          OutlinedTextField(
-            value = tempEmail,
-            onValueChange = { tempEmail = it },
-            singleLine = true,
-            label = { Text("Google Email (e.g. user@gmail.com)") },
-            modifier = Modifier.fillMaxWidth()
-          )
+          Spacer(modifier = Modifier.height(14.dp))
+
+          when (selectedAuthTab) {
+            0 -> {
+              Text(
+                text = "اپنے گوگل اکاؤنٹ سے سائن ان کریں تاکہ آپ کا اسکور، محفوظ آیات اور ہسٹری محفوظ رہیں:",
+                fontFamily = FontFamily.SansSerif,
+                fontSize = 11.5.sp,
+                color = TextSoft
+              )
+              Spacer(modifier = Modifier.height(10.dp))
+              OutlinedTextField(
+                value = tempName,
+                onValueChange = { tempName = it },
+                label = { Text("آپ کا نام (Your Name)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+              )
+              Spacer(modifier = Modifier.height(8.dp))
+              OutlinedTextField(
+                value = tempIdentifier,
+                onValueChange = { tempIdentifier = it },
+                label = { Text("Google Email") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+              )
+            }
+            1 -> {
+              Text(
+                text = "اپنا موبائل نمبر درج کریں (SMS تصدیق کے ساتھ لاگ ان کریں):",
+                fontFamily = FontFamily.SansSerif,
+                fontSize = 11.5.sp,
+                color = TextSoft
+              )
+              Spacer(modifier = Modifier.height(10.dp))
+              OutlinedTextField(
+                value = tempName,
+                onValueChange = { tempName = it },
+                label = { Text("آپ کا نام") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+              )
+              Spacer(modifier = Modifier.height(8.dp))
+              OutlinedTextField(
+                value = tempIdentifier,
+                onValueChange = { tempIdentifier = it },
+                label = { Text("موبائل نمبر (e.g. +923001234567)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+              )
+            }
+            2 -> {
+              Text(
+                text = "اپنا ای میل پتہ درج کریں:",
+                fontFamily = FontFamily.SansSerif,
+                fontSize = 11.5.sp,
+                color = TextSoft
+              )
+              Spacer(modifier = Modifier.height(10.dp))
+              OutlinedTextField(
+                value = tempName,
+                onValueChange = { tempName = it },
+                label = { Text("آپ کا نام") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+              )
+              Spacer(modifier = Modifier.height(8.dp))
+              OutlinedTextField(
+                value = tempIdentifier,
+                onValueChange = { tempIdentifier = it },
+                label = { Text("ای میل پتہ (Email Address)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+              )
+            }
+          }
         }
       },
       confirmButton = {
         TextButton(onClick = {
-          val name = if (tempName.isNotBlank()) tempName else userSettings.userName
-          val email = if (tempEmail.isNotBlank()) tempEmail else "user@gmail.com"
-          viewModel.updateAccountProfile(name, email)
+          val type = when (selectedAuthTab) {
+            0 -> "Google"
+            1 -> "Phone"
+            else -> "Email"
+          }
+          val id = if (tempIdentifier.isNotBlank()) tempIdentifier else "user@15secondsforallah.com"
+          val name = if (tempName.isNotBlank()) tempName else "ذاکرِ الٰہی"
+          viewModel.updateAccountProfile(id, name, type)
           showAuthDialog = false
         }) {
-          Text("Google کے ساتھ لاگ ان", color = BronzeGold, fontWeight = FontWeight.Bold)
+          Text("محفوظ اور منسلک کریں", color = BronzeGold, fontWeight = FontWeight.Bold)
         }
       },
       dismissButton = {
-        if (userSettings.isSignedIn) {
-          TextButton(onClick = {
-            viewModel.signOutAccount()
-            showAuthDialog = false
-          }) {
-            Text("لاگ آؤٹ (Sign Out)", color = Color(0xFFA83232))
-          }
-        } else {
-          TextButton(onClick = { showAuthDialog = false }) {
-            Text("منسوخ", color = TextSoft)
-          }
+        TextButton(onClick = { showAuthDialog = false }) {
+          Text("منسوخ", color = TextSoft)
         }
       }
     )
   }
 
-  // Dialog: Edit Name
+  // Name Dialog
   if (showNameDialog) {
     AlertDialog(
       onDismissRequest = { showNameDialog = false },
-      title = { Text("آپ کا نام (Your Name)", fontFamily = FontFamily.Serif, color = InkTeal) },
+      title = { Text("نام تبدیل کریں", fontFamily = FontFamily.Serif, color = InkTeal) },
       text = {
         OutlinedTextField(
           value = tempName,
           onValueChange = { tempName = it },
-          singleLine = true,
-          label = { Text("Display Name") }
+          label = { Text("آپ کا نام") },
+          singleLine = true
         )
       },
       confirmButton = {
         TextButton(onClick = {
-          if (tempName.isNotBlank()) viewModel.updateUserName(tempName)
+          if (tempName.isNotBlank()) {
+            val id = if (userSettings.userPhone.isNotBlank()) userSettings.userPhone else userSettings.userEmail
+            viewModel.updateAccountProfile(id, tempName, userSettings.authProvider)
+          }
           showNameDialog = false
         }) {
           Text("محفوظ کریں", color = BronzeGold, fontWeight = FontWeight.Bold)
@@ -1159,14 +818,9 @@ fun ProfileScreen(
     )
   }
 
-  // Dialog: Reminder Interval
+  // Interval Dialog
   if (showIntervalDialog) {
-    val intervals = listOf(
-      "Every 1 hour (1 گھنٹہ بعد)",
-      "Every 30 min (30 منٹ بعد)",
-      "Every 15 min (15 منٹ بعد)",
-      "Every 2 hours (2 گھنٹے بعد)"
-    )
+    val intervals = listOf("Every 1 hour (1 گھنٹہ بعد)", "Every 30 min (30 منٹ بعد)", "Every 15 min (15 منٹ بعد)", "Every 2 hours (2 گھنٹے بعد)")
     AlertDialog(
       onDismissRequest = { showIntervalDialog = false },
       title = { Text("یاد دہانی کا وقفہ منتخب کریں", fontFamily = FontFamily.Serif, color = InkTeal) },
@@ -1183,8 +837,8 @@ fun ProfileScreen(
                 .padding(vertical = 12.dp),
               horizontalArrangement = Arrangement.SpaceBetween
             ) {
-              Text(interval, fontFamily = FontFamily.SansSerif, fontSize = 13.5.sp, color = TextPrimary)
-              if (userSettings.reminderInterval == interval || (userSettings.reminderInterval.contains("1 hour") && interval.contains("1 hour"))) {
+              Text(interval, fontFamily = FontFamily.SansSerif, fontSize = 13.sp, color = TextPrimary)
+              if (userSettings.reminderInterval == interval) {
                 Text("✓", color = BronzeGold, fontWeight = FontWeight.Bold)
               }
             }
@@ -1192,14 +846,12 @@ fun ProfileScreen(
         }
       },
       confirmButton = {
-        TextButton(onClick = { showIntervalDialog = false }) {
-          Text("ٹھیک ہے", color = BronzeGold)
-        }
+        TextButton(onClick = { showIntervalDialog = false }) { Text("ٹھیک ہے", color = BronzeGold) }
       }
     )
   }
 
-  // Dialog: Daily Goal
+  // Goal Dialog
   if (showGoalDialog) {
     val goals = listOf(3, 5, 8, 10, 12, 15, 20)
     AlertDialog(
@@ -1218,7 +870,7 @@ fun ProfileScreen(
                 .padding(vertical = 12.dp),
               horizontalArrangement = Arrangement.SpaceBetween
             ) {
-              Text("$g moments per day (بار روزانہ)", fontFamily = FontFamily.SansSerif, fontSize = 13.5.sp, color = TextPrimary)
+              Text("$g moments per day (بار روزانہ)", fontFamily = FontFamily.SansSerif, fontSize = 13.sp, color = TextPrimary)
               if (userSettings.dailyGoal == g) {
                 Text("✓", color = BronzeGold, fontWeight = FontWeight.Bold)
               }
@@ -1227,188 +879,9 @@ fun ProfileScreen(
         }
       },
       confirmButton = {
-        TextButton(onClick = { showGoalDialog = false }) {
-          Text("ٹھیک ہے", color = BronzeGold)
-        }
+        TextButton(onClick = { showGoalDialog = false }) { Text("ٹھیک ہے", color = BronzeGold) }
       }
     )
-  }
-
-  // Dialog: Clear Confirmation
-  if (showClearDialog) {
-    AlertDialog(
-      onDismissRequest = { showClearDialog = false },
-      title = { Text("کیا آپ ریکارڈ صاف کرنا چاہتے ہیں؟", fontFamily = FontFamily.Serif, color = Color(0xFFA83232)) },
-      text = { Text("یہ آپ کے تمام مکمل شدہ اذکار کا ریکارڈ صاف کر دے گا۔") },
-      confirmButton = {
-        TextButton(onClick = {
-          viewModel.clearAllHistory()
-          showClearDialog = false
-        }) {
-          Text("صاف کریں", color = Color(0xFFA83232))
-        }
-      },
-      dismissButton = {
-        TextButton(onClick = { showClearDialog = false }) {
-          Text("منسوخ", color = TextSoft)
-        }
-      }
-    )
-  }
-}
-
-@Composable
-private fun SavedAyahItemRow(
-  item: DhikrItem,
-  onRead: () -> Unit,
-  onShare: () -> Unit,
-  onRemove: () -> Unit
-) {
-  Surface(
-    shape = RoundedCornerShape(14.dp),
-    color = ParchmentSurface,
-    border = BorderStroke(1.dp, ParchmentBorder),
-    modifier = Modifier.fillMaxWidth()
-  ) {
-    Column(modifier = Modifier.padding(12.dp)) {
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-      ) {
-        Surface(
-          shape = RoundedCornerShape(6.dp),
-          color = ParchmentSubtle
-        ) {
-          Text(
-            text = item.source,
-            fontFamily = FontFamily.SansSerif,
-            fontSize = 10.sp,
-            color = BronzeGold,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-          )
-        }
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-          IconButton(onClick = onShare, modifier = Modifier.size(28.dp)) {
-            Icon(
-              imageVector = Icons.Filled.Share,
-              contentDescription = "Share",
-              tint = InkTeal,
-              modifier = Modifier.size(16.dp)
-            )
-          }
-          IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {
-            Icon(
-              imageVector = Icons.Filled.BookmarkRemove,
-              contentDescription = "Remove Bookmark",
-              tint = Color(0xFFA83232),
-              modifier = Modifier.size(16.dp)
-            )
-          }
-        }
-      }
-
-      Spacer(modifier = Modifier.height(4.dp))
-
-      // Arabic snippet in Amiri
-      Text(
-        text = item.arabic,
-        fontFamily = ArabicFontFamily,
-        fontSize = 17.sp,
-        color = InkTeal,
-        lineHeight = 25.sp,
-        textAlign = TextAlign.Right,
-        maxLines = 2,
-        overflow = TextOverflow.Ellipsis,
-        modifier = Modifier.fillMaxWidth()
-      )
-
-      Spacer(modifier = Modifier.height(4.dp))
-
-      // Urdu translation snippet in Noto Nastaliq
-      Text(
-        text = item.translationUrdu,
-        fontFamily = UrduFontFamily,
-        fontSize = 12.sp,
-        color = Color(0xFF8A5A1A),
-        lineHeight = 18.sp,
-        textAlign = TextAlign.Right,
-        maxLines = 2,
-        overflow = TextOverflow.Ellipsis,
-        modifier = Modifier.fillMaxWidth()
-      )
-
-      Spacer(modifier = Modifier.height(8.dp))
-
-      Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = InkTeal,
-        modifier = Modifier
-          .fillMaxWidth()
-          .clip(RoundedCornerShape(8.dp))
-          .clickable(onClick = onRead)
-      ) {
-        Row(
-          modifier = Modifier.padding(vertical = 6.dp),
-          horizontalArrangement = Arrangement.Center,
-          verticalAlignment = Alignment.CenterVertically
-        ) {
-          Icon(
-            imageVector = Icons.Filled.PlayArrow,
-            contentDescription = null,
-            tint = BronzeGoldLight,
-            modifier = Modifier.size(14.dp)
-          )
-          Spacer(modifier = Modifier.width(6.dp))
-          Text(
-            text = "15 سیکنڈ ذکر شروع کریں (Begin Moment)",
-            fontFamily = FontFamily.SansSerif,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White
-          )
-        }
-      }
-    }
-  }
-}
-
-@Composable
-private fun ShareAppButton(
-  title: String,
-  color: Color,
-  onClick: () -> Unit,
-  modifier: Modifier = Modifier
-) {
-  Surface(
-    shape = RoundedCornerShape(10.dp),
-    color = color.copy(alpha = 0.12f),
-    border = BorderStroke(1.dp, color.copy(alpha = 0.3f)),
-    modifier = modifier
-      .clip(RoundedCornerShape(10.dp))
-      .clickable(onClick = onClick)
-  ) {
-    Row(
-      modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
-      horizontalArrangement = Arrangement.Center,
-      verticalAlignment = Alignment.CenterVertically
-    ) {
-      Icon(
-        imageVector = Icons.Filled.Share,
-        contentDescription = null,
-        tint = color,
-        modifier = Modifier.size(12.dp)
-      )
-      Spacer(modifier = Modifier.width(4.dp))
-      Text(
-        text = title,
-        fontFamily = FontFamily.SansSerif,
-        fontSize = 10.5.sp,
-        fontWeight = FontWeight.Bold,
-        color = color
-      )
-    }
   }
 }
 
@@ -1429,30 +902,11 @@ private fun ScoreTile(
       modifier = Modifier.padding(8.dp),
       horizontalAlignment = Alignment.CenterHorizontally
     ) {
-      Text(
-        text = title,
-        fontFamily = FontFamily.SansSerif,
-        fontSize = 9.5.sp,
-        color = TextSoft,
-        textAlign = TextAlign.Center
-      )
+      Text(title, fontFamily = FontFamily.SansSerif, fontSize = 9.5.sp, color = TextSoft, textAlign = TextAlign.Center)
       Spacer(modifier = Modifier.height(3.dp))
-      Text(
-        text = value,
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.Bold,
-        fontSize = 13.5.sp,
-        color = InkTeal,
-        textAlign = TextAlign.Center
-      )
+      Text(value, fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = 13.5.sp, color = InkTeal, textAlign = TextAlign.Center)
       Spacer(modifier = Modifier.height(2.dp))
-      Text(
-        text = subtitle,
-        fontFamily = FontFamily.SansSerif,
-        fontSize = 8.5.sp,
-        color = BronzeGold,
-        textAlign = TextAlign.Center
-      )
+      Text(subtitle, fontFamily = FontFamily.SansSerif, fontSize = 8.5.sp, color = BronzeGold, textAlign = TextAlign.Center)
     }
   }
 }
@@ -1471,26 +925,11 @@ private fun SettingRow(
     horizontalArrangement = Arrangement.SpaceBetween,
     verticalAlignment = Alignment.CenterVertically
   ) {
-    Text(
-      text = title,
-      fontFamily = FontFamily.SansSerif,
-      fontSize = 13.5.sp,
-      color = TextPrimary
-    )
+    Text(title, fontFamily = FontFamily.SansSerif, fontSize = 13.5.sp, color = TextPrimary)
     Row(verticalAlignment = Alignment.CenterVertically) {
-      Text(
-        text = value,
-        fontFamily = FontFamily.SansSerif,
-        fontSize = 12.5.sp,
-        color = BronzeGold
-      )
+      Text(value, fontFamily = FontFamily.SansSerif, fontSize = 12.5.sp, color = BronzeGold)
       Spacer(modifier = Modifier.width(6.dp))
-      Icon(
-        imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-        contentDescription = null,
-        tint = TextSoft,
-        modifier = Modifier.size(12.dp)
-      )
+      Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, contentDescription = null, tint = TextSoft, modifier = Modifier.size(12.dp))
     }
   }
   DividerLine()

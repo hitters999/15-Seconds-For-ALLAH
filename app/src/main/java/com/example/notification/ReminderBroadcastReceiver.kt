@@ -7,16 +7,14 @@ import com.example.data.DhikrCatalog
 
 class ReminderBroadcastReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent) {
-    val intervalMinutes = intent.getLongExtra("INTERVAL_MINUTES", 60L)
+    // Pick the sacred ayah according to 2-hour rotation or curated lessons
+    val dhikr = DhikrCatalog.getTwoHourRotatedDhikr(context)
 
-    // Select specifically from the curated essential Juz 30 lessons:
-    // Jannat, Jahannam ka darr, Allah ka hukam, Nabi ﷺ ki muhabbat
-    val dhikr = DhikrCatalog.getRandomNotificationDhikr(context)
-
-    // Show system notification & floating overlay with Beep sound
+    // Trigger Notification & Floating popup if allowed
     NotificationHelper.showDhikrNotification(context, dhikr)
 
-    // Reschedule for next interval (1 hour)
+    // Re-schedule for next period
+    val intervalMinutes = intent.getLongExtra("INTERVAL_MINUTES", 60L)
     NotificationHelper.scheduleReminder(context, intervalMinutes)
   }
 }

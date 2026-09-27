@@ -7,39 +7,56 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.Worker
+import androidx.work.WorkerParameters
 import com.example.MainActivity
 import com.example.R
 import com.example.data.DhikrCatalog
 import com.example.data.DhikrItem
 import com.example.util.ShareHelper
 import com.example.util.SoundAndHaptics
+import java.util.concurrent.TimeUnit
 
 object NotificationHelper {
 
-  const val CHANNEL_ID = "fifteen_seconds_hourly_reminder"
-  private const val CHANNEL_NAME = "15 Seconds for Allah • یاد دہانی"
-  private const val NOTIFICATION_ID = 1001
-  private const val ALARM_REQUEST_CODE = 2001
+  const val CHANNEL_ID = "channel_dhikr_reminders_hourly"
+  const val NOTIFICATION_ID = 1001
+  const val ALARM_REQUEST_CODE = 2001
   const val ACTION_SHARE_NOTIFICATION = "com.example.ACTION_SHARE_NOTIFICATION"
+
+  fun hasNotificationPermission(context: Context): Boolean {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      ContextCompat.checkSelfPermission(
+        context,
+        android.Manifest.permission.POST_NOTIFICATIONS
+      ) == PackageManager.PERMISSION_GRANTED
+    } else {
+      true
+    }
+  }
 
   fun createNotificationChannel(context: Context) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      val channel = NotificationChannel(
-        CHANNEL_ID,
-        CHANNEL_NAME,
-        NotificationManager.IMPORTANCE_HIGH
-      ).apply {
-        description = "Hourly reminders for mindful dhikr and contemplation"
+      val name = "15 Seconds for Allah • یاد دہانی"
+      val descriptionText = "ہر گھنٹے بعد قرآن و سنت کے اذکار کی یاد دہانی اور بیپ"
+      val importance = NotificationManager.IMPORTANCE_HIGH
+      val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
+        description = descriptionText
         enableVibration(true)
-        vibrationPattern = longArrayOf(0, 200, 100, 200)
+        setShowBadge(true)
         lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
       }
-      val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-      manager.createNotificationChannel(channel)
+      val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+      notificationManager.createNotificationChannel(channel)
     }
   }
 
@@ -47,105 +64,27 @@ object NotificationHelper {
     createNotificationChannel(context)
 
     // Play requested "Beep" sound
-    try {
-      SoundAndHaptics(context).playBeep()
-    } catch (_: Exception) {
-    }
+    SoundAndHaptics(context).playBeep()
 
-    // If overlay permission is enabled, pop up the 5s floating window directly!
-    if (FloatingPopupManager.canDrawOverlays(context)) {
-      FloatingPopupManager.showFloatingPopup(context, dhikr)
-    }
-
-    // Intent to open app directly on Moment screen with this dhikr
-    val intent = Intent(context, MainActivity::class.java).apply {
-      flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-      putExtra("TARGET_SCREEN", "MOMENT")
-      putExtra("DHIKR_ID", dhikr.id)
-    }
-
-    val pendingIntent = PendingIntent.getActivity(
-      context,
-      dhikr.id.hashCode(),
-      intent,
-      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
-
-    // Share action Intent for WhatsApp, Facebook, X
-    val shareIntent = Intent(context, NotificationShareReceiver::class.java).apply {
-      action = ACTION_SHARE_NOTIFICATION
-      putExtra("DHIKR_ID", dhikr.id)
-      putExtra("DHIKR_ARABIC", dhikr.arabic)
-      putExtra("DHIKR_URDU", dhikr.translationUrdu)
-      putExtra("DHIKR_ENG", dhikr.translation)
-      putExtra("DHIKR_SOURCE", dhikr.source)
-      putExtra("IS_QURANIC", dhikr.isQuranic)
-    }
-
-    val sharePendingIntent = PendingIntent.getBroadcast(
-      context,
-      dhikr.id.hashCode() + 10,
-      shareIntent,
-      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
-
-    // Large icon using the official brand logo
-    val largeLogoBitmap = try {
-      BitmapFactory.decodeResource(context.resources, R.drawable.app_brand_logo)
-    } catch (_: Exception) {
-      null
-    }
-
-    val bigText = buildString {
-      append(dhikr.arabic)
-      append("\n\n")
-      append("اردو: ")
-      append(dhikr.translationUrdu)
-      append("\n\n")
-      append("English: ")
-      append(dhikr.translation)
-      append("\n\n")
-      append(dhikr.source)
-    }
-
-    val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-      .setSmallIcon(R.drawable.app_brand_logo)
-      .setLargeIcon(largeLogoBitmap)
-      .setContentTitle("15 Seconds for Allah • یاد دہانی")
-      .setContentText("${dhikr.arabic} — ${dhikr.translationUrdu}")
-      .setStyle(
-        NotificationCompat.BigTextStyle()
-          .bigText(bigText)
-          .setSummaryText("15 سیکنڈ اللہ کے لیے")
-      )
-      .setPriority(NotificationCompat.PRIORITY_MAX)
-      .setCategory(NotificationCompat.CATEGORY_REMINDER)
-      .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-      .setAutoCancel(true)
-      .setContentIntent(pendingIntent)
-      .addAction(
-        R.drawable.app_brand_logo,
-        "ذکر شروع کریں (Begin)",
-        pendingIntent
-      )
-      .addAction(
-        android.R.drawable.ic_menu_share,
-        "شیئر کریں (Share WhatsApp/X)",
-        sharePendingIntent
-      )
-      .build()
-
+    // Ensure status bar notification tray is canceled so NO single long line notification appears
     try {
       val notificationManager = NotificationManagerCompat.from(context)
-      notificationManager.notify(NOTIFICATION_ID, notification)
-    } catch (_: SecurityException) {
-      // Permission not granted yet
+      notificationManager.cancel(NOTIFICATION_ID)
+    } catch (_: Exception) {}
+
+    // ONLY SHOW THE HERO POPUP NOTIFICATION / WINDOW ("Sirf Popup notification/Window rakhni hy , bs")
+    if (FloatingPopupManager.canDrawOverlays(context)) {
+      FloatingPopupManager.showFloatingPopup(context, dhikr)
+    } else {
+      // If overlay permission not granted yet, display the transparent popup window directly!
+      PopupNotificationActivity.start(context, dhikr)
     }
   }
 
+  // Reliable Dual Scheduling: Uses AlarmManager for exact time + WorkManager as fail-safe backup!
   fun scheduleReminder(context: Context, intervalMinutes: Long = 60) {
     createNotificationChannel(context)
-    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
 
     val intent = Intent(context, ReminderBroadcastReceiver::class.java).apply {
       action = "com.example.ACTION_DHIKR_HOURLY_REMINDER"
@@ -162,26 +101,30 @@ object NotificationHelper {
     val triggerAtMillis = System.currentTimeMillis() + (intervalMinutes * 60 * 1000L)
 
     try {
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        alarmManager.setExactAndAllowWhileIdle(
-          AlarmManager.RTC_WAKEUP,
-          triggerAtMillis,
-          pendingIntent
-        )
-      } else {
-        alarmManager.setExact(
-          AlarmManager.RTC_WAKEUP,
-          triggerAtMillis,
-          pendingIntent
-        )
+      alarmManager?.let { am ->
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+          am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+        } else {
+          am.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+        }
       }
     } catch (_: Exception) {
-      alarmManager.set(
-        AlarmManager.RTC_WAKEUP,
-        triggerAtMillis,
-        pendingIntent
-      )
+      // Fallback if exact alarm not permitted
+      alarmManager?.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
     }
+
+    // WorkManager Periodic Backup (ensures notifications survive deep sleep/doze)
+    try {
+      val periodicWork = PeriodicWorkRequestBuilder<ReminderWorker>(
+        intervalMinutes.coerceAtLeast(15), TimeUnit.MINUTES
+      ).build()
+
+      WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+        "periodic_dhikr_reminder",
+        ExistingPeriodicWorkPolicy.UPDATE,
+        periodicWork
+      )
+    } catch (_: Exception) {}
   }
 
   fun cancelReminder(context: Context) {
@@ -196,6 +139,17 @@ object NotificationHelper {
       PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
     alarmManager.cancel(pendingIntent)
+    try {
+      WorkManager.getInstance(context).cancelUniqueWork("periodic_dhikr_reminder")
+    } catch (_: Exception) {}
+  }
+}
+
+class ReminderWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
+  override fun doWork(): Result {
+    val dhikr = DhikrCatalog.getRandomNotificationDhikr(applicationContext)
+    NotificationHelper.showDhikrNotification(applicationContext, dhikr)
+    return Result.success()
   }
 }
 
@@ -220,6 +174,6 @@ class NotificationShareReceiver : BroadcastReceiver() {
       virtue = "",
       isQuranic = isQuranic
     )
-    ShareHelper.shareDhikr(context, dhikr)
+    ShareHelper.shareDhikrPoster(context, dhikr)
   }
 }

@@ -2,12 +2,13 @@ package com.example.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,16 +16,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.FormatQuote
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,15 +38,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ui.DayActivity
 import com.example.ui.MainViewModel
 import com.example.ui.components.ParchmentBackground
+import com.example.ui.theme.ArabicFontFamily
 import com.example.ui.theme.BronzeGold
 import com.example.ui.theme.BronzeGoldLight
 import com.example.ui.theme.InkTeal
@@ -49,11 +58,11 @@ import com.example.ui.theme.ParchmentBorder
 import com.example.ui.theme.ParchmentCard
 import com.example.ui.theme.ParchmentSubtle
 import com.example.ui.theme.ParchmentSurface
+import com.example.ui.theme.SoftEmerald
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSoft
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.example.ui.theme.UrduFontFamily
+import com.example.util.ShareHelper
 
 @Composable
 fun InsightsScreen(
@@ -62,252 +71,269 @@ fun InsightsScreen(
 ) {
   val streak by viewModel.streakCount.collectAsState()
   val totalMoments by viewModel.totalMomentsCount.collectAsState()
+  val userSettings by viewModel.userSettings.collectAsState()
   val activityGrid by viewModel.activityGrid.collectAsState()
-  val recentLogs by viewModel.recentLogs.collectAsState()
-  val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+  val scrollState = rememberScrollState()
+  val context = LocalContext.current
 
-  ParchmentBackground(modifier = modifier) {
-    LazyColumn(
+  ParchmentBackground(modifier = modifier, showMadinahBackdrop = true) {
+    Column(
       modifier = Modifier
         .fillMaxSize()
         .statusBarsPadding()
-        .padding(horizontal = 22.dp)
+        .verticalScroll(scrollState)
+        .padding(horizontal = 20.dp)
         .padding(bottom = 90.dp)
-        .testTag("insights_screen")
+        .testTag("insights_screen"),
+      horizontalAlignment = Alignment.CenterHorizontally
     ) {
-      item {
-        Spacer(modifier = Modifier.height(14.dp))
+      Spacer(modifier = Modifier.height(14.dp))
+
+      // Top Title
+      Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.Start
+      ) {
         Text(
-          text = "Spiritual Insights",
+          text = "Spiritual Streak • روحانی استقامت",
           fontFamily = FontFamily.Serif,
-          fontSize = 26.sp,
-          fontWeight = FontWeight.Normal,
+          fontSize = 24.sp,
+          fontWeight = FontWeight.Bold,
           color = InkTeal
         )
-        Spacer(modifier = Modifier.height(2.dp))
         Text(
-          text = "Consistency in small deeds loved most by Allah",
-          fontFamily = FontFamily.SansSerif,
-          fontSize = 12.sp,
-          color = TextSoft
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Stat Row from Mockup Screen 5 (.stat-row { 21 DAY STREAK, 340 MOMENTS, 92% THIS WEEK })
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-          StatItem(
-            value = "$streak",
-            label = "DAY STREAK",
-            modifier = Modifier.weight(1f)
-          )
-          StatItem(
-            value = "$totalMoments",
-            label = "MOMENTS",
-            modifier = Modifier.weight(1f)
-          )
-          StatItem(
-            value = "92%",
-            label = "THIS WEEK",
-            modifier = Modifier.weight(1f)
-          )
-        }
-
-        Spacer(modifier = Modifier.height(26.dp))
-
-        // Habit Heat-Map Grid from Mockup Screen 5: .grid { repeat(7, 1fr) }
-        Card(
-          shape = RoundedCornerShape(18.dp),
-          colors = CardDefaults.cardColors(containerColor = ParchmentCard),
-          border = BorderStroke(1.dp, ParchmentBorder),
-          modifier = Modifier.fillMaxWidth()
-        ) {
-          Column(modifier = Modifier.padding(18.dp)) {
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.SpaceBetween,
-              verticalAlignment = Alignment.CenterVertically
-            ) {
-              Text(
-                text = "PRESENCE GRID",
-                fontFamily = FontFamily.SansSerif,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 11.sp,
-                color = BronzeGold,
-                letterSpacing = 1.2.sp
-              )
-              Text(
-                text = "Last 5 Weeks",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 11.sp,
-                color = TextSoft
-              )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Day labels header
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-              listOf("S", "M", "T", "W", "T", "F", "S").forEach { day ->
-                Text(
-                  text = day,
-                  fontFamily = FontFamily.SansSerif,
-                  fontSize = 10.sp,
-                  color = TextSoft,
-                  textAlign = TextAlign.Center,
-                  modifier = Modifier.weight(1f)
-                )
-              }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // 5 rows of 7 days (35 days)
-            for (row in 0 until 5) {
-              Row(
-                modifier = Modifier
-                  .fillMaxWidth()
-                  .padding(vertical = 2.5.dp),
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
-              ) {
-                for (col in 0 until 7) {
-                  val index = row * 7 + col
-                  val dayData = activityGrid.getOrNull(index)
-                  val isHit = (dayData?.count ?: 0) > 0
-                  val isToday = dayData?.isToday == true
-
-                  val cellColor = when {
-                    isHit && (dayData?.count ?: 0) >= 4 -> BronzeGold
-                    isHit -> BronzeGoldLight
-                    else -> ParchmentBorder.copy(alpha = 0.5f)
-                  }
-
-                  Box(
-                    modifier = Modifier
-                      .weight(1f)
-                      .aspectRatio(1f)
-                      .clip(RoundedCornerShape(4.dp))
-                      .background(cellColor)
-                  )
-                }
-              }
-            }
-          }
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Calmest Hour Card from Mockup Screen 5 (.pad { .card { "Your calmest hour is usually Fajr." } })
-        Card(
-          shape = RoundedCornerShape(16.dp),
-          colors = CardDefaults.cardColors(containerColor = ParchmentSurface),
-          border = BorderStroke(1.dp, ParchmentBorder),
-          modifier = Modifier.fillMaxWidth()
-        ) {
-          Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-          ) {
-            Box(
-              contentAlignment = Alignment.Center,
-              modifier = Modifier
-                .size(36.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(InkTeal)
-            ) {
-              Icon(
-                imageVector = Icons.Filled.LocalFireDepartment,
-                contentDescription = null,
-                tint = BronzeGoldLight,
-                modifier = Modifier.size(20.dp)
-              )
-            }
-            Spacer(modifier = Modifier.width(14.dp))
-            Column {
-              Text(
-                text = "Your calmest hour is usually Fajr.",
-                fontFamily = FontFamily.Serif,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = InkTeal
-              )
-              Spacer(modifier = Modifier.height(2.dp))
-              Text(
-                text = "Morning remembrance creates peace that lasts all day.",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 11.sp,
-                color = TextSoft
-              )
-            }
-          }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text(
-          text = "RECENT MOMENTS",
-          fontFamily = FontFamily.SansSerif,
-          fontWeight = FontWeight.SemiBold,
-          fontSize = 11.sp,
-          color = BronzeGold,
-          letterSpacing = 1.2.sp,
-          modifier = Modifier.padding(vertical = 4.dp)
+          text = "مسلسل اذکار کا ریکارڈ اور روحانی درجات کا مقابلہ",
+          fontFamily = UrduFontFamily,
+          fontSize = 12.5.sp,
+          color = BronzeGold
         )
       }
 
-      items(recentLogs) { log ->
-        Card(
-          shape = RoundedCornerShape(14.dp),
-          colors = CardDefaults.cardColors(containerColor = Color.White),
-          border = BorderStroke(1.dp, ParchmentBorder),
+      Spacer(modifier = Modifier.height(16.dp))
+
+      // 1. FLAMING CRESCENT STREAK HERO CARD
+      Card(
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF132B27)),
+        border = BorderStroke(2.dp, BronzeGoldLight),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Column(
           modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
+            .padding(20.dp),
+          horizontalAlignment = Alignment.CenterHorizontally
         ) {
-          Row(
+          // Flame Icon Halo
+          Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+              .size(90.dp)
+              .clip(CircleShape)
+              .background(
+                Brush.radialGradient(
+                  listOf(Color(0xFFFF9800), Color(0xFFE65100), Color(0x33000000))
+                )
+              )
+              .border(2.dp, BronzeGoldLight, CircleShape)
+          ) {
+            Icon(
+              imageVector = Icons.Filled.LocalFireDepartment,
+              contentDescription = "Streak Fire",
+              tint = Color(0xFFFFEB3B),
+              modifier = Modifier.size(54.dp)
+            )
+          }
+
+          Spacer(modifier = Modifier.height(12.dp))
+
+          // Streak Number
+          Text(
+            text = "$streak",
+            fontFamily = FontFamily.Serif,
+            fontSize = 58.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFFFFE8B2)
+          )
+
+          Text(
+            text = "دن کی مسلسل استقامت (Days Devotion Streak)",
+            fontFamily = FontFamily.SansSerif,
+            fontSize = 13.5.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White
+          )
+
+          Spacer(modifier = Modifier.height(6.dp))
+
+          Text(
+            text = "ماشاء اللہ! آپ کی روحانی زنجیر الحمد للہ قائم ہے۔",
+            fontFamily = UrduFontFamily,
+            fontSize = 13.sp,
+            color = Color(0xFFD6C7A8)
+          )
+
+          Spacer(modifier = Modifier.height(16.dp))
+
+          // Share My Streak Poster Button (WhatsApp Status)
+          Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = Color(0xFF25D366),
             modifier = Modifier
               .fillMaxWidth()
-              .padding(14.dp),
+              .clip(RoundedCornerShape(12.dp))
+              .clickable {
+                ShareHelper.shareStreakPoster(
+                  context,
+                  streak,
+                  totalMoments,
+                  userSettings.totalScore,
+                  userSettings.spiritualRank
+                )
+              }
+          ) {
+            Row(
+              modifier = Modifier.padding(vertical = 12.dp),
+              horizontalArrangement = Arrangement.Center,
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Icon(Icons.Filled.Share, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+              Spacer(modifier = Modifier.width(8.dp))
+              Text(
+                text = "میری اسٹریک کا پوسٹر شیئر کریں (Share Streak Poster)",
+                fontFamily = FontFamily.SansSerif,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+              )
+            }
+          }
+        }
+      }
+
+      Spacer(modifier = Modifier.height(18.dp))
+
+      // 2. SPIRITUAL DEVOTION LEAGUE (روحانی مقابلہ • Leaderboard)
+      Card(
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = ParchmentCard),
+        border = BorderStroke(1.2.dp, BronzeGold),
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
           ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-              Icon(
-                imageVector = Icons.Filled.CheckCircle,
-                contentDescription = null,
-                tint = BronzeGold,
-                modifier = Modifier.size(20.dp)
-              )
-              Spacer(modifier = Modifier.width(12.dp))
+              Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                  .size(36.dp)
+                  .clip(CircleShape)
+                  .background(Color(0x22B8863B))
+              ) {
+                Icon(
+                  imageVector = Icons.Filled.EmojiEvents,
+                  contentDescription = null,
+                  tint = BronzeGold,
+                  modifier = Modifier.size(20.dp)
+                )
+              }
+              Spacer(modifier = Modifier.width(10.dp))
               Column {
                 Text(
-                  text = log.title,
+                  text = "روحانی لیگ (Devotion League)",
                   fontFamily = FontFamily.Serif,
-                  fontSize = 14.sp,
+                  fontWeight = FontWeight.Bold,
+                  fontSize = 14.5.sp,
                   color = InkTeal
                 )
                 Text(
-                  text = "${log.category} • ${log.durationSeconds}s",
+                  text = "روزانہ اذکار کا روحانی مقابلہ",
                   fontFamily = FontFamily.SansSerif,
-                  fontSize = 11.sp,
+                  fontSize = 10.5.sp,
                   color = TextSoft
                 )
               }
             }
 
-            Text(
-              text = timeFormat.format(Date(log.timestamp)),
-              fontFamily = FontFamily.SansSerif,
-              fontSize = 11.sp,
-              color = TextSoft
-            )
+            Surface(
+              shape = RoundedCornerShape(8.dp),
+              color = Color(0xFF1B4E48)
+            ) {
+              Text(
+                text = "${userSettings.totalScore} pts",
+                fontFamily = FontFamily.SansSerif,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = BronzeGoldLight,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+              )
+            }
           }
+
+          Spacer(modifier = Modifier.height(14.dp))
+
+          // League Ranks Comparison Table
+          LeagueRow(rank = "1", title = "صاحبِ استقامت (Master League)", pts = "5,000+ pts", isCurrent = userSettings.totalScore >= 5000)
+          LeagueRow(rank = "2", title = "ذاکرِ مداوم (Diamond League)", pts = "2,000+ pts", isCurrent = userSettings.totalScore in 2000..4999)
+          LeagueRow(rank = "3", title = "محبِ ذکر (Gold League)", pts = "800+ pts", isCurrent = userSettings.totalScore in 800..1999)
+          LeagueRow(rank = "4", title = "مبتدی (Seeker of Peace)", pts = "0 - 799 pts", isCurrent = userSettings.totalScore < 800)
+        }
+      }
+
+      Spacer(modifier = Modifier.height(18.dp))
+
+      // 3. 35-DAY PRESENCE HEATMAP
+      Card(
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = ParchmentCard),
+        border = BorderStroke(1.dp, ParchmentBorder),
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Column {
+              Text(
+                text = "35 روزہ حاضری نامہ (Presence Grid)",
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                color = InkTeal
+              )
+              Text(
+                text = "ہر بلاک ایک دن کے اذکار کی نشاندہی کرتا ہے",
+                fontFamily = FontFamily.SansSerif,
+                fontSize = 10.5.sp,
+                color = TextSoft
+              )
+            }
+
+            Surface(
+              shape = RoundedCornerShape(8.dp),
+              color = ParchmentSubtle
+            ) {
+              Text(
+                text = "$totalMoments مکمل",
+                fontFamily = FontFamily.SansSerif,
+                fontSize = 10.5.sp,
+                color = BronzeGold,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+              )
+            }
+          }
+
+          Spacer(modifier = Modifier.height(14.dp))
+
+          // Heatmap 7x5 Grid
+          HeatmapGrid(activityGrid = activityGrid)
         }
       }
     }
@@ -315,30 +341,108 @@ fun InsightsScreen(
 }
 
 @Composable
-private fun StatItem(
-  value: String,
-  label: String,
-  modifier: Modifier = Modifier
+private fun LeagueRow(
+  rank: String,
+  title: String,
+  pts: String,
+  isCurrent: Boolean
 ) {
-  Column(
-    modifier = modifier,
-    horizontalAlignment = Alignment.CenterHorizontally
+  val bgColor = if (isCurrent) Color(0x221B4E48) else Color.Transparent
+  val border = if (isCurrent) BorderStroke(1.dp, BronzeGold) else null
+
+  Surface(
+    shape = RoundedCornerShape(10.dp),
+    color = bgColor,
+    border = border,
+    modifier = Modifier
+      .fillMaxWidth()
+      .padding(vertical = 4.dp)
   ) {
-    Text(
-      text = value,
-      fontFamily = FontFamily.Serif,
-      fontSize = 24.sp,
-      fontWeight = FontWeight.Normal,
-      color = InkTeal
-    )
-    Spacer(modifier = Modifier.height(2.dp))
-    Text(
-      text = label,
-      fontFamily = FontFamily.SansSerif,
-      fontSize = 9.sp,
-      fontWeight = FontWeight.Medium,
-      color = TextSoft,
-      letterSpacing = 1.sp
-    )
+    Row(
+      modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically
+    ) {
+      Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+          contentAlignment = Alignment.Center,
+          modifier = Modifier
+            .size(24.dp)
+            .clip(CircleShape)
+            .background(if (isCurrent) BronzeGold else ParchmentSubtle)
+        ) {
+          Text(
+            text = rank,
+            fontFamily = FontFamily.SansSerif,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = if (isCurrent) Color.White else TextPrimary
+          )
+        }
+        Spacer(modifier = Modifier.width(10.dp))
+        Text(
+          text = title,
+          fontFamily = FontFamily.SansSerif,
+          fontSize = 12.sp,
+          fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+          color = if (isCurrent) InkTeal else TextPrimary
+        )
+      }
+
+      Text(
+        text = if (isCurrent) "آپ کا درجہ ★" else pts,
+        fontFamily = FontFamily.SansSerif,
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Bold,
+        color = if (isCurrent) BronzeGold else TextSoft
+      )
+    }
+  }
+}
+
+@Composable
+private fun HeatmapGrid(activityGrid: List<DayActivity>) {
+  Column(
+    modifier = Modifier.fillMaxWidth(),
+    verticalArrangement = Arrangement.spacedBy(5.dp)
+  ) {
+    // 5 rows of 7 days
+    val chunks = activityGrid.chunked(7)
+    chunks.forEach { week ->
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(5.dp)
+      ) {
+        week.forEach { day ->
+          val cellColor = when {
+            day.count >= 8 -> SoftEmerald
+            day.count >= 4 -> Color(0xFF66BB6A)
+            day.count >= 1 -> Color(0xFFA5D6A7)
+            else -> ParchmentSubtle
+          }
+
+          Box(
+            modifier = Modifier
+              .weight(1f)
+              .height(30.dp)
+              .clip(RoundedCornerShape(6.dp))
+              .background(cellColor)
+              .border(
+                width = if (day.isToday) 1.5.dp else 0.dp,
+                color = if (day.isToday) BronzeGold else Color.Transparent,
+                shape = RoundedCornerShape(6.dp)
+              ),
+            contentAlignment = Alignment.Center
+          ) {
+            Text(
+              text = "${day.dayOfMonth}",
+              fontFamily = FontFamily.SansSerif,
+              fontSize = 9.sp,
+              color = if (day.count >= 4) Color.White else TextSoft
+            )
+          }
+        }
+      }
+    }
   }
 }

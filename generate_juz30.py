@@ -1,0 +1,478 @@
+import json
+
+juz30_items = [
+    {
+        "id": "juz30_fajr_mutmainnah",
+        "arabic": "يَا أَيَّتُهَا النَّفْسُ الْمُطْمَئِنَّةُ • ارْجِعِي إِلَىٰ رَبِّكِ رَاضِيَةً مَّرْضِيَّةً • فَادْخُلِي فِي عِبَادِي • وَادْخُلِي جَنَّتِي",
+        "transliteration": "Yā ayyatuhan-nafsul-muṭma'innah. Irji'ī ilā Rabbiki rāḍiyatan marḍiyyah. Fadkhulī fī 'ibādī. Wadkhulī jannatī.",
+        "translationUrdu": "اے اطمینان والی روح! اپنے رب کی طرف لوٹ آ، تو اس سے راضی وہ تجھ سے راضی، پس میرے نیک بندوں میں داخل ہو جا اور میری جنت میں داخل ہو جا۔",
+        "translation": "O soul at complete rest and satisfaction! Return to your Lord, well-pleased and pleasing to Him. Enter among My righteous servants, and enter My Paradise.",
+        "contemplativeNote": "موت اور قیامت کے وقت مومن کو ملنے والی سب سے پیاری بشارت۔ ذکرِ الٰہی سے اپنے دل کو مطمئن رکھیں۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ الفجر (Al-Fajr 89:27-30)",
+        "virtue": "دل کا سکون اور اللہ کی رضا پانے کی سب سے خوبصورت قرآنی بشارت۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_abasa_beaming_faces",
+        "arabic": "وُجُوهٌ يَوْمَئِذٍ مُّسْفِرَةٌ • ضَاحِكَةٌ مُّسْتَبْشِرَةٌ",
+        "transliteration": "Wujūhun yawma'idhin musfirah. Ḍāḥikatun mustabshirah.",
+        "translationUrdu": "اس دن بہت سے چہرے روشن اور چمکتے ہوئے ہوں گے، ہنستے مسکراتے اور خوش و خرم!",
+        "translation": "Some faces, that Day, will be bright - laughing, rejoicing at good news.",
+        "contemplativeNote": "اہلِ ایمان کے چہرے قیامت کے دن نورِ الٰہی اور نیک اعمال کی برکت سے دمک رہے ہوں گے۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ عبس (Abasa 80:38-39)",
+        "virtue": "آخرت میں مسرت، سرخروئی اور اللہ کا فضل پانے کی پر امید آیت۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_sharh_inshirah_ease",
+        "arabic": "فَإِنَّ مَعَ الْعُسْرِ يُسْرًا • إِنَّ مَعَ الْعُسْرِ يُسْرًا • فَإِذَا فَرَغْتَ فَانصَبْ • وَإِلَىٰ رَبِّكَ فَارْغَب",
+        "transliteration": "Fa-inna ma'al-'usri yusrā. Inna ma'al-'usri yusrā. Fa-idhā faraghta fanṣab. Wa ilā Rabbika farghab.",
+        "translationUrdu": "پس بے شک ہر تنگی کے ساتھ آسانی ہے، یقیناً تنگی کے ساتھ آسانی ہے! پس جب آپ فارغ ہوں تو عبادت میں محنت کریں، اور اپنے رب ہی کی طرف رغبت رکھیں۔",
+        "translation": "For indeed, with hardship will be ease. Indeed, with hardship will be ease. So when you have finished, direct your labor, and to your Lord turn all longing.",
+        "contemplativeNote": "تنگی کے ساتھ دوہری آسانی کا الٰہی وعدہ۔ مشکل حالات میں مایوسی حرام ہے اور امید واجب ہے۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ الشرح (Ash-Sharh 94:5-8)",
+        "virtue": "غم، پریشانی اور ڈپریشن سے نجات کے لیے اکسیر قرآنی نسخہ۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_duha_lord_will_give",
+        "arabic": "مَا وَدَّعَكَ رَبُّكَ وَمَا قَلَىٰ • وَلَلْآخِرَةُ خَيْرٌ لَّكَ مِنَ الْأُولَىٰ • وَلَسَوْفَ يُعْطِيكَ رَبُّكَ فَتَرْضَىٰ",
+        "transliteration": "Mā wadda'aka Rabbuka wa mā qalā. Wa lal-ākhiratu khayrun laka minal-ūlā. Wa lasawfa yu'ṭīka Rabbuka fatarḍā.",
+        "translationUrdu": "آپ کے رب نے نہ تو آپ کو چھوڑا ہے اور نہ ناراض ہوا ہے۔ اور یقیناً آخرت آپ کے لیے دنیا سے کہیں بہتر ہے۔ اور عنقریب آپ کا رب آپ کو اتنا دے گا کہ آپ راضی ہو جائیں گے۔",
+        "translation": "Your Lord has not forsaken you, nor is He displeased. And the Hereafter is better for you than the first life. And your Lord will surely give you, and you will be well-pleased.",
+        "contemplativeNote": "مایوسی اور تنہائی کے اندھیروں میں اللہ کی محبت اور رحمت کا سب سے پر تسلی پیام۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ الضحیٰ (Ad-Duha 93:3-5)",
+        "virtue": "دل کو سکون اور یقین عطا کرنے والی آیت کہ رب کبھی اپنے بندے کو تنہا نہیں چھوڑتا۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_duha_blessings_refuge",
+        "arabic": "أَلَمْ يَجِدْكَ يَتِيمًا فَآوَىٰ • وَوَجَدَكَ ضَالًّا فَهَدَىٰ • وَوَجَدَكَ عَائِلًا فَأَغْنَىٰ",
+        "transliteration": "Alam yajidka yatīman fa-āwā. Wa wajadaka ḍāllan fa-hadā. Wa wajadaka 'ā'ilan fa-aghnā.",
+        "translationUrdu": "کیا اس نے آپ کو یتیم نہیں پایا تھا پھر ٹھکانہ دیا؟ اور آپ کو تلاشِ حق میں پایا تو سیدھا راستہ دکھایا؟ اور آپ کو نادار پایا تو غنی و بے نیاز کر دیا؟",
+        "translation": "Did He not find you an orphan and give you shelter? And He found you seeking and guided you? And He found you in need and made you self-sufficient?",
+        "contemplativeNote": "اللہ کی سابقہ نوازشات کو یاد کر کے موجودہ مشکلات میں شکر اور صبر کا مظاہرہ کریں۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ الضحیٰ (Ad-Duha 93:6-8)",
+        "virtue": "شکر گزاری اور ماضی کے انعامات کا اعتراف کر کے اللہ کے قریب ہونا۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_naziat_fear_lord_desire",
+        "arabic": "وَأَمَّا مَنْ خَافَ مَقَامَ رَبِّهِ وَنَهَى النَّفْسَ عَنِ الْهَوَىٰ • فَإِنَّ الْجَنَّةَ هِيَ الْمَأْوَىٰ",
+        "transliteration": "Wa ammā man khāfa maqāma Rabbihi wa nahan-nafsa 'anil-hawā. Fa-innal-jannata hiyal-ma'wā.",
+        "translationUrdu": "اور جو شخص اپنے رب کے حضور کھڑے ہونے سے ڈر گیا اور اپنے نفس کو بری خواہشات سے روکا، تو یقیناً جنت ہی اس کا ٹھکانہ ہے۔",
+        "translation": "But as for he who feared the standing before his Lord and restrained his soul from vain desires, then indeed, Paradise will be his refuge.",
+        "contemplativeNote": "جنت کا راستہ نفس کی ناجائز خواہشات کو اللہ کے خوف سے قابو میں رکھنے میں پوشیدہ ہے۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ النازعات (An-Nazi'at 79:40-41)",
+        "virtue": "گناہ سے بچنے اور نفس پر قابو پا کر دائمی جنت کا حقدار بننے کا قرآنی فارمولا۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_asr_loss_and_salvation",
+        "arabic": "وَالْعَصْرِ • إِنَّ الْإِنسَانَ لَفِي خُسْرٍ • إِلَّا الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ وَتَوَاصَوْا بِالْحَقِّ وَتَوَاصَوْا بِالصَّبْرِ",
+        "transliteration": "Wal-'aṣr. Innal-insāna lafī khusr. Illal-ladhīna āmanū wa 'amiluṣ-ṣāliḥāti wa tawāṣaw bil-ḥaqqi wa tawāṣaw biṣ-ṣabr.",
+        "translationUrdu": "زمانے کی قسم! بے شک انسان سراسر خسارے میں ہے، سوائے ان لوگوں کے جو ایمان لائے اور نیک عمل کیے اور ایک دوسرے کو حق کی وصیت کی اور صبر کی تلقین کی۔",
+        "translation": "By time, indeed, mankind is in loss, except for those who have believed and done righteous deeds and advised each other to truth and advised each other to patience.",
+        "contemplativeNote": "وقت کی قیمت پہچانیں، زندگی کی اصل کامیابی ایمان، عمل صالح اور حق و صبر کی تلقین میں ہے۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ العصر (Al-Asr 103:1-3)",
+        "virtue": "امام شافعی کے مطابق اگر قرآن کی صرف یہی سورت نازل ہوتی تو انسانوں کی رہنمائی کے لیے کافی تھی۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_infitar_deceived_by_generous_lord",
+        "arabic": "يَا أَيُّهَا الْإِنسَانُ مَا غَرَّكَ بِرَبِّكَ الْكَرِيمِ • الَّذِي خَلَقَكَ فَسَوَّاكَ فَعَدَلَكَ • فِي أَيِّ صُورَةٍ مَّا شَاءَ رَكَّبَكَ",
+        "transliteration": "Yā ayyuhal-insānu mā gharraka bi-Rabbikal-karīm. Alladhī khalaqaka fa-sawwāka fa-'adalak. Fī ayyi ṣūratin mā shā'a rakkabak.",
+        "translationUrdu": "اے انسان! تجھے اپنے اس ربِ کریم کے بارے میں کس چیز نے دھوکے میں ڈال دیا؟ جس نے تجھے پیدا کیا، تیرے اعضاء درست کیے، اور تجھے متناسب و خوبصورت بنایا۔",
+        "translation": "O mankind, what has deceived you concerning your Lord, the Generous, Who created you, proportioned you, and balanced you? In whatever form He willed has He assembled you.",
+        "contemplativeNote": "اللہ کی رحمت اور نعمتوں کو دیکھ کر اس کی نافرمانی کرنے سے بچیں، رب کا کرم گناہ کی دلیری کا جواز نہیں بننا چاہیے۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ الانفطار (Al-Infitar 82:6-8)",
+        "virtue": "غفلت سے بیدار کرنے اور اللہ کی عظمت کا احساس دلانے والی جھنجھوڑنے والی آیت۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_alaq_read_in_name_of_lord",
+        "arabic": "اقْرَأْ بِاسْمِ رَبِّكَ الَّذِي خَلَقَ • خَلَقَ الْإِنسَانَ مِنْ عَلَقٍ • اقْرَأْ وَرَبُّكَ الْأَكْرَمُ • الَّذِي عَلَّمَ بِالْقَلَمِ • عَلَّمَ الْإِنسَانَ مَا لَمْ يَعْلَمْ",
+        "transliteration": "Iqra' bismi Rabbikal-ladhī khalaq. Khalaqal-insāna min 'alaq. Iqra' wa Rabbukal-akram. Alladhī 'allama bil-qalam. 'Allamal-insāna mā lam ya'lam.",
+        "translationUrdu": "پڑھیے اپنے رب کے نام سے جس نے پیدا کیا۔ انسان کو خون کے لوتھڑے سے پیدا کیا۔ پڑھیے اور آپ کا رب سب سے بڑا کریم ہے، جس نے قلم کے ذریعے علم سکھایا، انسان کو وہ سکھایا جو وہ نہ جانتا تھا۔",
+        "translation": "Recite in the name of your Lord who created - created man from a clinging substance. Recite, and your Lord is the most Generous - Who taught by the pen - taught man that which he knew not.",
+        "contemplativeNote": "قرآن مجید کی پہلی وحی! علم کی عظمت اور اپنے خالق و مالک کے نام سے ہر نیک کام کا آغاز۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ العلق (Al-Alaq 96:1-5)",
+        "virtue": "قرآن کی سب سے پہلی نازل شدہ آیات جن سے دنیا میں ہدایت کا نور پھیلا۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_qadr_night_of_power",
+        "arabic": "إِنَّا أَنزَلْنَاهُ فِي لَيْلَةِ الْقَدْرِ • وَمَا أَدْرَاكَ مَا لَيْلَةُ الْقَدْرِ • لَيْلَةُ الْقَدْرِ خَيْرٌ مِّنْ أَلْفِ شَهْرٍ • تَنَزَّلُ الْمَلَائِكَةُ وَالرُّوحُ فِيهَا بِإِذْنِ رَبِّهِم مِّن كُلِّ أَمْرٍ • سَلَامٌ هِيَ حَتَّىٰ مَطْلَعِ الْفَجْرِ",
+        "transliteration": "Innā anzalnāhu fī laylatil-qadr. Wa mā adrāka mā laylatul-qadr. Laylatul-qadri khayrum-min alfi shahr. Tanazzalul-malā'ikatu war-rūḥu fīhā bi-idhni Rabbihim min kulli amr. Salāmun hiya ḥattā maṭla'il-fajr.",
+        "translationUrdu": "بے شک ہم نے اسے شبِ قدر میں اتارا۔ اور آپ کو کیا معلوم کہ شبِ قدر کیا ہے؟ شبِ قدر ہزار مہینوں سے بہتر ہے! اس میں فرشتے اور روح القدس اپنے رب کے حکم سے ہر امر کے لیے اترتے ہیں، وہ رات طلوعِ فجر تک سلامتی ہی سلامتی ہے۔",
+        "translation": "Indeed, We sent the Qur'an down during the Night of Decree. And what can make you know what is the Night of Decree? The Night of Decree is better than a thousand months. The angels and the Spirit descend therein by permission of their Lord for every matter. Peace it is until the emergence of dawn.",
+        "contemplativeNote": "قرآن کی قدر اور ایک رات کی عبادت میں 83 سال سے زائد کا ثواب! اللہ کی بے پایاں رحمت۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ القدر (Al-Qadr 97:1-5)",
+        "virtue": "امتِ محمدیہ پر اللہ تعالیٰ کا سب سے عظیم احسان اور مغفرت کی رات۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_zalzalah_atom_weight",
+        "arabic": "فَمَن يَعْمَلْ مِثْقَالَ ذَرَّةٍ خَيْرًا يَرَهُ • وَمَن يَعْمَلْ مِثْقَالَ ذَرَّةٍ شَرًّا يَرَهُ",
+        "transliteration": "Fa-man ya'mal mithqāla dharratin khayran yarah. Wa man ya'mal mithqāla dharratin sharran yarah.",
+        "translationUrdu": "پس جو ذرہ برابر بھی نیکی کرے گا وہ اسے دیکھ لے گا، اور جو ذرہ برابر بھی برائی کرے گا وہ اسے دیکھ لے گا۔",
+        "translation": "So whoever does an atom's weight of good will see it, and whoever does an atom's weight of evil will see it.",
+        "contemplativeNote": "کوئی چھوٹی نیکی حقیر نہیں اور کوئی چھوٹا گناہ بے ضرر نہیں۔ روزِ حشر ہر عمل سامنے آئے گا۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ الزلزلہ (Az-Zalzalah 99:7-8)",
+        "virtue": "اعمال کے مکمل اور عادلانہ احتساب کی قرآنی یاد دہانی۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_kawthar_abundance",
+        "arabic": "إِنَّا أَعْطَيْنَاكَ الْكَوْثَرَ • فَصَلِّ لِرَبِّكَ وَانْحَرْ • إِنَّ شَانِئَكَ هُوَ الْأَبْتَرُ",
+        "transliteration": "Innā a'ṭaynākal-kawthar. Fa-ṣalli li-Rabbika wan-ḥar. Inna shāni'aka huwal-abtar.",
+        "translationUrdu": "بے شک ہم نے آپ کو کوثر (خیرِ کثیر اور حوضِ کوثر) عطا فرمایا۔ پس اپنے رب کے لیے نماز پڑھیے اور قربانی کیجیے۔ یقیناً آپ کا دشمن ہی بے نام و نشان رہے گا۔",
+        "translation": "Indeed, We have granted you, [O Muhammad], al-Kawthar (abundance). So pray to your Lord and sacrifice. Indeed, your enemy is the one cut off.",
+        "contemplativeNote": "نبی اکرم ﷺ کے ساتھ سچی عقیدت اور رب کے حضور نماز و قربانی کا حکم۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ الکوثر (Al-Kawthar 108:1-3)",
+        "virtue": "حوضِ کوثر اور شفاعتِ مصطفیٰ ﷺ کی امید دلانے والی بابرکت سورت۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_ikhlas_oneness_of_allah",
+        "arabic": "قُلْ هُوَ اللَّهُ أَحَدٌ • اللَّهُ الصَّمَدُ • لَمْ يَلِدْ وَلَمْ يُولَدْ • وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ",
+        "transliteration": "Qul Huwal-Lāhu Aḥad. Allāhuṣ-Ṣamad. Lam yalid wa lam yūlad. Wa lam yakul-lahū kufuwan aḥad.",
+        "translationUrdu": "کہہ دیجیے کہ وہ اللہ ایک ہے، اللہ بے نیاز ہے، نہ اس کی کوئی اولاد ہے اور نہ وہ کسی کی اولاد ہے، اور کوئی اس کا ہمسر اور برابر نہیں ہے۔",
+        "translation": "Say, 'He is Allah, [who is] One, Allah, the Eternal Refuge. He neither begets nor is born, nor is there to Him any equivalent.'",
+        "contemplativeNote": "توحیدِ خالص! اللہ الصمد ہے یعنی ہر کوئی اپنی ہر حاجت میں اس کا محتاج ہے جبکہ وہ سب سے بے نیاز ہے۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ الإخلاص (Al-Ikhlas 112:1-4)",
+        "virtue": "ایک بار پڑھنا ثلثِ قرآن (تہائی قرآن) کے برابر ثواب رکھتا ہے۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_falaq_protection_dawn",
+        "arabic": "قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ • مِن شَرِّ مَا خَلَقَ • وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ • وَمِن شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ • وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ",
+        "transliteration": "Qul a'ūdhu bi-Rabbil-falaq. Min sharri mā khalaq. Wa min sharri ghāsiqin idhā waqab. Wa min sharrin-naffāthāti fil-'uqad. Wa min sharri ḥāsidin idhā ḥasad.",
+        "translationUrdu": "کہہ دیجیے: میں صبح کے رب کی پناہ مانگتا ہوں، ہر اس چیز کے شر سے جو اس نے پیدا کی، اور اندھیری رات کے شر سے جب وہ چھا جائے، اور گرہوں میں پھونکنے والیوں کے شر سے، اور حسد کرنے والے کے شر سے جب وہ حسد کرے۔",
+        "translation": "Say, 'I seek refuge in the Lord of daybreak from the evil of that which He created, and from the evil of darkness when it settles, and from the evil of the blowers in knots, and from the evil of an envier when he envies.'",
+        "contemplativeNote": "حسد، جادو، نظرِ بد اور تاریکی کے شرور سے اللہ کی حفاظت کا سب سے مضبوط قلعہ۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ الفلق (Al-Falaq 113:1-5)",
+        "virtue": "حفاظتِ جان و مال اور ہر قسم کے شرور سے پناہ کے لیے روزانہ پڑھنا مسنون ہے۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_nas_protection_mankind",
+        "arabic": "قُلْ أَعُوذُ بِرَبِّ النَّاسِ • مَلِكِ النَّاسِ • إِلَٰهِ النَّاسِ • مِن شَرِّ الْوَسْوَاسِ الْخَنَّاسِ • الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ • مِنَ الْجِنَّةِ وَالنَّاسِ",
+        "transliteration": "Qul a'ūdhu bi-Rabbin-nās. Malikin-nās. Ilāhin-nās. Min sharril-waswāsil-khannās. Alladhī yuwaswisu fī ṣudūrin-nās. Minal-jinnati wan-nās.",
+        "translationUrdu": "کہہ دیجیے: میں لوگوں کے پروردگار کی پناہ مانگتا ہوں، لوگوں کے بادشاہ کی، لوگوں کے معبود کی، وسوسہ ڈالنے والے پیچھے ہٹ جانے والے کے شر سے، جو لوگوں کے سینوں میں وسوسہ ڈالتا ہے، خواہ وہ جنات میں سے ہو یا انسانوں میں سے۔",
+        "translation": "Say, 'I seek refuge in the Lord of mankind, the Sovereign of mankind, the God of mankind, from the evil of the retreating whisperer who whispers into the breasts of mankind - from among the jinn and mankind.'",
+        "contemplativeNote": "شیطانی وسوسوں اور برے خیالات سے بچاؤ کے لیے اللہ تعالیٰ کی ذاتِ اقدس کی پناہ۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ الناس (An-Nas 114:1-6)",
+        "virtue": "شیطان کے شر اور دل کے وسوسوں کے علاج کی سب سے جامع دعا۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_ala_purify_remembrance",
+        "arabic": "قَدْ أَفْلَحَ مَن تَزَكَّىٰ • وَذَكَرَ اسْمَ رَبِّهِ فَصَلَّىٰ • بَلْ تُؤْثِرُونَ الْحَيَاةَ الدُّنْيَا • وَالْآخِرَةُ خَيْرٌ وَأَبْقَىٰ",
+        "transliteration": "Qad aflaḥa man tazakkā. Wa dhakaras-ma Rabbihi fa-ṣallā. Bal tu'thirūnal-ḥayātad-dunyā. Wal-ākhiratu khayrun wa abqā.",
+        "translationUrdu": "بے شک وہ کامیاب ہو گیا جس نے اپنا تزکیہ کیا، اور اپنے رب کا نام یاد کیا اور نماز پڑھی۔ بلکہ تم تو دنیا کی زندگی کو ترجیح دیتے ہو، حالانکہ آخرت کہیں بہتر اور ہمیشہ باقی رہنے والی ہے۔",
+        "translation": "He has certainly succeeded who purifies himself and mentions the name of his Lord and prays. But you prefer the worldly life, while the Hereafter is better and more enduring.",
+        "contemplativeNote": "کامیابی کا راز نفس کے تزکیے، ذکرِ الٰہی اور نماز میں ہے۔ فانی دنیا کے مقابلے میں دائمی آخرت کو فوقیت دیں۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ الاعلیٰ (Al-A'la 87:14-17)",
+        "virtue": "حقیقی فلاح اور تزکیہ نفس کے اہم اصولوں کا دلنشین بیان۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_shams_soul_success_ruin",
+        "arabic": "وَنَفْسٍ وَمَا سَوَّاهَا • فَأَلْهَمَهَا فُجُورَهَا وَتَقْوَاهَا • قَدْ أَفْلَحَ مَن زَكَّاهَا • وَقَدْ خَابَ مَن دَسَّاهَا",
+        "transliteration": "Wa nafsin wa mā sawwāhā. Fa-alhamahā fujūrahā wa taqwāhā. Qad aflaḥa man zakkāhā. Wa qad khāba man dassāhā.",
+        "translationUrdu": "اور نفسِ انسانی کی قسم اور جیسا کہ اس کو سنوارا، پھر اس کو اس کی بدکاری اور اس کے پرہیزگاری کی سمجھ دی! بے شک وہ مراد کو پہنچ گیا جس نے اپنے نفس کو پاک کیا، اور وہ نامراد ہوا جس نے اسے گناہوں میں دبا دیا۔",
+        "translation": "And [by] the soul and He who proportioned it and inspired it [with discernment of] its wickedness and its righteousness, he has succeeded who purifies it, and he has failed who instills it [with corruption].",
+        "contemplativeNote": "اللہ نے ہر دل کو اچھائی اور برائی کی تمیز دی ہے۔ اپنے باطن کو گناہوں سے پاک رکھ کر ہی نجات ممکن ہے۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ الشمس (Ash-Shams 91:7-10)",
+        "virtue": "11 قسموں کے بعد اللہ تعالیٰ کا دو ٹوک فیصلہ کہ کامیابی صرف پاکیزگیِ نفس میں ہے۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_layl_charity_and_ease",
+        "arabic": "فَأَمَّا مَنْ أَعْطَىٰ وَاتَّقَىٰ • وَصَدَّقَ بِالْحُسْنَىٰ • فَسَنُيَسِّرُهُ لِلْيُسْرَىٰ",
+        "transliteration": "Fa-ammā man a'ṭā wat-taqā. Wa ṣaddaqa bil-ḥusnā. Fa-sanuyassiruhū lil-yusrā.",
+        "translationUrdu": "پس جس نے اللہ کی راہ میں دیا اور تقویٰ اختیار کیا، اور بھلائی کی تصدیق کی، تو ہم عنقریب اس کے لیے آسانی کے راستے کو آسان فرما دیں گے۔",
+        "translation": "As for he who gives and fears Allah, and believes in the best [reward], We will ease him toward ease.",
+        "contemplativeNote": "سخاوت اور پرہیزگاری اختیار کرنے والے کے لیے اللہ نیکی اور سکون کی راہوں کو خود بخود آسان بنا دیتا ہے۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ اللیل (Al-Layl 92:5-7)",
+        "virtue": "زندگی میں برکت، توفیقِ نیکی اور کشادگی پانے کا الٰہی ضابطہ۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_balad_steep_path_compassion",
+        "arabic": "فَلَا اقْتَحَمَ الْعَقَبَةَ • وَمَا أَدْرَاكَ مَا الْعَقَبَةُ • فَكُّ رَقَبَةٍ • أَوْ إِطْعَامٌ فِي يَوْمٍ ذِي مَسْغَبَةٍ • يَتِيمًا ذَا مَقْرَبَةٍ • أَوْ مِسْكِينًا ذَا مَتْرَبَةٍ • ثُمَّ كَانَ مِنَ الَّذِينَ آمَنُوا وَتَوَاصَوْا بِالصَّبْرِ وَتَوَاصَوْا بِالْمَرْحَمَةِ",
+        "transliteration": "Falaq-taḥamal-'aqabah. Wa mā adrāka mal-'aqabah. Fakku raqabah. Aw iṭ'āmun fī yawmin dhī masghabah. Yatīman dhā maqrabah. Aw miskīnan dhā matrabah. Thumma kāna minal-ladhīna āmanū wa tawāṣaw biṣ-ṣabri wa tawāṣaw bil-marḥamah.",
+        "translationUrdu": "مگر وہ دشوار گھاٹی میں داخل نہ ہوا۔ اور آپ کو کیا معلوم کہ دشوار گھاٹی کیا ہے؟ کسی گردن کو چھڑانا، یا بھوک کے دن کھانا کھلانا، کسی رشتہ دار یتیم کو، یا خاک نشین مسکین کو، پھر وہ ان لوگوں میں شامل ہو جو ایمان لائے اور جنہوں نے باہم صبر اور رحم دلی کی تلقین کی۔",
+        "translation": "But he has not broken through the difficult pass. And what can make you know what is the difficult pass? It is the freeing of a slave, or feeding on a day of severe hunger an orphan of near relationship or a needy person in misery, and then being of those who believed and advised each other to patience and mercy.",
+        "contemplativeNote": "دین صرف عبادات کا نام نہیں، بلکہ معاشرے کے یتیموں، ناداروں کی خبر گیری اور رحم دلی اصل کسوٹی ہے۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ البلد (Al-Balad 90:11-17)",
+        "virtue": "انسانی ہمدردی، غریب پروری اور باہمی رحم دلی کی قرآنی دعوت۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_tin_best_stature",
+        "arabic": "لَقَدْ خَلَقْنَا الْإِنسَانَ فِي أَحْسَنِ تَقْوِيمٍ • ثُمَّ رَدَدْنَاهُ أَسْفَلَ سَافِلِينَ • إِلَّا الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ فَلَهُمْ أَجْرٌ غَيْرُ مَمْنُونٍ",
+        "transliteration": "Laqad khalaqnal-insāna fī aḥsani taqwīm. Thumma radadnāhu asfala sāfilīn. Illal-ladhīna āmanū wa 'amiluṣ-ṣāliḥāti fa-lahum ajrun ghayru mamnūn.",
+        "translationUrdu": "بے شک ہم نے انسان کو بہترین ساخت اور خوبصورت ترین سانچے میں پیدا کیا، پھر ہم نے اسے پستیوں میں سب سے نیچے گرا دیا، سوائے ان لوگوں کے جو ایمان لائے اور نیک عمل کیے، پس ان کے لیے کبھی ختم نہ ہونے والا اجر ہے۔",
+        "translation": "We have certainly created man in the best of stature; then We return him to the lowest of the low, except for those who believe and do righteous deeds, for they will have a reward uninterrupted.",
+        "contemplativeNote": "انسان کی اصل عظمت اس کے ظاہری حسن میں نہیں بلکہ ایمان اور نیک اعمال میں ہے جو اسے پستی سے بچاتے ہیں۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ التین (At-Tin 95:4-6)",
+        "virtue": "انسانی شرف، مقصدِ حیات اور نیک عمل کے دائمی بدلے کا ذکر۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_mutaffifin_bliss_righteous",
+        "arabic": "إِنَّ الْأَبْرَارَ لَفِي نَعِيمٍ • عَلَى الْأَرَائِكِ يَنظُرُونَ • تَعْرِفُ فِي وُجُوهِهِمْ نَضْرَةَ النَّعِيمِ • يُسْقَوْنَ مِن رَّحِيقٍ مَّخْتُومٍ • خِتَامُهُ مِسْكٌ وَفِي ذَٰلِكَ فَلْيَتَنَافَسِ الْمُتَنَافِسُونَ",
+        "transliteration": "Innal-abrāra lafī na'īm. 'Alal-arā'iki yanẓurūn. Ta'rifu fī wujūhihim naḍratan-na'īm. Yusqawna mir-raḥīqim-makhtūm. Khitāmuhū misk, wa fī dhālika falyatanāfasil-mutanāfisūn.",
+        "translationUrdu": "بے شک نیکوکار لازوال نعمتوں میں ہوں گے، مسہریوں پر بیٹھے نظارہ کر رہے ہوں گے، آپ ان کے چہروں پر نعمتوں کی تروتازگی اور رونق پہچان لیں گے، انہیں خالص سر بمہر شراب پلائی جائے گی جس کی مہر مشک کی ہوگی، اور آگے بڑھنے والوں کو چاہیے کہ اسی نعمت کو پانے کے لیے ایک دوسرے سے آگے بڑھیں!",
+        "translation": "Indeed, the righteous will be in pleasure, on adorned couches observing. You will recognize in their faces the radiance of pleasure. They will be given to drink of pure wine [which was] sealed, the last of which is musk. So for this let the competitors compete.",
+        "contemplativeNote": "جنت کے انعامات اور پاکیزہ شراب کی خوشبو۔ دنیا کی فانی دوڑ کے بجائے جنت کے لیے سبقت لے جانے کی ترغیب۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ المطففین (Al-Mutaffifin 83:22-26)",
+        "virtue": "جنت کا اشتیاق اور نیک اعمال میں ایک دوسرے سے سبقت لے جانے کی تحریک۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_ghashiyah_reflection_creation",
+        "arabic": "أَفَلَا يَنظُرُونَ إِلَى الْإِبِلِ كَيْفَ خُلِقَتْ • وَإِلَى السَّمَاءِ كَيْفَ رُفِعَتْ • وَإِلَى الْجِبَالِ كَيْفَ نُصِبَتْ • وَإِلَى الْأَرْضِ كَيْفَ سُطِحَتْ • فَذَكِّرْ إِنَّمَا أَنتَ مُذَكِّرٌ",
+        "transliteration": "Afalā yanẓurūna ilal-ibili kayfa khuliqat. Wa ilas-samā'i kayfa rufi'at. Wa ilal-jibāli kayfa nuṣibat. Wa ilal-arḍi kayfa suṭiḥat. Fa-dhakkir innamā anta mudhakkir.",
+        "translationUrdu": "کیا یہ اونٹوں کی طرف نہیں دیکھتے کہ کیسے پیدا کیے گئے؟ اور آسمان کی طرف کہ کیسا بلند کیا گیا؟ اور پہاڑوں کی طرف کہ کس طرح گاڑے گئے؟ اور زمین کی طرف کہ کیسے بچھائی گئی؟ پس آپ نصیحت فرماتے رہیے، آپ تو بس نصیحت کرنے والے ہیں۔",
+        "translation": "Then do they not look at the camels - how they are created? And at the sky - how it is raised? And at the mountains - how they are erected? And at the earth - how it is spread out? So remind, [O Muhammad]; you are only a reminder.",
+        "contemplativeNote": "کائنات کی نشانیوں پر غور و فکر کر کے اپنے رب کی قدرت اور حکمت کو پہچانیں۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ الغاشیۃ (Al-Ghashiyah 88:17-21)",
+        "virtue": "تفکر فی خلق اللہ اور نصیحت کو دل میں اتارنے کا قرآنی اسلوب۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_buruj_great_triumph",
+        "arabic": "إِنَّ الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ لَهُمْ جَنَّاتٌ تَجْرِي مِن تَحْتِهَا الْأَنْهَارُ ۚ ذَٰلِكَ الْفَوْزُ الْكَبِيرُ • إِنَّ بَطْشَ رَبِّكَ لَشَدِيدٌ • إِنَّهُ هُوَ يُبْدِئُ وَيُعِيدُ • وَهُوَ الْغَفُورُ الْوَدُودُ",
+        "transliteration": "Innal-ladhīna āmanū wa 'amiluṣ-ṣāliḥāti lahum jannātun tajrī min taḥtihal-anhār; dhālikal-fawzul-kabīr. Inna baṭsha Rabbika la-shadīd. Innahū Huwa yubdi'u wa yu'īd. Wa Huwal-Ghafūrul-Wadūd.",
+        "translationUrdu": "بے شک جو لوگ ایمان لائے اور انہوں نے نیک عمل کیے ان کے لیے ایسے باغات ہیں جن کے نیچے نہریں بہتی ہیں، یہی بہت بڑی کامیابی ہے! یقیناً آپ کے رب کی پکڑ بڑی سخت ہے، وہی پہلی بار پیدا کرتا ہے اور وہی دوبارہ پیدا کرے گا، اور وہ بڑا بخشنے والا اور بہت محبت فرمانے والا ہے۔",
+        "translation": "Indeed, those who have believed and done righteous deeds will have gardens beneath which rivers flow. That is the great attainment. Indeed, the vengeance of your Lord is severe. Indeed, it is He who originates [creation] and repeats. And He is the Forgiving, the Affectionate.",
+        "contemplativeNote": "اللہ نہ صرف غفور ہے بلکہ 'الودود' یعنی اپنے مومن بندوں سے بے پناہ پیار کرنے والا بھی ہے۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ البروج (Al-Buruj 85:11-14)",
+        "virtue": "رب کی مغفرت اور بے پایاں محبت (الودود) کے سایے میں پناہ لینا۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_tariq_guardian_over_soul",
+        "arabic": "وَالسَّمَاءِ وَالطَّارِقِ • وَمَا أَدْرَاكَ مَا الطَّارِقُ • النَّجْمُ الثَّاقِبُ • إِن كُلُّ نَفْسٍ لَّمَّا عَلَيْهَا حَافِظٌ",
+        "transliteration": "Was-samā'i waṭ-ṭāriq. Wa mā adrāka maṭ-ṭāriq. An-najmuth-thāqib. In kullu nafsin lammā 'alayhā ḥāfiẓ.",
+        "translationUrdu": "آسمان کی قسم اور رات کو نمودار ہونے والے کی! اور آپ کو کیا معلوم کہ رات کو نمودار ہونے والا کیا ہے؟ چمکتا ہوا تارا! کوئی جان ایسی نہیں جس پر ایک نگہبان مقرر نہ ہو۔",
+        "translation": "By the sky and the night comer - and what can make you know what is the night comer? It is the piercing star - there is no soul but that it has over it a protector/watcher.",
+        "contemplativeNote": "تنہائی ہو یا ہجوم، اللہ کا فرشتہ اور اس کی نظر ہر لمحہ آپ کی حفاظت اور نگرانی کر رہی ہے۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ الطارق (At-Tariq 86:1-4)",
+        "virtue": "اللہ کی نگرانی اور فرشتوں کی حفاظت پر کامل یقین۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_inshiqaq_laboring_towards_lord",
+        "arabic": "يَا أَيُّهَا الْإِنسَانُ إِنَّكَ كَادِحٌ إِلَىٰ رَبِّكَ كَدْحًا فَمُلَاقِيهِ • فَأَمَّا مَنْ أُوتِيَ كِتَابَهُ بِيَمِينِهِ • فَسَوْفَ يُحَاسَبُ حِسَابًا يَسِيرًا • وَيَنقَلِبُ إِلَىٰ أَهْلِهِ مَسْرُورًا",
+        "transliteration": "Yā ayyuhal-insānu innaka kādiḥun ilā Rabbika kadḥan fa-mulāqīh. Fa-ammā man ūtiya kitābahū bi-yamīnih. Fa-sawfa yuḥāsabu ḥisābay-yasīrā. Wa yanqalibu ilā ahlihī masrūrā.",
+        "translationUrdu": "اے انسان! تو اپنے رب کی طرف پہنچنے تک مسلسل محنت و مشقت کر رہا ہے، پھر تو اس سے ملنے والا ہے۔ پس جس کا نامہ اعمال اس کے دائیں ہاتھ میں دیا جائے گا، تو اس سے نہایت آسان حساب لیا جائے گا، اور وہ اپنے اہل کی طرف ہنسی خوشی لوٹے گا!",
+        "translation": "O mankind, indeed you are laboring toward your Lord with [great] exertion and will meet Him. Then as for he who is given his record in his right hand, he will be judged with an easy account and return to his people in happiness.",
+        "contemplativeNote": "زندگی کی تمام تکالیف اور محنتیں بالآخر رب کے حضور پیش ہوں گی۔ دعا کریں کہ نامہ اعمال دائیں ہاتھ میں ملے۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ الانشقاق (Al-Inshiqaq 84:6-9)",
+        "virtue": "آسان حساب اور خوشیوں بھری دائمی ملاقات کی پرامید دعا۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_takathur_competition_distraction",
+        "arabic": "أَلْهَاكُمُ التَّكَاثُرُ • حَتَّىٰ زُرْتُمُ الْمَقَابِرَ • كَلَّا سَوْفَ تَعْلَمُونَ • ثُمَّ كَلَّا سَوْفَ تَعْلَمُونَ • ثُمَّ لَتُسْأَلُنَّ يَوْمَئِذٍ عَنِ النَّعِيمِ",
+        "transliteration": "Alhākumut-takāthur. Ḥattā zurtumul-maqābir. Kallā sawfa ta'lamūn. Thumma kallā sawfa ta'lamūn. Thumma latus'alunna yawma'idhin 'anin-na'īm.",
+        "translationUrdu": "تمہیں کثرتِ مال و اولاد کی ہوس نے غفلت میں ڈالے رکھا، یہاں تک کہ تم نے قبروں کا منہ دیکھا! ہرگز نہیں، تم عنقریب جان لو گے! پھر ہرگز نہیں، تم عنقریب جان لو گے! پھر تم سے اس دن اللہ کی تمام نعمتوں کے بارے میں ضرور سوال کیا جائے گا۔",
+        "translation": "Competition in [worldly] increase diverts you until you visit the graveyards. No! You are going to know. Then no! You are going to know... Then you will surely be asked that Day about pleasure.",
+        "contemplativeNote": "دنیا کی فانی دوڑ اور مادیت پرستی سے ہوشیار رہیں۔ صحت، وقت اور مال ہر نعمت کی بازپرس ہوگی۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ التکاثر (At-Takathur 102:1-4, 8)",
+        "virtue": "دل کی غفلت توڑنے اور نعمتوں کی قدر دانی سکھانے والی نصیحت۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_qariah_scales_heavy",
+        "arabic": "فَأَمَّا مَن ثَقُلَتْ مَوَازِينُهُ • فَهُوَ فِي عِيشَةٍ رَّاضِيَةٍ • وَأَمَّا مَنْ خَفَّتْ مَوَازِينُهُ • فَأُمُّهُ هَاوِيَةٌ • وَمَا أَدْرَاكَ مَا هِيَهْ • نَارٌ حَامِيَةٌ",
+        "transliteration": "Fa-ammā man thaqulat mawāzīnuh. Fa-huwa fī 'īshatir-rāḍiyah. Wa ammā man khaffat mawāzīnuh. Fa-ummuhū hāwiyah. Wa mā adrāka mā hiyah. Nārun ḥāmiyah.",
+        "translationUrdu": "پس جس کے نیکیوں کے پلڑے بھاری ہو گئے، تو وہ من پسند اور پر لطف زندگی میں ہوگا! اور جس کے پلڑے ہلکے پڑ گئے، تو اس کا ٹھکانہ گہری کھائی ہوگا، اور آپ کو کیا معلوم وہ کیا ہے؟ دہکتی ہوئی آگ!",
+        "translation": "Then as for one whose scales are heavy [with good deeds], he will be in a pleasant life. But as for one whose scales are light, his refuge will be an abyss. And what can make you know what that is? It is a Fire, intensely hot.",
+        "contemplativeNote": "میزانِ عمل میں ذکرِ الٰہی سب سے وزنی عمل ہے۔ سبحان اللہ وبحمدہ سبحان اللہ العظیم میزان کو بھر دیتے ہیں۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ القارعۃ (Al-Qari'ah 101:6-11)",
+        "virtue": "میزانِ حشر میں نیکیوں کا پلڑا وزنی کرنے کی تڑپ اور فکر۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_maun_care_for_orphans_prayer",
+        "arabic": "أَرَأَيْتَ الَّذِي يُكَذِّبُ بِالدِّينِ • فَذَٰلِكَ الَّذِي يَدُعُّ الْيَتِيمَ • وَلَا يَحُضُّ عَلَىٰ طَعَامِ الْمِسْكِينِ • فَوَيْلٌ لِّلْمُصَلِّينَ • الَّذِينَ هُمْ عَن صَلَاتِهِمْ سَاهُونَ • الَّذِينَ هُمْ يُرَاءُونَ • وَيَمْنَعُونَ الْمَاعُونَ",
+        "transliteration": "A-ra'aytal-ladhī yukadh-dhibu bid-dīn. Fa-dhālikal-ladhī yadu''ul-yatīm. Wa lā yaḥuḍḍu 'alā ṭa'āmil-miskīn. Fa-waylul-lil-muṣallīn. Alladhīna hum 'an ṣalātihim sāhūn. Alladhīna hum yurā'ūn. Wa yamna'ūnal-mā'ūn.",
+        "translationUrdu": "بھلا آپ نے اسے دیکھا جو روزِ جزا کو جھٹلاتا ہے؟ یہی وہ ہے جو یتیم کو دھکے دیتا ہے، اور مسکین کو کھانا کھلانے کی ترغیب نہیں دیتا۔ پس ہلاکت ہے ان نمازیوں کے لیے جو اپنی نماز سے غافل ہیں، جو دکھاوا کرتے ہیں اور معمولی ضرورت کی چیز مانگے پر بھی روک لیتے ہیں۔",
+        "translation": "Have you seen the one who denies the Recompense? For that is the one who drives away the orphan and does not encourage the feeding of the poor. So woe to those who pray [but] who are heedless of their prayer - those who make a show [of their deeds] and withhold simple assistance.",
+        "contemplativeNote": "نماز میں خشوع اور مخلوقِ خدا کے لیے دل میں شفقت و سخاوت—ریاکاری اور بخل سے اللہ کی پناہ مانگیں۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ الماعون (Al-Ma'un 107:1-7)",
+        "virtue": "سچی بندگی، نماز کی حفاظت اور محتاجوں کی خدمت کا جامع قرآنی درس۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_nasr_victory_and_istighfar",
+        "arabic": "إِذَا جَاءَ نَصْرُ اللَّهِ وَالْفَتْحُ • وَرَأَيْتَ النَّاسَ يَدْخُلُونَ فِي دِينِ اللَّهِ أَفْوَاجًا • فَسَبِّحْ بِحَمْدِ رَبِّكَ وَاسْتَغْفِرْهُ ۚ إِنَّهُ كَانَ تَوَّابًا",
+        "transliteration": "Idhā jā'a naṣrul-Lāhi wal-fatḥ. Wa ra'aytan-nāsa yadkhulūna fī dīnil-Lāhi afwājā. Fa-sabbiḥ bi-ḥamdi Rabbika was-taghfirh; innahū kāna Tawwābā.",
+        "translationUrdu": "جب اللہ کی مدد اور فتح آ جائے، اور آپ لوگوں کو جوق در جوق اللہ کے دین میں داخل ہوتے دیکھ لیں، تو اپنے رب کی حمد کے ساتھ تسبیح کیجیے اور اس سے مغفرت مانگیے، بے شک وہ بڑا ہی توبہ قبول فرمانے والا ہے۔",
+        "translation": "When the victory of Allah has come and the conquest, and you see the people entering into the religion of Allah in multitudes, then exalt [Him] with praise of your Lord and ask forgiveness of Him. Indeed, He is ever Accepting of repentance.",
+        "contemplativeNote": "کامیابی اور فتوحات کے وقت غرور کے بجائے عاجزی، حمدِ الٰہی اور استغفار کا سنہری اصول۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ النصر (An-Nasr 110:1-3)",
+        "virtue": "فتح و نصرت پر شکر گزاری اور کثرتِ استغفار کی تعلیم۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_naba_attainment_righteous",
+        "arabic": "إِنَّ لِلْمُتَّقِينَ مَفَازًا • حَدَائِقَ وَأَعْنَابًا • وَكَوَاعِبَ أَتْرَابًا • وَكَأْسًا دِهَاقًا • لَّا يَسْمَعُونَ فِيهَا لَغْوًا وَلَا كِذَّابًا • جَزَاءً مِّن رَّبِّكَ عَطَاءً حِسَابًا",
+        "transliteration": "Inna lil-muttaqīna mafāzā. Ḥadā'iqa wa a'nābā. Wa kawā'iba atrābā. Wa ka'san dihāqā. Lā yasma'ūna fīhā laghwan wa lā kidhdhābā. Jazā'am-mir-Rabbika 'aṭā'an ḥisābā.",
+        "translationUrdu": "بے شک پرہیزگاروں کے لیے بڑی کامیابی اور کامرانی ہے! باغات اور انگور، اور ہم عمر حسین ساتھی، اور چھلکتے ہوئے جام! وہ وہاں نہ کوئی بیہودہ بات سنیں گے اور نہ کوئی جھوٹ، یہ آپ کے رب کی طرف سے بھرپور جزا اور عطا ہے۔",
+        "translation": "Indeed, for the righteous is attainment - gardens and grapevines and full cups. They will not hear therein ill speech or falsehood - [as] reward from your Lord, an ample gift.",
+        "contemplativeNote": "تقویٰ کا بدلہ جنت کے پاکیزہ باغات اور سکونِ قلب جہاں کوئی لغو یا تکلیف دہ بات نہیں ہوگی۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ النبأ (An-Naba 78:31-36)",
+        "virtue": "متقی بندوں کے لیے اللہ کی لاجواب ضیافت اور بشارت۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_quraysh_feed_and_security",
+        "arabic": "فَلْيَعْبُدُوا رَبَّ هَٰذَا الْبَيْتِ • الَّذِي أَطْعَمَهُم مِّن جُوعٍ وَآمَنَهُم مِّنْ خَوْفٍ",
+        "transliteration": "Fal-ya'budū Rabba hādhal-bayt. Alladhī aṭ'amahum min jū'in wa āmanahum min khawf.",
+        "translationUrdu": "پس انہیں چاہیے کہ وہ اس گھر (بیت اللہ) کے رب کی عبادت کریں، جس نے انہیں بھوک میں کھانا کھلایا اور خوف سے امن عطا فرمایا۔",
+        "translation": "Let them worship the Lord of this House, Who has fed them against hunger and made them safe from fear.",
+        "contemplativeNote": "رزق اور امن زندگی کی سب سے بڑی دو نعمتیں ہیں، دونوں صرف اللہ ہی عطا فرماتا ہے، پس اسی کی عبادت کریں۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ قریش (Quraysh 106:3-4)",
+        "virtue": "رزق میں برکت اور ہر قسم کے خوف اور خطرات سے حفاظت کا قرآنی وظیفہ۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_bayyinah_best_of_creatures",
+        "arabic": "إِنَّ الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ أُولَٰئِكَ هُمْ خَيْرُ الْبَرِيَّةِ • جَزَاؤُهُمْ عِندَ رَبِّهِمْ جَنَّاتُ عَدْنٍ تَجْرِي مِن تَحْتِهَا الْأَنْهَارُ خَالِدِينَ فِيهَا أَبَدًا ۚ رَّضِيَ اللَّهُ عَنْهُمْ وَرَضُوا عَنْهُ ۚ ذَٰلِكَ لِمَنْ خَشِيَ رَبَّهُ",
+        "transliteration": "Innal-ladhīna āmanū wa 'amiluṣ-ṣāliḥāti ulā'ika hum khayrul-bariyyah. Jazā'uhum 'inda Rabbihim jannātu 'adnin tajrī min taḥtihal-anhāru khālidīna fīhā abadā; raḍiyal-Lāhu 'anhum wa raḍū 'anh; dhālika liman khashiya Rabbah.",
+        "translationUrdu": "بے شک جو لوگ ایمان لائے اور نیک عمل کیے وہی سب مخلوق میں بہترین ہیں! ان کا بدلہ ان کے رب کے پاس ہمیشگی کے باغات ہیں جن کے نیچے نہریں بہتی ہیں، وہ ان میں ہمیشہ رہیں گے، اللہ ان سے راضی ہو گیا اور وہ اللہ سے راضی ہو گئے، یہ اس کے لیے ہے جو اپنے رب سے ڈرا۔",
+        "translation": "Indeed, they who have believed and done righteous deeds - those are the best of creatures. Their reward with their Lord will be gardens of perpetual residence beneath which rivers flow, wherein they will abide forever, Allah being well pleased with them and they with Him. That is for whoever has feared his Lord.",
+        "contemplativeNote": "مخلوق میں سب سے بہترین وہ ہے جو ایمان اور عمل صالح اپنائے، جس کا صلہ رضائے الٰہی کی ابدی نعمت ہے۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ البینۃ (Al-Bayyinah 98:7-8)",
+        "virtue": "رضوانِ اکبر—اللہ کی رضا اور خوشنودی حاصل کرنے کی سب سے عظیم فضیلت۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_humazah_wealth_illusion",
+        "arabic": "وَيْلٌ لِّكُلِّ هُمَزَةٍ لُّمَزَةٍ • الَّذِي جَمَعَ مَالًا وَعَدَّدَهُ • يَحْسَبُ أَنَّ مَالَهُ أَخْلَدَهُ • كَلَّا ۖ لَيُنبَذَنَّ فِي الْحُطَمَةِ",
+        "transliteration": "Waylul-likulli humazatil-lumazah. Alladhī jama'a mālan wa 'addadah. Yaḥsabu anna mālahū akhladah. Kallā layumbadhanna fīl-ḥuṭamah.",
+        "translationUrdu": "ہلاکت ہے ہر پیٹھ پیچھے عیب جوئی کرنے والے اور روبرو طعنے دینے والے کے لیے! جس نے مال جمع کیا اور اسے گن گن کر رکھا، وہ سمجھتا ہے کہ اس کا مال اسے ہمیشہ زندہ رکھے گا! ہرگز نہیں، وہ ضرور توڑ پھوڑ دینے والی آگ میں پھینکا جائے گا۔",
+        "translation": "Woe to every scorner and mocker who collects wealth and continuously counts it. He thinks that his wealth will make him immortal. No! He will surely be thrown into the Crusher.",
+        "contemplativeNote": "غیبت، طعنہ زنی اور مال پر اندھے فخر کی سخت مذمت۔ اپنی زبان اور دل کو پاکیزہ رکھیں۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ الہمزۃ (Al-Humazah 104:1-4)",
+        "virtue": "زبان کی حفاظت اور مال کی محبت کے فتنوں سے بچنے کی پر زور تنبیہ۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_kafirun_purity_of_faith",
+        "arabic": "قُلْ يَا أَيُّهَا الْكَافِرُونَ • لَا أَعْبُدُ مَا تَعْبُدُونَ • وَلَا أَنتُمْ عَابِدُونَ مَا أَعْبُدُ • لَكُمْ دِينُكُمْ وَلِيَ دِينِ",
+        "transliteration": "Qul yā ayyuhal-kāfirūn. Lā a'budu mā ta'budūn. Wa lā antum 'ābidūna mā a'bud. Lakum dīnukum wa liya dīn.",
+        "translationUrdu": "کہہ دیجیے کہ اے کافرو! میں ان کی عبادت نہیں کرتا جن کی تم عبادت کرتے ہو، اور نہ تم اس کی عبادت کرنے والے ہو جس کی میں عبادت کرتا ہوں، تمہارے لیے تمہارا دین ہے اور میرے لیے میرا دین ہے۔",
+        "translation": "Say, 'O disbelievers, I do not worship what you worship. Nor are you worshippers of what I worship... For you is your religion, and for me is my religion.'",
+        "contemplativeNote": "عقیدہ توحید پر غیر متزلزل استقامت اور شرک سے مکمل براءت کا اعلان۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ الکافرون (Al-Kafirun 109:1-6)",
+        "virtue": "شرک سے بیزاری اور چوتھائی قرآن کا ثواب رکھنے والی عظیم سورت۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    },
+    {
+        "id": "juz30_fil_birds_ababil",
+        "arabic": "أَلَمْ تَرَ كَيْفَ فَعَلَ رَبُّكَ بِأَصْحَابِ الْفِيلِ • أَلَمْ يَجْعَلْ كَيْدَهُمْ فِي تَضْلِيلٍ • وَأَرْسَلَ عَلَيْهِمْ طَيْرًا أَبَابِيلَ • تَرْمِيهِم بِحِجَارَةٍ مِّن سِجِّيلٍ • فَجَعَلَهُمْ كَعَصْفٍ مَّأْكُولٍ",
+        "transliteration": "Alam tara kayfa fa'ala Rabbuka bi-aṣḥābil-fīl. Alam yaj'al kaydahum fī taḍlīl. Wa arsala 'alayhim ṭayran abābīl. Tarmīhim bi-ḥijāratim-min sijjīl. Fa-ja'alahum ka-'aṣfim-ma'kūl.",
+        "translationUrdu": "کیا آپ نے نہیں دیکھا کہ آپ کے رب نے ہاتھی والوں کے ساتھ کیا سلوک کیا؟ کیا ان کی تدبیر کو اکارت نہیں کر دیا؟ اور ان پر جھنڈ کے جھنڈ پرندے بھیجے، جو ان پر پکی ہوئی مٹی کے پتھر پھینک رہے تھے، پھر انہیں کھائے ہوئے بھوسے کی طرح بنا ڈالا۔",
+        "translation": "Have you not considered how your Lord dealt with the companions of the elephant? Did He not make their plan into misguidance? And He sent against them flocks of birds, striking them with stones of hard clay, and He made them like eaten straw.",
+        "contemplativeNote": "اللہ اپنے دین اور اپنے گھر کی حفاظت خود فرماتا ہے، خواہ کتنا ہی بڑا ظالم یا لشکر کیوں نہ ہو۔",
+        "category": "Juz 30 (تیسواں پارہ)",
+        "source": "سورۃ الفیل (Al-Fil 105:1-5)",
+        "virtue": "ظالموں کی چالوں سے بے خوفی اور رب کی نصرت پر کامل بھروسہ۔",
+        "defaultDurationSeconds": 15,
+        "isQuranic": True
+    }
+]
+
+# Read existing catalog
+with open("app/src/main/assets/sacred_catalog.json", "r") as f:
+    existing = json.load(f)
+
+# Keep all non-Juz 30 items
+non_juz30 = [item for item in existing if "Juz 30" not in item.get("category", "")]
+
+# Combine new selected pearls of Juz 30 with other sacred categories
+final_catalog = juz30_items + non_juz30
+
+print(f"New Juz 30 items count: {len(juz30_items)}")
+print(f"Other items count: {len(non_juz30)}")
+print(f"Total new catalog items: {len(final_catalog)}")
+
+with open("app/src/main/assets/sacred_catalog.json", "w") as f:
+    json.dump(final_catalog, f, ensure_ascii=False, indent=2)
+
+print("Successfully written to app/src/main/assets/sacred_catalog.json")

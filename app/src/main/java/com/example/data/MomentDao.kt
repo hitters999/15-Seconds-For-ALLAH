@@ -17,33 +17,39 @@ interface MomentDao {
   @Query("SELECT * FROM moment_logs ORDER BY timestamp DESC LIMIT :limit")
   fun getRecentMomentLogs(limit: Int): Flow<List<MomentLogEntity>>
 
-  @Insert(onConflict = OnConflictStrategy.REPLACE)
-  suspend fun insertMomentLog(log: MomentLogEntity): Long
-
   @Query("SELECT COUNT(*) FROM moment_logs")
   fun getTotalMomentsCount(): Flow<Int>
 
-  @Query("SELECT COUNT(DISTINCT dateKey) FROM moment_logs")
-  fun getTotalActiveDays(): Flow<Int>
-
-  @Query("SELECT * FROM user_settings WHERE id = 1")
-  fun getUserSettings(): Flow<UserSettingsEntity?>
-
-  @Query("SELECT * FROM user_settings WHERE id = 1")
-  suspend fun getUserSettingsDirect(): UserSettingsEntity?
-
   @Insert(onConflict = OnConflictStrategy.REPLACE)
-  suspend fun insertOrUpdateUserSettings(settings: UserSettingsEntity)
+  suspend fun insertMomentLog(log: MomentLogEntity): Long
 
-  @Query("SELECT * FROM bookmarked_dhikr ORDER BY timestamp DESC")
+  @Query("DELETE FROM moment_logs")
+  suspend fun clearAllLogs()
+
+  // Bookmarks
+  @Query("SELECT * FROM bookmarks ORDER BY timestamp DESC")
   fun getAllBookmarks(): Flow<List<BookmarkEntity>>
 
   @Insert(onConflict = OnConflictStrategy.REPLACE)
   suspend fun insertBookmark(bookmark: BookmarkEntity)
 
-  @Query("DELETE FROM bookmarked_dhikr WHERE dhikrId = :dhikrId")
+  @Query("DELETE FROM bookmarks WHERE dhikrId = :dhikrId")
   suspend fun deleteBookmark(dhikrId: String)
 
-  @Query("DELETE FROM moment_logs")
-  suspend fun clearAllLogs()
+  // Settings
+  @Query("SELECT * FROM user_settings WHERE id = 1 LIMIT 1")
+  fun getUserSettings(): Flow<UserSettingsEntity?>
+
+  @Query("SELECT * FROM user_settings WHERE id = 1 LIMIT 1")
+  suspend fun getUserSettingsDirect(): UserSettingsEntity?
+
+  @Insert(onConflict = OnConflictStrategy.REPLACE)
+  suspend fun insertOrUpdateUserSettings(settings: UserSettingsEntity)
+
+  // Registered Accounts / Viewers Database Directory
+  @Query("SELECT * FROM registered_accounts ORDER BY joinedTimestamp DESC")
+  fun getAllRegisteredAccounts(): Flow<List<UserAccountEntity>>
+
+  @Insert(onConflict = OnConflictStrategy.REPLACE)
+  suspend fun insertUserAccount(account: UserAccountEntity)
 }

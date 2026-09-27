@@ -9,8 +9,12 @@ import com.example.data.DhikrCatalog
 import com.example.data.DhikrItem
 import com.example.data.DhikrRepository
 import com.example.data.MomentLogEntity
+import com.example.data.PrayerTimesService
+import com.example.data.PrayerTimesState
+import com.example.data.UserAccountEntity
 import com.example.data.UserSettingsEntity
 import com.example.notification.NotificationHelper
+import com.example.util.LocationHelper
 import com.example.util.SoundAndHaptics
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -29,7 +33,6 @@ import java.util.Date
 import java.util.Locale
 
 sealed class Screen(val route: String) {
-  object Splash : Screen("splash")
   object Home : Screen("home")
   object Moment : Screen("moment")
   object Library : Screen("library")
@@ -66,6 +69,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
   val userSettings: StateFlow<UserSettingsEntity> = repository.userSettings
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UserSettingsEntity())
 
+  val registeredAccounts: StateFlow<List<UserAccountEntity>> = repository.registeredAccounts
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
   val allItems: StateFlow<List<DhikrItem>> = repository.allItems
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DhikrCatalog.items)
 
@@ -82,12 +88,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
   val recentLogs: StateFlow<List<MomentLogEntity>> = repository.getRecentLogs(10)
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-  // Search & Filters in Library
-  private val _searchQuery = MutableStateFlow("")
-  val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
-
-  private val _selectedCategory = MutableStateFlow("All")
-  val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
+  // Dynamic 2-Hour Auto-Rotating Featured Item for Landing Page
+  private val _manualRotationOffset = MutableStateFlow(0)
+  val rotatingFeaturedDhikr: StateFlow<DhikrItem> = combine(allItems, _manualRotationOffset) { _, offset ->
+    DhikrCatalog.getTwoHourRotatedDhikr(getApplication(), offset)
+  }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DhikrCatalog.items.first())
 
   // Active Moment State
   private val _selectedDhikr = MutableStateFlow(DhikrCatalog.items.first())
@@ -98,14 +103,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
   private var timerJob: Job? = null
 
-  // In-App Notification Reminder Popup State
-  private val _showReminderPopup = MutableStateFlow(false)
-  val showReminderPopup: StateFlow<Boolean> = _showReminderPopup.asStateFlow()
+  // Search & Filters in Library
+  private val _searchQuery = MutableStateFlow("")
+  val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-  private val _popupDhikr = MutableStateFlow(DhikrCatalog.items.first())
-  val popupDhikr: StateFlow<DhikrItem> = _popupDhikr.asStateFlow()
+  private val _selectedCategory = MutableStateFlow("All (تمام 1000+)")
+  val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
 
-  // 5s Non-Blocking Floating Top Banner State (Matches user design)
+  // 5s Non-Blocking Floating Top Banner State
   private val _showFloatingBanner = MutableStateFlow(false)
   val showFloatingBanner: StateFlow<Boolean> = _showFloatingBanner.asStateFlow()
 
@@ -120,10 +125,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
   val totalMomentsCount: StateFlow<Int> = repository.totalMomentsCount
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 340)
 
-  // 35-day activity grid (5 weeks) for the heatmap
+  // 35-day activity grid
   val activityGrid: StateFlow<List<DayActivity>> = allLogs.combine(todayLogs) { logs, _ ->
     calculateActivityGrid(logs)
   }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+  // Prayer Times State based on Public API & Geolocation
+  private val _prayerTimesState = MutableStateFlow(
+    PrayerTimesService.computeDefaultPrayerState("کراچی، پاکستان (طے شدہ)")
+  )
+  val prayerTimesState: StateFlow<PrayerTimesState> = _prayerTimesState.asStateFlow()
 
   init {
     viewModelScope.launch {
@@ -133,13 +144,80 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
       }
     }
 
-    // Schedule 1-hour periodic notification reminder by default as requested
+    // Initialize Notification System (AlarmManager + WorkManager)
     NotificationHelper.createNotificationChannel(application)
     NotificationHelper.scheduleReminder(application, 60L)
+
+    // Initial Prayer Times Fetch (tries GPS location or fallback)
+    fetchPrayerTimes(useGps = true)
+
+    // Periodic 2-hour rotation checker loop & Prayer Times countdown ticker
+    viewModelScope.launch {
+      while (true) {
+        val remaining = DhikrCatalog.getRemainingTimeInTwoHourWindowMillis()
+        delay(60_000L)
+        // Refresh prayer countdown & active prayer item dynamically every minute
+        refreshPrayerCountdownOnly()
+        // Trigger recomposition of rotated item if 2 hours elapsed
+        if (remaining <= 60_000L) {
+          _manualRotationOffset.value = _manualRotationOffset.value
+        }
+      }
+    }
+  }
+
+  fun fetchPrayerTimes(useGps: Boolean = true) {
+    viewModelScope.launch {
+      _prayerTimesState.value = _prayerTimesState.value.copy(isLoading = true)
+      var lat: Double? = null
+      var lng: Double? = null
+      var locationName: String? = null
+
+      if (useGps) {
+        val locResult = LocationHelper.getCurrentLocation(getApplication())
+        if (locResult != null) {
+          lat = locResult.latitude
+          lng = locResult.longitude
+          locationName = locResult.cityName
+        }
+      }
+
+      val result = PrayerTimesService.fetchPrayerTimes(lat, lng, locationName)
+      _prayerTimesState.value = result
+    }
+  }
+
+  private fun refreshPrayerCountdownOnly() {
+    val current = _prayerTimesState.value
+    if (current.items.isEmpty()) return
+    val fajr = current.items.find { it.id == "fajr" }?.time24 ?: "05:08"
+    val sunrise = current.items.find { it.id == "sunrise" }?.time24 ?: "06:22"
+    val dhuhr = current.items.find { it.id == "dhuhr" }?.time24 ?: "12:20"
+    val asr = current.items.find { it.id == "asr" }?.time24 ?: "15:42"
+    val maghrib = current.items.find { it.id == "maghrib" }?.time24 ?: "18:18"
+    val isha = current.items.find { it.id == "isha" }?.time24 ?: "19:32"
+
+    val updated = PrayerTimesService.computePrayerState(
+      fajr = fajr,
+      sunrise = sunrise,
+      dhuhr = dhuhr,
+      asr = asr,
+      maghrib = maghrib,
+      isha = isha,
+      locationName = current.locationName,
+      hijriDate = current.hijriDate,
+      isGps = current.isGpsEnabled
+    )
+    _prayerTimesState.value = updated
   }
 
   fun navigateTo(screen: Screen) {
     _currentScreen.value = screen
+  }
+
+  fun rotateFeaturedDhikrNow() {
+    _manualRotationOffset.value = _manualRotationOffset.value + 1
+    soundAndHaptics.triggerHapticFeedback()
   }
 
   fun setSearchQuery(query: String) {
@@ -166,18 +244,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
   }
 
-  fun triggerPopupNotification(dhikr: DhikrItem? = null) {
-    val targetDhikr = dhikr ?: allItems.value.randomOrNull() ?: DhikrCatalog.items.first()
-    _popupDhikr.value = targetDhikr
-    _showReminderPopup.value = true
-  }
-
-  fun dismissReminderPopup() {
-    _showReminderPopup.value = false
-  }
-
   fun triggerFloatingBanner(dhikr: DhikrItem? = null) {
-    val targetDhikr = dhikr ?: DhikrCatalog.getRandomNotificationDhikr(getApplication())
+    val targetDhikr = dhikr ?: rotatingFeaturedDhikr.value
     _floatingBannerDhikr.value = targetDhikr
     _showFloatingBanner.value = true
     soundAndHaptics.playBeep()
@@ -188,15 +256,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
   }
 
   fun sendTestNotificationNow() {
-    // Pick from the curated essential lessons of Juz 30 (Jannat, Jahannam, Hukam, Nabi ki muhabbat)
-    val dhikr = DhikrCatalog.getRandomNotificationDhikr(getApplication())
-    // Play requested "Beep" sound
+    val dhikr = rotatingFeaturedDhikr.value
     soundAndHaptics.playBeep()
-    // Trigger in-app 5s non-blocking floating banner
     _floatingBannerDhikr.value = dhikr
     _showFloatingBanner.value = true
-    // Also trigger system notification & floating overlay
-    NotificationHelper.showDhikrNotification(getApplication(), dhikr)
   }
 
   fun toggleTimer() {
@@ -216,10 +279,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     timerJob = viewModelScope.launch {
       val stepMs = 100L
+      var tickCounter = 0
       while (_timerState.value.remainingSeconds > 0 && _timerState.value.isRunning) {
         delay(stepMs)
         val newRemaining = (_timerState.value.remainingSeconds - (stepMs / 1000f)).coerceAtLeast(0f)
         _timerState.value = _timerState.value.copy(remainingSeconds = newRemaining)
+
+        tickCounter++
+        if (tickCounter % 10 == 0 && userSettings.value.soundEnabled) {
+          soundAndHaptics.playSoftTick()
+        }
       }
 
       if (_timerState.value.remainingSeconds <= 0f) {
@@ -286,23 +355,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
   }
 
-  fun updateUserName(name: String) {
+  fun updateAccountProfile(identifier: String, name: String, type: String) {
     viewModelScope.launch {
-      val current = userSettings.value
-      repository.updateSettings(current.copy(userName = name.trim()))
-    }
-  }
-
-  fun updateAccountProfile(name: String, email: String) {
-    viewModelScope.launch {
-      val current = userSettings.value
-      repository.updateSettings(
-        current.copy(
-          userName = name.trim(),
-          userEmail = email.trim(),
-          isSignedIn = true
-        )
-      )
+      repository.registerOrSwitchUser(identifier.trim(), name.trim(), type)
     }
   }
 
@@ -313,7 +368,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         current.copy(
           userName = "مہمان کاربر (Guest Seeker)",
           userEmail = "guest@15secondsforallah.com",
-          isSignedIn = false
+          userPhone = "",
+          isSignedIn = false,
+          authProvider = "Guest"
         )
       )
     }
@@ -335,7 +392,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         interval.contains("15") -> 15L
         interval.contains("30") -> 30L
         interval.contains("2") -> 120L
-        else -> 60L // Default 1 hour
+        else -> 60L
       }
       NotificationHelper.scheduleReminder(getApplication(), minutes)
     }
@@ -374,7 +431,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val target = intent?.getStringExtra("TARGET_SCREEN")
     val dhikrId = intent?.getStringExtra("DHIKR_ID")
     if (target == "MOMENT" && dhikrId != null) {
-      val item = allItems.value.firstOrNull { it.id == dhikrId } ?: DhikrCatalog.items.first()
+      val item = allItems.value.firstOrNull { it.id == dhikrId } ?: rotatingFeaturedDhikr.value
       selectDhikrForMoment(item, startImmediately = true)
     }
   }

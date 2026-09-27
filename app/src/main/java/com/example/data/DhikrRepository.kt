@@ -22,7 +22,6 @@ class DhikrRepository(
   private val rawCatalogFlow = MutableStateFlow<List<DhikrItem>>(DhikrCatalog.items)
 
   init {
-    // Load 1000+ items from assets in background IO dispatcher
     CoroutineScope(Dispatchers.IO).launch {
       val fullList = DhikrCatalog.loadFullCatalog(context)
       rawCatalogFlow.value = fullList
@@ -53,6 +52,8 @@ class DhikrRepository(
     settings ?: UserSettingsEntity()
   }
 
+  val registeredAccounts: Flow<List<UserAccountEntity>> = dao.getAllRegisteredAccounts()
+
   suspend fun logCompletedMoment(item: DhikrItem, durationSeconds: Int = 15) {
     val dateKey = getTodayDateKey()
     val log = MomentLogEntity(
@@ -65,7 +66,7 @@ class DhikrRepository(
     )
     dao.insertMomentLog(log)
 
-    // Increment user's spiritual score (+10 points per 15s moment, bonus +50 on completing daily goal)
+    // Increment user's spiritual score (+10 points per 15s moment)
     val current = dao.getUserSettingsDirect() ?: UserSettingsEntity()
     val newScore = current.totalScore + 10
     val rank = when {
@@ -74,7 +75,21 @@ class DhikrRepository(
       newScore >= 800 -> "محبِ ذکر (Lover of Remembrance)"
       else -> "مبتدی (Seeker of Peace)"
     }
-    dao.insertOrUpdateUserSettings(current.copy(totalScore = newScore, spiritualRank = rank))
+    val updated = current.copy(totalScore = newScore, spiritualRank = rank)
+    dao.insertOrUpdateUserSettings(updated)
+
+    // Update account profile in registered viewers database directory
+    if (updated.isSignedIn) {
+      val identifier = if (updated.userPhone.isNotBlank()) updated.userPhone else updated.userEmail
+      dao.insertUserAccount(
+        UserAccountEntity(
+          identifier = identifier,
+          displayName = updated.userName,
+          accountType = updated.authProvider,
+          totalScore = newScore
+        )
+      )
+    }
   }
 
   suspend fun toggleBookmark(dhikrId: String, currentStatus: Boolean) {
@@ -87,6 +102,30 @@ class DhikrRepository(
 
   suspend fun updateSettings(settings: UserSettingsEntity) {
     dao.insertOrUpdateUserSettings(settings)
+  }
+
+  suspend fun registerOrSwitchUser(identifier: String, name: String, type: String) {
+    val current = dao.getUserSettingsDirect() ?: UserSettingsEntity()
+    val isPhone = type == "Phone" || identifier.matches(Regex("^[+0-9\\s-]+$"))
+
+    val updatedSettings = current.copy(
+      userName = name.ifBlank { if (isPhone) "موبائل یوزر ($identifier)" else identifier.substringBefore("@") },
+      userEmail = if (isPhone) "" else identifier,
+      userPhone = if (isPhone) identifier else "",
+      isSignedIn = true,
+      authProvider = type
+    )
+    dao.insertOrUpdateUserSettings(updatedSettings)
+
+    // Record in registered viewers directory
+    dao.insertUserAccount(
+      UserAccountEntity(
+        identifier = identifier,
+        displayName = updatedSettings.userName,
+        accountType = type,
+        totalScore = current.totalScore
+      )
+    )
   }
 
   suspend fun clearHistory() {
@@ -135,5 +174,10 @@ class DhikrRepository(
 
     dao.insertBookmark(BookmarkEntity(dhikrId = "juz30_jannat_nafs_mutmainna"))
     dao.insertBookmark(BookmarkEntity(dhikrId = "juz30_hukam_inshirah_ease"))
+
+    // Initial community viewers in database
+    dao.insertUserAccount(UserAccountEntity("qari.abdullah@gmail.com", "قاری عبد اللہ", "Google", 1420))
+    dao.insertUserAccount(UserAccountEntity("+923001234567", "حافظ محمد عمر", "Phone", 2850))
+    dao.insertUserAccount(UserAccountEntity("tariq.masood@outlook.com", "طارق مسعود", "Email", 950))
   }
 }

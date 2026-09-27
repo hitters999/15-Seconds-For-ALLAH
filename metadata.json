@@ -1,6 +1,6 @@
 {
   "name": "15 Seconds for Allah",
-  "description": "A quiet, premium space for mindful 15-second dhikr, Quranic reflections, and daily spiritual consistency.",
+  "description": "Sacred daily Quran, Hadith and Dhikr reminders with Madinah artwork, authentic Arabic & Urdu calligraphy, 15-second mechanical dial, and Islamic status poster generator",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

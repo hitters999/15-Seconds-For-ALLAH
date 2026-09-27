@@ -22,12 +22,16 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.example.MainActivity
 import com.example.data.DhikrItem
 import com.example.ui.components.FloatingReminderBanner
+import com.example.ui.theme.MyApplicationTheme
+import com.example.util.ShareHelper
 import com.example.util.SoundAndHaptics
 
 object FloatingPopupManager {
 
-  private var activeComposeView: ComposeView? = null
-  private val handler = Handler(Looper.getMainLooper())
+  private var activeOverlayView: ComposeView? = null
+  private var windowManager: WindowManager? = null
+  private val mainHandler = Handler(Looper.getMainLooper())
+  private var dismissRunnable: Runnable? = null
 
   fun canDrawOverlays(context: Context): Boolean {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -38,128 +42,115 @@ object FloatingPopupManager {
   }
 
   fun requestOverlayPermission(context: Context) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
       val intent = Intent(
         Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
         Uri.parse("package:${context.packageName}")
       ).apply {
         flags = Intent.FLAG_ACTIVITY_NEW_TASK
       }
-      try {
-        context.startActivity(intent)
-      } catch (_: Exception) {
-      }
+      context.startActivity(intent)
     }
   }
 
   fun showFloatingPopup(context: Context, dhikr: DhikrItem) {
-    handler.post {
-      // Play the requested "Beep" sound
+    if (!canDrawOverlays(context)) return
+
+    mainHandler.post {
+      dismissExistingOverlay()
+
       try {
-        val soundAndHaptics = SoundAndHaptics(context)
-        soundAndHaptics.playBeep()
-      } catch (_: Exception) {
-      }
+        windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
-      if (!canDrawOverlays(context)) {
-        // Fallback to high priority heads up system notification
-        NotificationHelper.showDhikrNotification(context, dhikr)
-        return@post
-      }
-
-      val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as? WindowManager ?: return@post
-      dismissFloatingPopup(context)
-
-      val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-      } else {
-        @Suppress("DEPRECATION")
-        WindowManager.LayoutParams.TYPE_PHONE
-      }
-
-      val params = WindowManager.LayoutParams(
-        WindowManager.LayoutParams.MATCH_PARENT,
-        WindowManager.LayoutParams.WRAP_CONTENT,
-        layoutType,
-        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-          WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-          WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-        PixelFormat.TRANSLUCENT
-      ).apply {
-        gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-        y = 50
-      }
-
-      class WindowLifecycleOwner : LifecycleOwner, SavedStateRegistryOwner {
-        private val lifecycleRegistry = LifecycleRegistry(this)
-        private val savedStateRegistryController = SavedStateRegistryController.create(this)
-
-        init {
-          savedStateRegistryController.performRestore(null)
-          lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
-          lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
-          lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+        val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+          WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+        } else {
+          @Suppress("DEPRECATION")
+          WindowManager.LayoutParams.TYPE_PHONE
         }
 
-        fun destroy() {
-          lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
-          lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
-          lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+        val params = WindowManager.LayoutParams(
+          WindowManager.LayoutParams.MATCH_PARENT,
+          WindowManager.LayoutParams.WRAP_CONTENT,
+          layoutType,
+          WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+          PixelFormat.TRANSLUCENT
+        ).apply {
+          gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+          y = 50
         }
 
-        override val lifecycle: Lifecycle get() = lifecycleRegistry
-        override val savedStateRegistry: SavedStateRegistry get() = savedStateRegistryController.savedStateRegistry
-      }
+        // Play gentle beep
+        SoundAndHaptics(context).playBeep()
 
-      val windowOwner = WindowLifecycleOwner()
+        val lifecycleOwner = OverlayLifecycleOwner()
+        lifecycleOwner.performRestore(null)
+        lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_START)
+        lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
 
-      val composeView = ComposeView(context).apply {
-        setViewTreeLifecycleOwner(windowOwner)
-        setViewTreeSavedStateRegistryOwner(windowOwner)
-        setContent {
-          FloatingReminderBanner(
-            dhikr = dhikr,
-            durationSeconds = 5,
-            onDismiss = {
-              dismissFloatingPopup(context)
-            },
-            onStartMoment = {
-              dismissFloatingPopup(context)
-              val intent = Intent(context, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                putExtra("TARGET_SCREEN", "MOMENT")
-                putExtra("DHIKR_ID", dhikr.id)
-              }
-              context.startActivity(intent)
+        val composeView = ComposeView(context).apply {
+          setViewTreeLifecycleOwner(lifecycleOwner)
+          setViewTreeSavedStateRegistryOwner(lifecycleOwner)
+          setContent {
+            MyApplicationTheme {
+              FloatingReminderBanner(
+                dhikr = dhikr,
+                countdownSeconds = 5,
+                onDismiss = { dismissExistingOverlay() },
+                onBegin = {
+                  dismissExistingOverlay()
+                  val intent = Intent(context, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    putExtra("TARGET_SCREEN", "MOMENT")
+                    putExtra("DHIKR_ID", dhikr.id)
+                  }
+                  context.startActivity(intent)
+                },
+                onShare = {
+                  ShareHelper.shareDhikrPoster(context, dhikr)
+                },
+                onWhatsAppShare = {
+                  ShareHelper.shareToWhatsApp(context, dhikr)
+                }
+              )
             }
-          )
+          }
         }
-      }
 
-      try {
-        windowManager.addView(composeView, params)
-        activeComposeView = composeView
+        windowManager?.addView(composeView, params)
+        activeOverlayView = composeView
 
-        // Auto dismiss safely after 5.5 seconds
-        handler.postDelayed({
-          dismissFloatingPopup(context)
-          windowOwner.destroy()
-        }, 5500L)
-      } catch (_: Exception) {
-        // If window manager failed, show heads up notification
-        NotificationHelper.showDhikrNotification(context, dhikr)
-      }
+        // Auto dismiss after 5.5 seconds smoothly
+        dismissRunnable = Runnable {
+          dismissExistingOverlay()
+        }
+        mainHandler.postDelayed(dismissRunnable!!, 5500)
+
+      } catch (_: Exception) {}
     }
   }
 
-  fun dismissFloatingPopup(context: Context) {
-    activeComposeView?.let { view ->
+  fun dismissExistingOverlay() {
+    dismissRunnable?.let { mainHandler.removeCallbacks(it) }
+    dismissRunnable = null
+    activeOverlayView?.let { view ->
       try {
-        val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as? WindowManager
-        windowManager?.removeViewImmediate(view)
-      } catch (_: Exception) {
-      }
-      activeComposeView = null
+        windowManager?.removeView(view)
+      } catch (_: Exception) {}
     }
+    activeOverlayView = null
+  }
+
+  private class OverlayLifecycleOwner : LifecycleOwner, SavedStateRegistryOwner {
+    private val lifecycleRegistry = LifecycleRegistry(this)
+    private val savedStateRegistryController = SavedStateRegistryController.create(this)
+
+    override val lifecycle: Lifecycle get() = lifecycleRegistry
+    override val savedStateRegistry: SavedStateRegistry get() = savedStateRegistryController.savedStateRegistry
+
+    fun handleLifecycleEvent(event: Lifecycle.Event) = lifecycleRegistry.handleLifecycleEvent(event)
+    fun performRestore(savedState: android.os.Bundle?) = savedStateRegistryController.performRestore(savedState)
   }
 }
