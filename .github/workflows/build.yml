@@ -12,8 +12,9 @@ jobs:
       - name: Ensure Gradle Wrapper
         run: |
           if [ ! -f gradlew ]; then
-            sudo apt-get update && sudo apt-get install -y gradle
-            gradle wrapper
+            wget -q https://services.gradle.org/distributions/gradle-8.7-bin.zip
+            unzip -q gradle-8.7-bin.zip
+            ./gradle-8.7/bin/gradle wrapper --gradle-version 8.7
           fi
           chmod +x gradlew
       - run: ./gradlew assembleDebug
