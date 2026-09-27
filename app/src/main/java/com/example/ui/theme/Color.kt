@@ -30,3 +30,8 @@ val DarkTextSoft = Color(0xFF94A3B8) // Light silver
 val DarkUrduText = Color(0xFFFDE68A) // Luminous warm gold
 val DarkArabicText = Color(0xFFFFFFFF) // Pure white
 val DarkAccentGold = Color(0xFFFBBF24)
+
+// Backward compatible aliases for older component files (e.g., SereneComponents)
+val InkTealDeep = InkTealDark
+val ParchmentBg = ParchmentSurface
+val DarkBorder = DarkCardBorder

@@ -33,6 +33,10 @@ val UrduFontFamily = try {
   FontFamily.Serif
 }
 
+// Aliases for compatibility
+val UrduNastaliqFontFamily = UrduFontFamily
+val QuranCalligraphyFontFamily = QuranArabicFontFamily
+
 val Typography = Typography(
   bodyLarge = TextStyle(
     fontFamily = FontFamily.SansSerif,
