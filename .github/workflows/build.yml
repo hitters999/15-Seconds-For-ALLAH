@@ -12,9 +12,9 @@ jobs:
       - name: Ensure Gradle Wrapper
         run: |
           if [ ! -f gradlew ]; then
-            wget -q https://services.gradle.org/distributions/gradle-8.7-bin.zip
-            unzip -q gradle-8.7-bin.zip
-            ./gradle-8.7/bin/gradle wrapper --gradle-version 8.7
+            wget -q https://services.gradle.org/distributions/gradle-9.3.1-bin.zip
+            unzip -q gradle-9.3.1-bin.zip
+            ./gradle-9.3.1/bin/gradle wrapper --gradle-version 9.3.1
           fi
           chmod +x gradlew
       - run: ./gradlew assembleDebug
