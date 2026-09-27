@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -42,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -52,6 +54,7 @@ import com.example.data.DhikrCatalog
 import com.example.data.DhikrItem
 import com.example.ui.MainViewModel
 import com.example.ui.components.ParchmentBackground
+import com.example.ui.theme.ArabicFontFamily
 import com.example.ui.theme.BronzeGold
 import com.example.ui.theme.BronzeGoldLight
 import com.example.ui.theme.InkTeal
@@ -61,6 +64,8 @@ import com.example.ui.theme.ParchmentSubtle
 import com.example.ui.theme.ParchmentSurface
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSoft
+import com.example.ui.theme.UrduFontFamily
+import com.example.util.ShareHelper
 
 @Composable
 fun LibraryScreen(
@@ -70,28 +75,35 @@ fun LibraryScreen(
   val allItems by viewModel.allItems.collectAsState()
   val searchQuery by viewModel.searchQuery.collectAsState()
   val selectedCategory by viewModel.selectedCategory.collectAsState()
+  val context = LocalContext.current
 
-  // Filter items according to search & category
   val filteredItems = allItems.filter { item ->
-    val matchesCategory = selectedCategory == "All" || item.category.equals(selectedCategory, ignoreCase = true)
+    val matchesCategory = when {
+      selectedCategory.startsWith("All") -> true
+      selectedCategory.contains("Saved") || selectedCategory.contains("محفوظ") -> item.isBookmarked
+      else -> item.category.contains(selectedCategory.take(10), ignoreCase = true) ||
+        selectedCategory.contains(item.category.take(10), ignoreCase = true)
+    }
     val matchesSearch = searchQuery.isBlank() ||
       item.transliteration.contains(searchQuery, ignoreCase = true) ||
+      item.translationUrdu.contains(searchQuery, ignoreCase = true) ||
       item.translation.contains(searchQuery, ignoreCase = true) ||
       item.category.contains(searchQuery, ignoreCase = true) ||
       item.arabic.contains(searchQuery)
     matchesCategory && matchesSearch
   }
 
-  // Precomputed category counts for the list view from the mockup
   val categoryCounts = mapOf(
-    "Morning Remembrance" to allItems.count { it.category == "Morning Remembrance" },
-    "Evening Remembrance" to allItems.count { it.category == "Evening Remembrance" },
-    "Gratitude" to allItems.count { it.category == "Gratitude" },
-    "Forgiveness" to allItems.count { it.category == "Forgiveness" },
-    "Before Sleep" to allItems.count { it.category == "Before Sleep" },
-    "Protection" to allItems.count { it.category == "Protection" },
-    "Hardship" to allItems.count { it.category == "Hardship" },
-    "Quranic Gems" to allItems.count { it.category == "Quranic Gems" }
+    "Saved (محفوظ آیات)" to allItems.count { it.isBookmarked },
+    "Juz 30 (تیسواں پارہ)" to allItems.count { it.category.contains("Juz 30") },
+    "Asma ul Husna (اسماء الحسنیٰ)" to allItems.count { it.category.contains("Asma") },
+    "Quranic Duas (قرآنی دعائیں)" to allItems.count { it.category.contains("Quranic") },
+    "Morning & Evening (صبح و شام)" to allItems.count { it.category.contains("Morning") },
+    "After Salah (نماز کے بعد)" to allItems.count { it.category.contains("After") },
+    "Forgiveness (توبہ و استغفار)" to allItems.count { it.category.contains("Forgiveness") },
+    "Gratitude (حمد و شکر)" to allItems.count { it.category.contains("Gratitude") },
+    "Protection (حفاظت و پناہ)" to allItems.count { it.category.contains("Protection") },
+    "Hadith Nabawi (احادیث مبارکہ)" to allItems.count { it.category.contains("Hadith") }
   )
 
   ParchmentBackground(modifier = modifier) {
@@ -102,33 +114,32 @@ fun LibraryScreen(
         .padding(bottom = 80.dp)
         .testTag("library_screen")
     ) {
-      // Top Title
       Column(modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp)) {
         Text(
-          text = "Sacred Library",
+          text = "Sacred Library • مقدس ذخیرہ",
           fontFamily = FontFamily.Serif,
-          fontSize = 26.sp,
+          fontSize = 24.sp,
           fontWeight = FontWeight.Normal,
           color = InkTeal
         )
         Spacer(modifier = Modifier.height(2.dp))
         Text(
-          text = "Every word chosen with intention",
+          text = "${allItems.size}+ تمام اذکار، دعائیں اور 30ویں سپارے کی آیات مع اردو ترجمہ",
           fontFamily = FontFamily.SansSerif,
-          fontSize = 12.sp,
+          fontSize = 11.5.sp,
           color = TextSoft
         )
       }
 
-      // Search Bar as in mockup: .search { background:#fff; border:1px solid var(--line); border-radius:12px; }
+      // Search Bar
       OutlinedTextField(
         value = searchQuery,
         onValueChange = { viewModel.setSearchQuery(it) },
         placeholder = {
           Text(
-            text = "Search dhikr, du'a, surah…",
+            text = "تلاش کریں (Search dhikr, du'a, urdu…)",
             fontFamily = FontFamily.SansSerif,
-            fontSize = 13.sp,
+            fontSize = 12.5.sp,
             color = TextSoft
           )
         },
@@ -199,7 +210,6 @@ fun LibraryScreen(
 
       Spacer(modifier = Modifier.height(12.dp))
 
-      // Category Overview Row from Mockup (Screen 4 Library: .cat { b: category, small: count })
       if (searchQuery.isEmpty() && selectedCategory == "All") {
         LazyColumn(
           modifier = Modifier
@@ -208,7 +218,7 @@ fun LibraryScreen(
         ) {
           item {
             Text(
-              text = "CATEGORIES",
+              text = "اقسام • CATEGORIES",
               fontFamily = FontFamily.SansSerif,
               fontWeight = FontWeight.SemiBold,
               fontSize = 11.sp,
@@ -260,7 +270,7 @@ fun LibraryScreen(
           item {
             Spacer(modifier = Modifier.height(20.dp))
             Text(
-              text = "ALL REMEMBRANCES",
+              text = "تمام اذکار اور دعائیں • ALL REMEMBRANCES",
               fontFamily = FontFamily.SansSerif,
               fontWeight = FontWeight.SemiBold,
               fontSize = 11.sp,
@@ -274,13 +284,13 @@ fun LibraryScreen(
             DhikrItemCard(
               item = item,
               onSelect = { viewModel.selectDhikrForMoment(item, startImmediately = true) },
-              onBookmark = { viewModel.toggleBookmark(item.id) }
+              onBookmark = { viewModel.toggleBookmark(item.id) },
+              onShare = { ShareHelper.shareDhikr(context, item) }
             )
             Spacer(modifier = Modifier.height(10.dp))
           }
         }
       } else {
-        // Filtered List View
         LazyColumn(
           modifier = Modifier
             .fillMaxSize()
@@ -290,7 +300,8 @@ fun LibraryScreen(
             DhikrItemCard(
               item = item,
               onSelect = { viewModel.selectDhikrForMoment(item, startImmediately = true) },
-              onBookmark = { viewModel.toggleBookmark(item.id) }
+              onBookmark = { viewModel.toggleBookmark(item.id) },
+              onShare = { ShareHelper.shareDhikr(context, item) }
             )
             Spacer(modifier = Modifier.height(10.dp))
           }
@@ -305,6 +316,7 @@ private fun DhikrItemCard(
   item: DhikrItem,
   onSelect: () -> Unit,
   onBookmark: () -> Unit,
+  onShare: () -> Unit,
   modifier: Modifier = Modifier
 ) {
   Card(
@@ -342,8 +354,19 @@ private fun DhikrItemCard(
             fontFamily = FontFamily.SansSerif,
             fontSize = 11.sp,
             color = TextSoft,
-            modifier = Modifier.padding(end = 8.dp)
+            modifier = Modifier.padding(end = 4.dp)
           )
+          IconButton(
+            onClick = onShare,
+            modifier = Modifier.size(28.dp)
+          ) {
+            Icon(
+              imageVector = Icons.Filled.Share,
+              contentDescription = "Share",
+              tint = InkTeal,
+              modifier = Modifier.size(16.dp)
+            )
+          }
           IconButton(
             onClick = onBookmark,
             modifier = Modifier.size(28.dp)
@@ -360,18 +383,26 @@ private fun DhikrItemCard(
 
       Spacer(modifier = Modifier.height(10.dp))
 
+      // Distinct Bismillah Header if Quranic Ayah
+      if (item.isQuranic) {
+        com.example.ui.components.BismillahCalligraphyHeader(isDarkTheme = false)
+        Spacer(modifier = Modifier.height(8.dp))
+      }
+
+      // Arabic Calligraphy with Amiri font
       Text(
         text = item.arabic,
-        fontFamily = FontFamily.Serif,
-        fontSize = 20.sp,
+        fontFamily = ArabicFontFamily,
+        fontSize = 22.sp,
         color = InkTeal,
-        lineHeight = 30.sp,
+        lineHeight = 32.sp,
         textAlign = TextAlign.Right,
         modifier = Modifier.fillMaxWidth()
       )
 
       Spacer(modifier = Modifier.height(6.dp))
 
+      // Transliteration
       Text(
         text = item.transliteration,
         fontFamily = FontFamily.Serif,
@@ -382,12 +413,25 @@ private fun DhikrItemCard(
 
       Spacer(modifier = Modifier.height(4.dp))
 
+      // Urdu Translation (Prominent with Noto Nastaliq Urdu font)
+      Text(
+        text = item.translationUrdu,
+        fontFamily = UrduFontFamily,
+        fontSize = 13.sp,
+        fontWeight = FontWeight.Normal,
+        color = Color(0xFF8A5A1A),
+        lineHeight = 20.sp
+      )
+
+      Spacer(modifier = Modifier.height(3.dp))
+
+      // English Translation
       Text(
         text = item.translation,
         fontFamily = FontFamily.SansSerif,
-        fontSize = 12.sp,
+        fontSize = 11.sp,
         color = TextSoft,
-        lineHeight = 17.sp
+        lineHeight = 16.sp
       )
     }
   }

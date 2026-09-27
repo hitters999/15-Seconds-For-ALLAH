@@ -29,10 +29,13 @@ interface MomentDao {
   @Query("SELECT * FROM user_settings WHERE id = 1")
   fun getUserSettings(): Flow<UserSettingsEntity?>
 
+  @Query("SELECT * FROM user_settings WHERE id = 1")
+  suspend fun getUserSettingsDirect(): UserSettingsEntity?
+
   @Insert(onConflict = OnConflictStrategy.REPLACE)
   suspend fun insertOrUpdateUserSettings(settings: UserSettingsEntity)
 
-  @Query("SELECT * FROM bookmarked_dhikr")
+  @Query("SELECT * FROM bookmarked_dhikr ORDER BY timestamp DESC")
   fun getAllBookmarks(): Flow<List<BookmarkEntity>>
 
   @Insert(onConflict = OnConflictStrategy.REPLACE)

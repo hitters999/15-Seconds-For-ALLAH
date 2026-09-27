@@ -1,246 +1,286 @@
 package com.example.data
 
+import android.content.Context
+import org.json.JSONArray
+
 data class DhikrItem(
   val id: String,
   val arabic: String,
   val transliteration: String,
+  val translationUrdu: String,
   val translation: String,
   val contemplativeNote: String,
   val category: String,
   val source: String,
   val virtue: String,
   val defaultDurationSeconds: Int = 15,
-  val isBookmarked: Boolean = false
+  val isBookmarked: Boolean = false,
+  val isQuranic: Boolean = false
 )
 
 object DhikrCatalog {
-  val items: List<DhikrItem> = listOf(
-    // Gratitude & Praise
+
+  val categories = listOf(
+    "All (تمام 1000+)",
+    "Saved (محفوظ آیات)",
+    "Juz 30 (تیسواں پارہ)",
+    "Asma ul Husna",
+    "Quranic Duas (قرآنی دعائیں)",
+    "Morning & Evening (صبح و شام)",
+    "After Salah (نماز کے بعد)",
+    "Forgiveness (توبہ و استغفار)",
+    "Gratitude (حمد و شکر)",
+    "Protection (حفاظت و پناہ)",
+    "Hadith Nabawi (احادیث مبارکہ)"
+  )
+
+  // Essential lessons from Juz 30 and Sunnah selected specifically for hourly notifications:
+  // Jannat ki basharat, Jahannam ka darr, Khauf-e-Khuda, Allah ka hukam, Nabi ﷺ ki muhabbat
+  val essentialNotificationAyat: List<DhikrItem> = listOf(
+    // 1. Jannat ki basharat
     DhikrItem(
-      id = "subhanallah",
-      arabic = "سُبْحَانَ اللَّٰهِ",
-      transliteration = "Subhan-Allah",
-      translation = "Glory be to Allah.",
-      contemplativeNote = "Said with full presence, just for this moment. Freeing the heart of all distractions.",
-      category = "Gratitude",
-      source = "Sahih Muslim 2691",
-      virtue = "Plants a palm tree in Jannah and lightens the heaviness of the soul."
+      id = "juz30_jannat_nafs_mutmainna",
+      arabic = "يَا أَيَّتُهَا النَّفْسُ الْمُطْمَئِنَّةُ • ارْجِعِي إِلَىٰ رَبِّكِ رَاضِيَةً مَّرْضِيَّةً • فَادْخُلِي فِي عِبَادِي • وَادْخُلِي جَنَّتِي",
+      transliteration = "Ya ayyatuhan-nafsul-mutma'innah. Irji'ee ila Rabbiki radiyatan mardiyyah. Fadkhulee fee 'ibadee. Wadkhulee jannatee.",
+      translationUrdu = "اے اطمینان والی روح! اپنے رب کی طرف لوٹ آ، تو اس سے راضی وہ تجھ سے راضی، پس میرے نیک بندوں میں داخل ہو جا اور میری جنت میں داخل ہو جا۔",
+      translation = "O soul at rest and satisfaction! Return to your Lord, well-pleased and well-pleasing. Enter among My righteous servants, and enter My Paradise.",
+      contemplativeNote = "موت کے وقت مومن کو ملنے والی سب سے پیاری بشارت۔ دل کو مطمئن رکھیں۔",
+      category = "Juz 30 (تیسواں پارہ)",
+      source = "سورۃ الفجر 89:27-30",
+      virtue = "اہل ایمان کے لیے جنت اور اللہ کے دیدار کی سب سے عظیم تسلی۔",
+      isQuranic = true
     ),
     DhikrItem(
-      id = "alhamdulillah",
-      arabic = "الْحَمْدُ لِلَّٰهِ",
-      transliteration = "Al-hamdulillah",
-      translation = "All praise and gratitude belong to Allah alone.",
-      contemplativeNote = "Fills the scale of good deeds. Acknowledge one specific blessing in your life right now.",
-      category = "Gratitude",
-      source = "Sahih Muslim 223",
-      virtue = "Fills the scales (Mizan) on the Day of Judgment."
+      id = "juz30_jannat_muttaqeen",
+      arabic = "إِنَّ لِلْمُتَّقِينَ مَفَازًا • حَدَائِقَ وَأَعْنَابًا • وَكَوَاعِبَ أَتْرَابًا • وَكَأْسًا دِهَاقًا",
+      transliteration = "Inna lil-muttaqeena mafaza. Hada'iqa wa a'naba. Wa kawa'iba atraba. Wa ka'san dihaqa.",
+      translationUrdu = "بے شک پرہیزگاروں کے لیے کامیابی کی جگہ ہے، باغات اور انگور، اور چھلکتے ہوئے خوشگوار جام۔",
+      translation = "Indeed, for the righteous is attainment - gardens and grapevines and full cups.",
+      contemplativeNote = "تقویٰ اختیار کرنے والوں کے لیے جنت کی لازوال نعمتوں کا تذکرہ۔",
+      category = "Juz 30 (تیسواں پارہ)",
+      source = "سورۃ النبأ 78:31-34",
+      virtue = "تقویٰ اختیار کرنے والا دنیا و آخرت دونوں میں سرخرو ہے۔",
+      isQuranic = true
     ),
     DhikrItem(
-      id = "subhan_wa_bihamdihi",
-      arabic = "سُبْحَانَ اللَّٰهِ وَبِحَمْدِهِ",
-      transliteration = "Subhan-Allahi wa bihamdihi",
-      translation = "Glory be to Allah and all praise is His.",
-      contemplativeNote = "A two-word key that erases mistakes like sea foam disappearing into the sand.",
-      category = "Gratitude",
-      source = "Sahih al-Bukhari 6405",
-      virtue = "Whoever says this 100 times, their sins will be wiped away even if like sea foam."
+      id = "juz30_jannat_abrar",
+      arabic = "إِنَّ الْأَبْرَارَ لَفِي نَعِيمٍ • عَلَى الْأَرَائِكِ يَنظُرُونَ • تَعْرِفُ فِي وُجُوهِهِمْ نَضْرَةَ النَّعِيمِ",
+      transliteration = "Innal-abrara lafee na'eem. 'Alal-ara'iki yandhuroon. Ta'rifu fee wujoohihim nadratan-na'eem.",
+      translationUrdu = "بے شک نیک لوگ بڑی نعمتوں میں ہوں گے، مسندوں پر بیٹھے نظارہ کر رہے ہوں گے، تم ان کے چہروں پر رونق اور خوشی پہچان لو گے۔",
+      translation = "Indeed, the righteous will be in pleasure, on adorned couches observing. You will recognize in their faces the radiance of pleasure.",
+      contemplativeNote = "نیک اعمال کا انجام: دائمی خوشی اور چہروں کا نور۔",
+      category = "Juz 30 (تیسواں پارہ)",
+      source = "سورۃ المطففین 83:22-24",
+      virtue = "نیکی دل کو سکون اور چہرے کو نور بخشتی ہے۔",
+      isQuranic = true
     ),
     DhikrItem(
-      id = "subhan_wa_bihamdihi_adada",
-      arabic = "سُبْحَانَ اللَّٰهِ وَبِحَمْدِهِ عَدَدَ خَلْقِهِ وَرِضَا نَفْسِهِ وَزِنَةَ عَرْشِهِ وَمِدَادَ كَلِمَاتِهِ",
-      transliteration = "Subhan-Allahi wa bihamdihi, 'adada khalqihi, wa rida nafsihi, wa zinata 'arshihi, wa midada kalimatihi",
-      translation = "Glory be to Allah and praise Him, to the number of His creation, by His pleasure, by the weight of His Throne, and the ink of His words.",
-      contemplativeNote = "A comprehensive remembrance heavier than hours of silent sitting.",
-      category = "Morning Remembrance",
-      source = "Sahih Muslim 2726",
-      virtue = "Weighs more than hours of solitary remembrance in the scales of the Almighty."
+      id = "juz30_jannat_radhiyallahu",
+      arabic = "جَزَاؤُهُمْ عِندَ رَبِّهِمْ جَنَّاتُ عَدْنٍ تَجْرِي مِن تَحْتِهَا الْأَنْهَارُ خَالِدِينَ فِيهَا أَبَدًا ۖ رَّضِيَ اللَّهُ عَنْهُمْ وَرَضُوا عَنْهُ ۚ ذَٰلِكَ لِمَنْ خَشِيَ رَبَّهُ",
+      transliteration = "Jaza'uhum 'inda Rabbihim jannatu 'adnin tajree min tahtihal-anharu khalideena feeha abada. Radiyallahu 'anhum wa radoo 'anhu. Dhalika liman khashiya Rabbah.",
+      translationUrdu = "ان کا بدلہ ان کے رب کے پاس سدا بہار جنتیں ہیں جن کے نیچے نہریں بہتی ہیں، اللہ ان سے راضی ہوا اور وہ اللہ سے راضی ہوئے، یہ اس کے لیے ہے جو اپنے رب سے ڈرا۔",
+      translation = "Their reward with their Lord is gardens of perpetual residence beneath which rivers flow. Allah is pleased with them and they are pleased with Him. That is for whoever feared his Lord.",
+      contemplativeNote = "سب سے بڑی نعمت اللہ کی رضا ہے جو خشیت الٰہی سے نصیب ہوتی ہے۔",
+      category = "Juz 30 (تیسواں پارہ)",
+      source = "سورۃ البینۃ 98:8",
+      virtue = "اللہ کی خوشنودی پانے کا نسخہ: دل میں اپنے پیدا کرنے والے کا خوف اور محبت رکھنا۔",
+      isQuranic = true
     ),
 
-    // Morning Remembrance
+    // 2. Jahannam ka darr aur azaab
     DhikrItem(
-      id = "asbahna_wa_asbaha",
-      arabic = "أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّٰهِ، وَالْحَمْدُ لِلَّٰهِ",
-      transliteration = "Asbahna wa-asbahal-mulku lillah, wal-hamdu lillah",
-      translation = "We have reached the morning and the whole dominion belongs to Allah, and all praise is for Allah.",
-      contemplativeNote = "Entrusting this newborn dawn entirely into the hands of the Creator.",
-      category = "Morning Remembrance",
-      source = "Sahih Muslim 2723",
-      virtue = "Brings contentment and guidance for the remainder of the day."
+      id = "juz30_khauf_maqama_rabbihi",
+      arabic = "وَأَمَّا مَنْ خَافَ مَقَامَ رَبِّهِ وَنَهَى النَّفْسَ عَنِ الْهَوَىٰ • فَإِنَّ الْجَنَّةَ هِيَ الْمَأْوَىٰ",
+      transliteration = "Wa amma man khafa maqama Rabbihi wa nahan-nafsa 'anil-hawa. Fa-innal-jannata hiyal-ma'wa.",
+      translationUrdu = "اور جو شخص اپنے رب کے سامنے پیش ہونے سے ڈرا اور اپنے نفس کو بری خواہشات سے روکا، پس یقیناً جنت ہی اس کا ٹھکانا ہے۔",
+      translation = "But as for he who feared the position of his Lord and prevented the soul from [unlawful] inclination, then indeed, Paradise will be his refuge.",
+      contemplativeNote = "خواہشِ نفس کو اللہ کے خوف سے چھوڑ دینا ہی جنت کا سب سے سیدھا راستہ ہے۔",
+      category = "Juz 30 (تیسواں پارہ)",
+      source = "سورۃ النازعات 79:40-41",
+      virtue = "نفس کو قابو میں رکھنے والا قیامت کے دن اللہ کے سایہ رحمت میں ہوگا۔",
+      isQuranic = true
     ),
     DhikrItem(
-      id = "radheetu_billah",
-      arabic = "رَضِيتُ بِاللَّٰهِ رَبًّا، وَبِالْإِسْلَامِ دِينًا، وَبِمُحَمَّدٍ ﷺ نَبِيًّا",
-      transliteration = "Radheetu billahi Rabba, wa bil-Islami deena, wa bi-Muhammadin (sallallahu 'alayhi wa sallam) nabiyya",
-      translation = "I am pleased with Allah as my Lord, with Islam as my religion, and with Muhammad ﷺ as my Prophet.",
-      contemplativeNote = "Quiet acceptance. Peace in knowing who you are and where you belong.",
-      category = "Morning Remembrance",
-      source = "Abu Dawood 5072",
-      virtue = "Allah has taken upon Himself to please whoever recites this three times."
+      id = "juz30_darr_al_hutamah",
+      arabic = "كَلَّا ۖ لَيُنبَذَنَّ فِي الْحُطَمَةِ • وَمَا أَدْرَاكَ مَا الْحُطَمَةُ • نَارُ اللَّهِ الْمُوقَدَةُ • الَّتِي تَطَّلِعُ عَلَى الْأَفْئِدَةِ",
+      transliteration = "Kalla layumbadhanna fil-hutamah. Wa ma adraka mal-hutamah. Narullahil-mooqadah. Allatee tattali'u 'alal-af'idah.",
+      translationUrdu = "ہرگز نہیں! وہ ضرور حطمہ (توڑ پھوڑ دینے والی آگ) میں پھینکا جائے گا، اور تم کیا جانو حطمہ کیا ہے؟ وہ اللہ کی دہکائی ہوئی آگ ہے جو دلوں تک چڑھ جائے گی۔",
+      translation = "No! He will surely be thrown into the Crusher. And what can make you know what is the Crusher? It is the fire of Allah, [eternally] fueled, which mounts directed at the hearts.",
+      contemplativeNote = "غیبت، بدزبانی اور تکبر سے بچیں، جہنم کا عذاب روح کو لرزا دینے والا ہے۔",
+      category = "Juz 30 (تیسواں پارہ)",
+      source = "سورۃ الہمزۃ 104:4-7",
+      virtue = "اللہ تعالیٰ سے دوزخ کے عذاب سے پناہ مانگتے رہنا مسنون ہے۔",
+      isQuranic = true
     ),
     DhikrItem(
-      id = "bismillah_alladhi",
-      arabic = "بِسْمِ اللَّٰهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ وَهُوَ السَّمِيعُ الْعَلِيمُ",
-      transliteration = "Bismillahi-lladhi la yadurru ma'as-mihi shay'un fil-ardi wa la fis-sama'i wa Huwas-Sami'ul-'Aleem",
-      translation = "In the Name of Allah, with Whose Name nothing on earth or in heaven can cause harm, and He is the All-Hearing, All-Knowing.",
-      contemplativeNote = "A divine shield spoken with conviction over yourself and your loved ones.",
-      category = "Morning Remembrance",
-      source = "Sunan at-Tirmidhi 3388",
-      virtue = "Protection against all unexpected harm throughout the day."
-    ),
-
-    // Evening Remembrance
-    DhikrItem(
-      id = "amsayna_wa_amsal",
-      arabic = "أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّٰهِ، وَالْحَمْدُ لِلَّٰهِ",
-      transliteration = "Amsayna wa-amsal-mulku lillah, wal-hamdu lillah",
-      translation = "We have reached the evening and the entire dominion belongs to Allah, and praise is due to Allah.",
-      contemplativeNote = "Releasing the stresses, meetings, and unfinished work of the day back to Allah.",
-      category = "Evening Remembrance",
-      source = "Sahih Muslim 2723",
-      virtue = "Brings deep stillness as dusk falls upon the earth."
+      id = "juz30_darr_mawazeenuhu",
+      arabic = "فَأَمَّا مَن ثَقُلَتْ مَوَازِينُهُ • فَهُوَ فِي عِيشَةٍ رَّاضِيَةٍ • وَأَمَّا مَنْ خَفَّتْ مَوَازِينُهُ • فَأُمُّهُ هَاوِيَةٌ • وَمَا أَدْرَاكَ مَا هِيَهْ • نَارٌ حَامِيَةٌ",
+      transliteration = "Fa-amma man thaqulat mawazeenuhu fa-huwa fee 'eeshatir-radiyah. Wa amma man khaffat mawazeenuhu fa-ummuhu hawiyah. Wa ma adraka ma hiyah. Narun hamiyah.",
+      translationUrdu = "پس جس کے نیکیوں کے پلڑے بھاری ہوں گے وہ من پسند زندگی میں ہوگا، اور جس کے پلڑے ہلکے ہوں گے اس کا ٹھکانا گہری کھائی ہے، اور تمہیں کیا معلوم وہ کیا ہے؟ وہ دہکتی ہوئی آگ ہے۔",
+      translation = "Then as for one whose scales are heavy [with good deeds], he will be in a pleasant life. But as for one whose scales are light, his refuge will be an abyss. And what can make you know what that is? It is a Fire, intensely hot.",
+      contemplativeNote = "ہر نیک عمل اور ہر ذکر میزان کو بھاری کر رہا ہے، کوئی نیکی چھوٹی نہ سمجھیں۔",
+      category = "Juz 30 (تیسواں پارہ)",
+      source = "سورۃ القارعۃ 101:6-11",
+      virtue = "سبحان اللہ وبحمدہ میزان کو سب سے زیادہ وزنی کرتا ہے۔",
+      isQuranic = true
     ),
     DhikrItem(
-      id = "sayyid_al_istighfar",
-      arabic = "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَٰهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَىٰ عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ",
-      transliteration = "Allahumma Anta Rabbi la ilaha illa Ant, khalaqtani wa ana 'abduk, wa ana 'ala 'ahdika wa wa'dika mastata't",
-      translation = "O Allah, You are my Lord, none has the right to be worshiped but You. You created me and I am Your servant, keeping Your covenant as best I can.",
-      contemplativeNote = "The Master supplication of forgiveness. The highest form of honest humility.",
-      category = "Evening Remembrance",
-      source = "Sahih al-Bukhari 6306",
-      virtue = "The Prophet ﷺ called this the Chief of all Prayers for Forgiveness (Sayyid al-Istighfar)."
+      id = "juz30_darr_takathur",
+      arabic = "أَلْهَاكُمُ التَّكَاثُرُ • حَتَّىٰ زُرْتُمُ الْمَقَابِرَ • كَلَّا سَوْفَ تَعْلَمُونَ • ثُمَّ كَلَّا سَوْفَ تَعْلَمُونَ",
+      transliteration = "Alhakumut-takathur. Hatta zurtumul-maqabir. Kalla sawfa ta'lamoon. Thumma kalla sawfa ta'lamoon.",
+      translationUrdu = "تمہیں مال اور دنیا کی کثرت کی ہوس نے غافل کر دیا، یہاں تک کہ تم نے قبریں جا دیکھیں، ہرگز نہیں! عنقریب تم حقیقت جان لو گے۔",
+      translation = "Competition in increase diverts you until you visit the graveyards. No! You are going to know. Then no! You are going to know.",
+      contemplativeNote = "دنیا عارضی ہے۔ 15 سیکنڈ نکال کر اپنی آخرت کی تیاری کی فکر کریں۔",
+      category = "Juz 30 (تیسواں پارہ)",
+      source = "سورۃ التکاثر 102:1-4",
+      virtue = "موت کو کثرت سے یاد کرنا دل کو دنیا کی محبت سے آزاد کرتا ہے۔",
+      isQuranic = true
     ),
 
-    // Forgiveness & Istighfar
+    // 3. ALLAH ka Hukam, Adal aur Hidayat
     DhikrItem(
-      id = "astaghfirullah",
-      arabic = "أَسْتَغْفِرُ اللَّٰهَ وَأَتُوبُ إِلَيْهِ",
-      transliteration = "Astaghfirullaha wa atoobu ilayh",
-      translation = "I seek Allah's forgiveness and turn to Him in true repentance.",
-      contemplativeNote = "A gentle return. No burden is too heavy for His vast ocean of mercy.",
-      category = "Forgiveness",
-      source = "Sahih al-Bukhari 6307",
-      virtue = "The Messenger of Allah ﷺ sought forgiveness more than 70 times every day."
+      id = "juz30_hukam_zarrah",
+      arabic = "فَمَن يَعْمَلْ مِثْقَالَ ذَرَّةٍ خَيْرًا يَرَهُ • وَمَن يَعْمَلْ مِثْقَالَ ذَرَّةٍ شَرًّا يَرَهُ",
+      transliteration = "Faman ya'mal mithqala dharratin khayran yarah. Wa man ya'mal mithqala dharratin sharran yarah.",
+      translationUrdu = "پس جو ذرہ برابر نیکی کرے گا وہ اسے دیکھ لے گا، اور جو ذرہ برابر برائی کرے گا وہ اسے بھی دیکھ لے گا۔",
+      translation = "So whoever does an atom's weight of good will see it, and whoever does an atom's weight of evil will see it.",
+      contemplativeNote = "آپ کا 15 سیکنڈ کا یہ چھوٹا سا ذکر بھی کل قیامت کے دن سامنے آئے گا۔",
+      category = "Juz 30 (تیسواں پارہ)",
+      source = "سورۃ الزلزلۃ 99:7-8",
+      virtue = "اللہ تعالیٰ کے ہاں کوئی ادنیٰ نیکی بھی ضائع نہیں ہوتی۔",
+      isQuranic = true
     ),
     DhikrItem(
-      id = "rabbana_dhalamna",
-      arabic = "رَبَّنَا ظَلَمْنَا أَنفُسَنَا وَإِن لَّمْ تَغْفِرْ لَنَا وَتَرْحَمْنَا لَنَكُونَنَّ مِنَ الْخَاسِرِينَ",
-      transliteration = "Rabbana dhalamna anfusana wa il-lam taghfir lana wa tarhamna lana-koonanna minal-khasireen",
-      translation = "Our Lord, we have wronged ourselves, and if You do not forgive us and have mercy upon us, we will surely be among the losers.",
-      contemplativeNote = "The timeless prayer of Adam and Eve — humble, honest, and filled with hope.",
-      category = "Forgiveness",
-      source = "Surah Al-A'raf 7:23",
-      virtue = "The prayer by which Allah accepted the repentance of mankind's parents."
-    ),
-
-    // Before Sleep
-    DhikrItem(
-      id = "bismika_rabbi_wada'tu",
-      arabic = "بِاسْمِكَ رَبِّي وَضَعْتُ جَنْبِي وَبِكَ أَرْفَعُهُ، إِنْ أَمْسَكْتَ نَفْسِي فَارْحَمْهَا",
-      transliteration = "Bismika Rabbi wada'tu janbi wa bika arfa'uh, in amsakta nafsi far-hamha",
-      translation = "In Your Name my Lord, I lay down my side, and by You I raise it up. If You take my soul, have mercy on it.",
-      contemplativeNote = "Resting with a heart purified of grudges, ready to return or wake anew.",
-      category = "Before Sleep",
-      source = "Sahih al-Bukhari 6320",
-      virtue = "Guarantees angelic guardianship through the hours of night."
+      id = "juz30_hukam_asr",
+      arabic = "وَالْعَصْرِ • إِنَّ الْإِنسَانَ لَفِي خُسْرٍ • إِلَّا الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ وَتَوَاصَوْا بِالْحَقِّ وَتَوَاصَوْا بِالصَّبْرِ",
+      transliteration = "Wal-'asr. Innal-insana lafee khusr. Illal-ladheena amanoo wa 'amilus-salihati wa tawwasaw bil-haqqi wa tawwasaw bis-sabr.",
+      translationUrdu = "زمانے کی قسم! انسان یقیناً خسارے میں ہے، سوائے ان کے جو ایمان لائے اور نیک عمل کیے اور ایک دوسرے کو حق اور صبر کی تلقین کی۔",
+      translation = "By time, indeed mankind is in loss, except for those who have believed and done righteous deeds and advised each other to truth and advised each other to patience.",
+      contemplativeNote = "اگر پورا قرآن نہ اترتا تو صرف سورۃ العصر انسانیت کی ہدایت کے لیے کافی تھی۔",
+      category = "Juz 30 (تیسواں پارہ)",
+      source = "سورۃ العصر 103:1-3",
+      virtue = "امام شافعی رحمہ اللہ کا ارشاد: سورۃ العصر تمام حکمت کا خلاصہ ہے۔",
+      isQuranic = true
     ),
     DhikrItem(
-      id = "ayat_al_kursi_opening",
-      arabic = "اللَّٰهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ",
-      transliteration = "Allahu la ilaha illa Huwal-Hayyul-Qayyum, la ta'khudhuhu sinatun wa la nawm",
-      translation = "Allah — there is no deity except Him, the Ever-Living, the Sustainer of all existence. Neither drowsiness overtakes Him nor sleep.",
-      contemplativeNote = "The greatest verse in the Qur'an. Sleep peacefully knowing the One watching you never sleeps.",
-      category = "Before Sleep",
-      source = "Surah Al-Baqarah 2:255",
-      virtue = "Whoever recites it when sleeping will have a guardian from Allah over them until dawn."
-    ),
-
-    // Protection & Peace
-    DhikrItem(
-      id = "la_hawla",
-      arabic = "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّٰهِ الْعَلِيِّ الْعَظِيمِ",
-      transliteration = "La hawla wa la quwwata illa billahil-'Aliyyil-'Azeem",
-      translation = "There is no power and no might except through Allah, the Most High, the Supreme.",
-      contemplativeNote = "A treasure from beneath the Throne. Surrendering control brings absolute calm.",
-      category = "Protection",
-      source = "Sahih al-Bukhari 4205",
-      virtue = "One of the treasures of Paradise (Kanz min kunooz al-Jannah)."
+      id = "juz30_hukam_ma_gharraka",
+      arabic = "يَا أَيُّهَا الْإِنسَانُ مَا غَرَّكَ بِرَبِّكَ الْكَرِيمِ • الَّذِي خَلَقَكَ فَسَوَّاكَ فَعَدَلَكَ",
+      transliteration = "Ya ayyuhal-insanu ma gharraka bi-Rabbikal-kareem. Alladhee khalaqaka fa-sawwaka fa-'adalak.",
+      translationUrdu = "اے انسان! تجھے اپنے رب کریم کے بارے میں کس چیز نے دھوکے میں ڈال دیا؟ جس نے تجھے پیدا کیا، پھر تیرے اعضاء کو سنوارا اور تجھے متناسب بنایا۔",
+      translation = "O mankind, what has deceived you concerning your Lord, the Generous, who created you, proportioned you, and balanced you?",
+      contemplativeNote = "رب کے احسانات کو یاد کر کے شرم اور عاجزی کے آنسو بہائیں۔",
+      category = "Juz 30 (تیسواں پارہ)",
+      source = "سورۃ الانفطار 82:6-7",
+      virtue = "اللہ کی رحمت اور نعمتوں کو پہچاننا ہی اصل شکر گزاری ہے۔",
+      isQuranic = true
     ),
     DhikrItem(
-      id = "hasbunallah",
-      arabic = "حَسْبُنَا اللَّٰهُ وَنِعْمَ الْوَكِيلُ",
-      transliteration = "Hasbunallahu wa ni'mal-Wakeel",
-      translation = "Allah is sufficient for us, and He is the best Disposer of affairs.",
-      contemplativeNote = "Said by Ibrahim (as) facing the fire, and by Muhammad ﷺ facing an army. Unshakeable trust.",
-      category = "Protection",
-      source = "Surah Ali 'Imran 3:173",
-      virtue = "Transforms fear and uncertainty into quiet confidence and tranquility."
+      id = "juz30_hukam_inshirah_ease",
+      arabic = "فَإِنَّ مَعَ الْعُسْرِ يُسْرًا • إِنَّ مَعَ الْعُسْرِ يُسْرًا • فَإِذَا فَرَغْتَ فَانصَبْ • وَإِلَىٰ رَبِّكَ فَارْغَب",
+      transliteration = "Fa-inna ma'al-'usri yusra. Inna ma'al-'usri yusra. Fa-idha faraghta fansab. Wa ila Rabbika farghab.",
+      translationUrdu = "پس بے شک تنگی کے ساتھ آسانی ہے، یقیناً تنگی کے ساتھ آسانی ہے۔ پس جب آپ فارغ ہوں تو عبادت میں محنت کریں اور اپنے رب ہی کی طرف لو لگائیں۔",
+      translation = "For indeed, with hardship [will be] ease. Indeed, with hardship [will be] ease. So when you have finished, stand up [for worship], and to your Lord direct [your] longing.",
+      contemplativeNote = "مشکل جتنی بھی بڑی ہو، اللہ کی آسانی اس کے ساتھ ہی لگی ہوئی ہے۔",
+      category = "Juz 30 (تیسواں پارہ)",
+      source = "سورۃ الشرح 94:5-8",
+      virtue = "اللہ کا سچا وعدہ کہ تنگی کے بعد وسعت اور کشادگی یقینی ہے۔",
+      isQuranic = true
     ),
 
-    // Hardship & Ease
+    // 4. Nabi ﷺ ki Shan aur Muhabbat
     DhikrItem(
-      id = "yunus_dua",
-      arabic = "لَّا إِلَٰهَ إِلَّا أَنتَ سُبْحَانَكَ إِنِّي كُنتُ مِنَ الظَّالِمِينَ",
-      transliteration = "La ilaha illa Anta subhanaka inni kuntu minaz-zalimeen",
-      translation = "There is no deity except You; exalted are You. Indeed, I have been of the wrongdoers.",
-      contemplativeNote = "Dua of Prophet Yunus (Jonah) in the darkness of the whale. Darkness becomes light.",
-      category = "Hardship",
-      source = "Surah Al-Anbiya 21:87",
-      virtue = "No distressed believer prays with this except that Allah relieves their hardship."
+      id = "juz30_nabi_waddaaqa",
+      arabic = "مَا وَدَّعَكَ رَبُّكَ وَمَا قَلَىٰ • وَلَلْآخِرَةُ خَيْرٌ لَّكَ مِنَ الْأُولَىٰ • وَلَسَوْفَ يُعْطِيكَ رَبُّكَ فَتَرْضَىٰ",
+      transliteration = "Ma wadda'aka Rabbuka wa ma qala. Wa lal-akhiratu khayrul-laka minal-oola. Wa lasawfa yu'teeka Rabbuka fatarda.",
+      translationUrdu = "آپ کے رب نے نہ آپ کو چھوڑا ہے اور نہ وہ بیزار ہوا ہے، اور آخرت آپ کے لیے دنیا سے کہیں بہتر ہے، اور عنقریب آپ کا رب آپ کو اتنا عطا فرمائے گا کہ آپ راضی ہو جائیں گے۔",
+      translation = "Your Lord has not taken leave of you, [O Muhammad], nor has He detested [you]. And the Hereafter is better for you than the first [life]. And your Lord is going to give you, and you will be satisfied.",
+      contemplativeNote = "رسول اللہ ﷺ سے رب کی بے پایاں محبت اور شفاعت کبریٰ کی نوید۔",
+      category = "Juz 30 (تیسواں پارہ)",
+      source = "سورۃ الضحیٰ 93:3-5",
+      virtue = "حضرت علی رضی اللہ عنہ: قرآن کریم کی سب سے زیادہ امید افزا آیت ہے۔",
+      isQuranic = true
     ),
     DhikrItem(
-      id = "inshirah_verse",
-      arabic = "فَإِنَّ مَعَ الْعُسْرِ يُسْرًا • إِنَّ مَعَ الْعُسْرِ يُسْرًا",
-      transliteration = "Fa-inna ma'al-'usri yusra. Inna ma'al-'usri yusra.",
-      translation = "For indeed, with hardship [will be] ease. Indeed, with hardship [will be] ease.",
-      contemplativeNote = "Not after hardship, but with it. The seed of relief is already planted inside the trial.",
-      category = "Hardship",
-      source = "Surah Ash-Sharh 94:5-6",
-      virtue = "A divine promise that one hardship can never overcome twofold ease."
-    ),
-
-    // Quranic Gems
-    DhikrItem(
-      id = "rabbi_zidni_ilma",
-      arabic = "رَّبِّ زِدْنِي عِلْمًا",
-      transliteration = "Rabbi zidnee 'ilma",
-      translation = "My Lord, increase me in knowledge.",
-      contemplativeNote = "The only worldly matter the Prophet ﷺ was instructed to ask for more of.",
-      category = "Quranic Gems",
-      source = "Surah Ta-Ha 20:114",
-      virtue = "Opens the chambers of understanding, wisdom, and spiritual clarity."
+      id = "juz30_nabi_rafaana_dhikrak",
+      arabic = "أَلَمْ نَشْرَحْ لَكَ صَدْرَكَ • وَوَضَعْنَا عَنكَ وِزْرَكَ • الَّذِي أَنقَضَ ظَهَرَكَ • وَرَفَعْنَا لَكَ ذِكْرَكَ",
+      transliteration = "Alam nashrah laka sadrak. Wa wada'na 'anka wizrak. Alladhee anqada dhahrak. Wa rafa'na laka dhikrak.",
+      translationUrdu = "کیا ہم نے آپ کی خاطر آپ کا سینہ کشادہ نہیں فرما دیا؟ اور آپ سے آپ کا بوجھ اتار دیا، جس نے آپ کی کمر جھکا رکھی تھی، اور ہم نے آپ کے ذکر کو بلند کر دیا۔",
+      translation = "Did We not expand for you, [O Muhammad], your breast? And We removed from you your burden which had weighed upon your back, and raised high for you your repute.",
+      contemplativeNote = "جہاں جہاں اللہ کا نام آتا ہے، وہاں وہاں رسول اللہ ﷺ کا نام بلند ہوتا ہے۔",
+      category = "Juz 30 (تیسواں پارہ)",
+      source = "سورۃ الشرح 94:1-4",
+      virtue = "نبی اکرم ﷺ کے ذکر کی بلندی اللہ کا ابدی اور لاجواب فیصلہ ہے۔",
+      isQuranic = true
     ),
     DhikrItem(
-      id = "rabbana_atina",
-      arabic = "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ",
-      transliteration = "Rabbana atina fid-dunya hasanatan wa fil-akhirati hasanatan wa qina 'adhaban-nar",
-      translation = "Our Lord, grant us the good of this world and the good of the Hereafter, and save us from the torment of the Fire.",
-      contemplativeNote = "The most frequent supplication of the Messenger of Allah ﷺ. Complete balance.",
-      category = "Quranic Gems",
-      source = "Surah Al-Baqarah 2:201",
-      virtue = "Encompasses every form of goodness in this life and the next."
+      id = "juz30_nabi_al_kawthar",
+      arabic = "إِنَّا أَعْطَيْنَاكَ الْكَوْثَرَ • فَصَلِّ لِرَبِّكَ وَانْحَرْ • إِنَّ شَانِئَكَ هُوَ الْأَبْتَرُ",
+      transliteration = "Inna a'taynkal-kawthar. Fa-salli li-Rabbika wanhar. Inna shani'aka huwal-abtar.",
+      translationUrdu = "بے شک ہم نے آپ کو کوثر (بے انتہا بھلائی) عطا فرمائی، پس آپ اپنے رب کے لیے نماز پڑھیں اور قربانی کریں، یقیناً آپ کا دشمن ہی بے نام و نشان رہے گا۔",
+      translation = "Indeed, We have granted you, [O Muhammad], al-Kawthar. So pray to your Lord and sacrifice. Indeed, your enemy is the one cut off.",
+      contemplativeNote = "حوضِ کوثر کا دیدار اور رسول اللہ ﷺ کے مبارک ہاتھوں سے جام پینا۔",
+      category = "Juz 30 (تیسواں پارہ)",
+      source = "سورۃ الکوثر 108:1-3",
+      virtue = "حوض کوثر پر نبی کریم ﷺ کے دست مبارک سے پینے کے بعد کبھی پیاس نہیں لگے گی۔",
+      isQuranic = true
     ),
     DhikrItem(
-      id = "salawat_nabawi",
-      arabic = "اللَّهُمَّ صَلِّ عَلَىٰ مُحَمَّدٍ وَعَلَىٰ آلِ مُحَمَّدٍ",
-      transliteration = "Allahumma salli 'ala Muhammadin wa 'ala aali Muhammad",
-      translation = "O Allah, send peace and blessings upon Muhammad and upon the family of Muhammad.",
-      contemplativeNote = "When you send one prayer upon him, Allah sends ten prayers upon you.",
-      category = "Gratitude",
-      source = "Sahih Muslim 408",
-      virtue = "Elevates ranks, erases sins, and brings immediate peace to the heart."
+      id = "durood_sharif_ibrahimi",
+      arabic = "اللَّهُمَّ صَلِّ عَلَىٰ مُحَمَّدٍ وَعَلَىٰ آلِ مُحَمَّدٍ كَمَا صَلَّيْتَ عَلَىٰ إِبْرَاهِيمَ وَعَلَىٰ آلِ إِبْرَاهِيمَ إِنَّكَ حَمِيدٌ مَجِيدٌ",
+      transliteration = "Allahumma salli 'ala Muhammadin wa 'ala aali Muhammadin kama sallayta 'ala Ibraheema wa 'ala aali Ibraheema innaka Hameedum-Majeed",
+      translationUrdu = "اے اللہ! رحمتیں نازل فرما حضرت محمد ﷺ پر اور آپ ﷺ کی آل پر، جیسا کہ تو نے رحمتیں نازل فرمائیں حضرت ابراہیم علیہ السلام پر اور ان کی آل پر، بے شک تو قابل تعریف اور بڑی بزرگی والا ہے۔",
+      translation = "O Allah, send peace and blessings upon Muhammad and upon the family of Muhammad, as You sent blessings upon Ibrahim and upon the family of Ibrahim. Indeed, You are Praiseworthy and Glorious.",
+      contemplativeNote = "جب آپ ایک بار درود بھیجتے ہیں تو اللہ تعالیٰ آپ پر دس رحمتیں نازل فرماتا ہے۔",
+      category = "نبی کریم ﷺ پر درود و سلام",
+      source = "صحیح بخاری 3370",
+      virtue = "جو مجھ پر ایک بار درود بھیجے، اللہ اس پر دس رحمتیں نازل فرماتا ہے اور دس گناہ مٹا دیتا ہے۔",
+      isQuranic = false
     )
   )
 
-  val categories = listOf(
-    "All",
-    "Gratitude",
-    "Morning Remembrance",
-    "Evening Remembrance",
-    "Forgiveness",
-    "Before Sleep",
-    "Protection",
-    "Hardship",
-    "Quranic Gems"
-  )
+  // Primary list for fast UI initialization (combines essential notification ayat + foundational dhikr)
+  val items: List<DhikrItem> = essentialNotificationAyat
+
+  fun getRandomNotificationDhikr(context: Context): DhikrItem {
+    return essentialNotificationAyat.random()
+  }
+
+  fun loadFullCatalog(context: Context): List<DhikrItem> {
+    return try {
+      val jsonString = context.assets.open("sacred_catalog.json").bufferedReader().use { it.readText() }
+      val jsonArray = JSONArray(jsonString)
+      val list = ArrayList<DhikrItem>(jsonArray.length() + essentialNotificationAyat.size)
+
+      // Always put the essential notification ayat at the very top of catalog
+      list.addAll(essentialNotificationAyat)
+
+      for (i in 0 until jsonArray.length()) {
+        val obj = jsonArray.getJSONObject(i)
+        val id = obj.getString("id")
+        // Don't duplicate if already in essential
+        if (essentialNotificationAyat.none { it.id == id }) {
+          val cat = obj.getString("category")
+          val isQ = cat.contains("Juz", ignoreCase = true) || cat.contains("Quran", ignoreCase = true)
+          list.add(
+            DhikrItem(
+              id = id,
+              arabic = obj.getString("arabic"),
+              transliteration = obj.getString("transliteration"),
+              translationUrdu = obj.getString("translationUrdu"),
+              translation = obj.getString("translation"),
+              contemplativeNote = obj.optString("contemplativeNote", ""),
+              category = cat,
+              source = obj.getString("source"),
+              virtue = obj.getString("virtue"),
+              defaultDurationSeconds = obj.optInt("defaultDurationSeconds", 15),
+              isQuranic = isQ
+            )
+          )
+        }
+      }
+      if (list.isNotEmpty()) list else items
+    } catch (_: Exception) {
+      items
+    }
+  }
 }

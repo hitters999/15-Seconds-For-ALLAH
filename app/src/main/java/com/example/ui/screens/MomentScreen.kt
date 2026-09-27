@@ -1,9 +1,7 @@
 package com.example.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,6 +29,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,27 +42,33 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.ui.MainViewModel
 import com.example.ui.Screen
+import com.example.ui.theme.ArabicFontFamily
 import com.example.ui.theme.BronzeGold
 import com.example.ui.theme.BronzeGoldLight
-import com.example.ui.theme.DarkBorder
-import com.example.ui.theme.DarkTextSoft
 import com.example.ui.theme.InkTeal
 import com.example.ui.theme.InkTealDeep
 import com.example.ui.theme.ParchmentSurface
+import com.example.ui.theme.UrduFontFamily
+import com.example.util.ShareHelper
 
 @Composable
 fun MomentScreen(
   viewModel: MainViewModel,
   modifier: Modifier = Modifier
 ) {
+  val context = LocalContext.current
   val selectedDhikr by viewModel.selectedDhikr.collectAsState()
   val timerState by viewModel.timerState.collectAsState()
 
@@ -80,14 +85,14 @@ fun MomentScreen(
       .background(InkTeal)
       .statusBarsPadding()
       .navigationBarsPadding()
-      .padding(horizontal = 24.dp, vertical = 12.dp)
+      .padding(horizontal = 22.dp, vertical = 10.dp)
       .testTag("moment_screen")
   ) {
-    // Top Bar: Back to Home, Category tag, Bookmark
+    // Top Bar: Back to Home, Brand Logo & Category, Bookmark & Share
     Row(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(top = 8.dp),
+        .padding(top = 4.dp),
       horizontalArrangement = Arrangement.SpaceBetween,
       verticalAlignment = Alignment.CenterVertically
     ) {
@@ -98,118 +103,170 @@ fun MomentScreen(
         Icon(
           imageVector = Icons.AutoMirrored.Filled.ArrowBack,
           contentDescription = "Back",
-          tint = ParchmentSurface.copy(alpha = 0.8f)
+          tint = ParchmentSurface.copy(alpha = 0.85f)
         )
       }
 
-      Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = Color(0x22FFFFFF),
-        border = BorderStroke(1.dp, BronzeGoldLight.copy(alpha = 0.3f))
-      ) {
-        Text(
-          text = selectedDhikr.category.uppercase(),
-          fontFamily = FontFamily.SansSerif,
-          fontWeight = FontWeight.Medium,
-          fontSize = 10.sp,
-          color = BronzeGoldLight,
-          letterSpacing = 1.2.sp,
-          modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-        )
+      // Small Brand Logo in Header
+      Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+          modifier = Modifier
+            .size(32.dp)
+            .clip(CircleShape)
+            .border(1.dp, BronzeGoldLight, CircleShape)
+            .background(Color.White)
+        ) {
+          Image(
+            painter = painterResource(id = R.drawable.app_brand_logo),
+            contentDescription = "Logo",
+            modifier = Modifier.size(32.dp),
+            contentScale = ContentScale.Fit
+          )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Surface(
+          shape = RoundedCornerShape(10.dp),
+          color = Color(0x22FFFFFF),
+          border = BorderStroke(1.dp, BronzeGoldLight.copy(alpha = 0.4f))
+        ) {
+          Text(
+            text = selectedDhikr.category,
+            fontFamily = FontFamily.SansSerif,
+            fontWeight = FontWeight.Medium,
+            fontSize = 11.sp,
+            color = BronzeGoldLight,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+          )
+        }
       }
 
-      IconButton(
-        onClick = { viewModel.toggleBookmark(selectedDhikr.id) },
-        modifier = Modifier.testTag("moment_bookmark_btn")
-      ) {
-        Icon(
-          imageVector = if (selectedDhikr.isBookmarked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
-          contentDescription = "Bookmark",
-          tint = if (selectedDhikr.isBookmarked) BronzeGoldLight else ParchmentSurface.copy(alpha = 0.7f)
-        )
+      Row(verticalAlignment = Alignment.CenterVertically) {
+        // Share Button
+        IconButton(
+          onClick = { ShareHelper.shareDhikr(context, selectedDhikr) },
+          modifier = Modifier.testTag("moment_share_btn")
+        ) {
+          Icon(
+            imageVector = Icons.Filled.Share,
+            contentDescription = "Share",
+            tint = BronzeGoldLight
+          )
+        }
+
+        IconButton(
+          onClick = { viewModel.toggleBookmark(selectedDhikr.id) },
+          modifier = Modifier.testTag("moment_bookmark_btn")
+        ) {
+          Icon(
+            imageVector = if (selectedDhikr.isBookmarked) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
+            contentDescription = "Bookmark",
+            tint = if (selectedDhikr.isBookmarked) BronzeGoldLight else ParchmentSurface.copy(alpha = 0.7f)
+          )
+        }
       }
     }
 
-    // Main Content: Centered contemplation as in Mockup Screen 3
+    // Main Content
     Column(
       modifier = Modifier
         .fillMaxSize()
-        .padding(top = 56.dp, bottom = 40.dp),
+        .padding(top = 44.dp, bottom = 24.dp),
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.Center
     ) {
-      // Arabic Text (Screen 3 Moment)
+      // Distinct Bismillah Header on Top if Quranic Ayah
+      if (selectedDhikr.isQuranic) {
+        com.example.ui.components.BismillahCalligraphyHeader(isDarkTheme = true)
+        Spacer(modifier = Modifier.height(10.dp))
+      }
+
+      // Arabic Text with Amiri font
       Text(
         text = selectedDhikr.arabic,
-        fontFamily = FontFamily.Serif,
-        fontSize = 30.sp,
-        lineHeight = 44.sp,
+        fontFamily = ArabicFontFamily,
+        fontSize = 28.sp,
+        lineHeight = 42.sp,
         color = ParchmentSurface,
         textAlign = TextAlign.Center,
         modifier = Modifier
           .fillMaxWidth()
-          .padding(horizontal = 8.dp)
+          .padding(horizontal = 6.dp)
       )
 
-      Spacer(modifier = Modifier.height(14.dp))
+      Spacer(modifier = Modifier.height(10.dp))
 
       // Transliteration
       Text(
         text = selectedDhikr.transliteration,
         fontFamily = FontFamily.Serif,
-        fontSize = 15.sp,
+        fontSize = 14.5.sp,
         fontWeight = FontWeight.Medium,
         color = BronzeGoldLight,
         textAlign = TextAlign.Center,
         modifier = Modifier.fillMaxWidth()
       )
 
-      Spacer(modifier = Modifier.height(10.dp))
+      Spacer(modifier = Modifier.height(8.dp))
 
-      // Translation / Contemplation (Mockup Screen 3: "Glory be to Allah — said with full presence, just for this moment.")
+      // Urdu Translation (Prominently featured with Noto Nastaliq Urdu font)
+      Text(
+        text = selectedDhikr.translationUrdu,
+        fontFamily = UrduFontFamily,
+        fontSize = 14.5.sp,
+        fontWeight = FontWeight.Normal,
+        color = Color(0xFFFFE8B2),
+        textAlign = TextAlign.Center,
+        lineHeight = 24.sp,
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 14.dp)
+      )
+
+      Spacer(modifier = Modifier.height(4.dp))
+
+      // English Translation
       Text(
         text = selectedDhikr.translation,
         fontFamily = FontFamily.SansSerif,
-        fontSize = 13.sp,
-        color = Color(0xFF9FB6B3),
+        fontSize = 12.sp,
+        color = Color(0xFFB5CCC9),
         textAlign = TextAlign.Center,
-        lineHeight = 20.sp,
+        lineHeight = 17.sp,
         modifier = Modifier
           .fillMaxWidth()
           .padding(horizontal = 16.dp)
       )
 
-      Spacer(modifier = Modifier.height(36.dp))
+      Spacer(modifier = Modifier.height(28.dp))
 
-      // Timer Circle Disc from the mockup
+      // Timer Circle Disc
       Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier.size(136.dp)
+        modifier = Modifier.size(134.dp)
       ) {
-        // Outer thin animated circular track
         CircularProgressIndicator(
           progress = { progress },
-          modifier = Modifier.size(136.dp),
+          modifier = Modifier.size(134.dp),
           color = BronzeGoldLight,
           trackColor = Color(0x33B8863B),
-          strokeWidth = 3.dp,
+          strokeWidth = 3.5.dp,
         )
 
-        // Center Content
         if (timerState.isCompleted) {
           Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
               imageVector = Icons.Filled.CheckCircle,
               contentDescription = "Completed",
               tint = BronzeGoldLight,
-              modifier = Modifier.size(34.dp)
+              modifier = Modifier.size(36.dp)
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-              text = "Completed",
+              text = "ماشاء اللہ • +10 پوائنٹس",
               fontFamily = FontFamily.Serif,
-              fontSize = 12.sp,
-              color = ParchmentSurface
+              fontSize = 12.5.sp,
+              fontWeight = FontWeight.Bold,
+              color = BronzeGoldLight
             )
           }
         } else {
@@ -224,15 +281,14 @@ fun MomentScreen(
         }
       }
 
-      Spacer(modifier = Modifier.height(34.dp))
+      Spacer(modifier = Modifier.height(26.dp))
 
-      // Controls from Mockup Screen 3: Previous, Play/Pause, Next
+      // Controls: Previous, Play/Pause, Next
       Row(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth()
       ) {
-        // Previous Dhikr
         IconButton(
           onClick = { viewModel.previousDhikr() },
           modifier = Modifier
@@ -248,9 +304,8 @@ fun MomentScreen(
           )
         }
 
-        Spacer(modifier = Modifier.width(24.dp))
+        Spacer(modifier = Modifier.width(22.dp))
 
-        // Center Play / Pause / Reset button
         Box(
           contentAlignment = Alignment.Center,
           modifier = Modifier
@@ -272,9 +327,8 @@ fun MomentScreen(
           )
         }
 
-        Spacer(modifier = Modifier.width(24.dp))
+        Spacer(modifier = Modifier.width(22.dp))
 
-        // Next Dhikr
         IconButton(
           onClick = { viewModel.nextDhikr() },
           modifier = Modifier
@@ -291,16 +345,51 @@ fun MomentScreen(
         }
       }
 
-      Spacer(modifier = Modifier.height(26.dp))
+      Spacer(modifier = Modifier.height(20.dp))
 
-      // Virtue / Source reference
+      // Virtue & Source note + Quick Share pill
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+      ) {
+        Surface(
+          shape = RoundedCornerShape(12.dp),
+          color = Color(0x33B8863B),
+          border = BorderStroke(1.dp, BronzeGoldLight.copy(alpha = 0.4f)),
+          modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable { ShareHelper.shareDhikr(context, selectedDhikr) }
+        ) {
+          Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Icon(
+              imageVector = Icons.Filled.Share,
+              contentDescription = "Share",
+              tint = BronzeGoldLight,
+              modifier = Modifier.size(13.dp)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+              text = "شیئر کریں (Share WhatsApp/X)",
+              fontFamily = FontFamily.SansSerif,
+              fontSize = 11.sp,
+              color = ParchmentSurface
+            )
+          }
+        }
+      }
+
+      Spacer(modifier = Modifier.height(8.dp))
+
       Text(
         text = "${selectedDhikr.source} • ${selectedDhikr.virtue}",
         fontFamily = FontFamily.SansSerif,
         fontSize = 11.sp,
-        color = Color(0x99FFFFFF),
+        color = Color(0xCCFFFFFF),
         textAlign = TextAlign.Center,
-        modifier = Modifier.padding(horizontal = 20.dp)
+        modifier = Modifier.padding(horizontal = 16.dp)
       )
     }
   }

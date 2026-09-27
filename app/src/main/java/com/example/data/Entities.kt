@@ -19,8 +19,14 @@ data class MomentLogEntity(
 data class UserSettingsEntity(
   @PrimaryKey
   val id: Int = 1,
-  val userName: String = "Abdur Rahim",
-  val reminderInterval: String = "Every 30 min",
+  val userName: String = "Umer Farooq",
+  val userEmail: String = "umer@example.com",
+  val userAvatarUrl: String? = null,
+  val isSignedIn: Boolean = true,
+  val accountType: String = "Google Account",
+  val totalScore: Int = 2450,
+  val spiritualRank: String = "ذاکرِ مداوم (Consistent Rememberer)",
+  val reminderInterval: String = "Every 1 hour (1 گھنٹہ بعد)",
   val dailyGoal: Int = 8,
   val hapticsEnabled: Boolean = true,
   val soundEnabled: Boolean = true,
@@ -31,5 +37,6 @@ data class UserSettingsEntity(
 data class BookmarkEntity(
   @PrimaryKey
   val dhikrId: String,
-  val timestamp: Long = System.currentTimeMillis()
+  val timestamp: Long = System.currentTimeMillis(),
+  val note: String = ""
 )

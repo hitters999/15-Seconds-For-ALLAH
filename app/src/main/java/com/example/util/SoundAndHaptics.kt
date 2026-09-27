@@ -20,6 +20,13 @@ class SoundAndHaptics(private val context: Context) {
     }
   }
 
+  fun playBeep() {
+    try {
+      toneGen?.startTone(ToneGenerator.TONE_PROP_BEEP, 220)
+    } catch (_: Exception) {
+    }
+  }
+
   fun playChime() {
     try {
       toneGen?.startTone(ToneGenerator.TONE_PROP_BEEP, 250)

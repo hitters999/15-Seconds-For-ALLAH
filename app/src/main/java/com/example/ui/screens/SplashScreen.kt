@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,18 +26,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ui.components.SereneOutlineButton
+import com.example.R
 import com.example.ui.theme.BronzeGold
 import com.example.ui.theme.BronzeGoldLight
 import com.example.ui.theme.InkTeal
-import com.example.ui.theme.InkTealDeep
 import com.example.ui.theme.ParchmentSurface
 
 @Composable
@@ -47,7 +50,7 @@ fun SplashScreen(
   val alphaAnim = remember { Animatable(0f) }
 
   LaunchedEffect(Unit) {
-    alphaAnim.animateTo(1f, animationSpec = tween(1000))
+    alphaAnim.animateTo(1f, animationSpec = tween(900))
   }
 
   Box(
@@ -67,57 +70,76 @@ fun SplashScreen(
         .alpha(alphaAnim.value)
         .fillMaxWidth()
     ) {
-      // Elegant Islamic Geometric / Teardrop Mark from the design mockup
+      // Official Brand Logo Emblem
       Box(
+        contentAlignment = Alignment.Center,
         modifier = Modifier
-          .size(56.dp)
-          .border(
-            width = 2.5.dp,
-            color = BronzeGoldLight,
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp, bottomEnd = 28.dp, bottomStart = 0.dp)
-          )
-          .rotate(45f)
-      )
+          .size(140.dp)
+          .clip(CircleShape)
+          .border(2.5.dp, BronzeGoldLight, CircleShape)
+          .background(Color.White)
+          .testTag("splash_brand_logo")
+      ) {
+        Image(
+          painter = painterResource(id = R.drawable.app_brand_logo),
+          contentDescription = "15 Seconds for Allah Official Logo",
+          modifier = Modifier.size(134.dp),
+          contentScale = ContentScale.Fit
+        )
+      }
 
-      Spacer(modifier = Modifier.height(32.dp))
+      Spacer(modifier = Modifier.height(28.dp))
 
       Text(
-        text = "15 Seconds\nfor Allah",
+        text = "15 Seconds for Allah",
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.Normal,
-        fontSize = 36.sp,
-        lineHeight = 44.sp,
+        fontSize = 30.sp,
         color = ParchmentSurface,
         textAlign = TextAlign.Center,
         letterSpacing = 0.5.sp
       )
 
-      Spacer(modifier = Modifier.height(14.dp))
+      Spacer(modifier = Modifier.height(6.dp))
 
       Text(
-        text = "A MOMENT, GIVEN FULLY",
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Medium,
-        fontSize = 11.sp,
+        text = "۱۵ سیکنڈز اللہ کے لیے",
+        fontFamily = FontFamily.Serif,
+        fontSize = 24.sp,
+        fontWeight = FontWeight.Bold,
         color = BronzeGoldLight,
-        letterSpacing = 2.5.sp,
         textAlign = TextAlign.Center
       )
 
-      Spacer(modifier = Modifier.height(64.dp))
+      Spacer(modifier = Modifier.height(14.dp))
+
+      Text(
+        text = "A MOMENT, GIVEN FULLY\nصرف پندرہ سیکنڈ، خلوص کے ساتھ",
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Medium,
+        fontSize = 11.5.sp,
+        color = Color(0xFFC7DBD8),
+        letterSpacing = 1.2.sp,
+        lineHeight = 18.sp,
+        textAlign = TextAlign.Center
+      )
+
+      Spacer(modifier = Modifier.height(52.dp))
 
       // Button to enter
       Box(
         modifier = Modifier
           .border(1.2.dp, BronzeGoldLight, RoundedCornerShape(24.dp))
+          .clip(RoundedCornerShape(24.dp))
           .clickable(onClick = onContinue)
-          .padding(horizontal = 32.dp, vertical = 12.dp)
+          .background(Color(0x33B8863B))
+          .padding(horizontal = 36.dp, vertical = 13.dp)
           .testTag("enter_app_button")
       ) {
         Text(
-          text = "Enter Sanctuary",
+          text = "شروع کریں • Enter Sanctuary",
           fontFamily = FontFamily.Serif,
-          fontSize = 14.sp,
+          fontSize = 14.5.sp,
           color = ParchmentSurface,
           letterSpacing = 0.8.sp
         )

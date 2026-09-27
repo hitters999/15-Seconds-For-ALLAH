@@ -1,6 +1,7 @@
 package com.example.ui
 
 import android.app.Application
+import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.AppDatabase
@@ -9,6 +10,7 @@ import com.example.data.DhikrItem
 import com.example.data.DhikrRepository
 import com.example.data.MomentLogEntity
 import com.example.data.UserSettingsEntity
+import com.example.notification.NotificationHelper
 import com.example.util.SoundAndHaptics
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -18,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -37,7 +40,7 @@ sealed class Screen(val route: String) {
 data class DayActivity(
   val dateKey: String,
   val dayOfMonth: Int,
-  val dayOfWeek: Int, // 1 = Sunday, 2 = Monday, etc.
+  val dayOfWeek: Int,
   val count: Int,
   val isToday: Boolean
 )
@@ -54,7 +57,7 @@ data class MomentTimerUiState(
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
   private val database = AppDatabase.getDatabase(application)
-  private val repository = DhikrRepository(database.momentDao())
+  private val repository = DhikrRepository(database.momentDao(), application)
   private val soundAndHaptics = SoundAndHaptics(application)
 
   private val _currentScreen = MutableStateFlow<Screen>(Screen.Home)
@@ -65,6 +68,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
   val allItems: StateFlow<List<DhikrItem>> = repository.allItems
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DhikrCatalog.items)
+
+  val bookmarkedItems: StateFlow<List<DhikrItem>> = allItems.map { list ->
+    list.filter { it.isBookmarked }
+  }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
   val todayLogs: StateFlow<List<MomentLogEntity>> = repository.getTodayLogs()
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -91,8 +98,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
   private var timerJob: Job? = null
 
+  // In-App Notification Reminder Popup State
+  private val _showReminderPopup = MutableStateFlow(false)
+  val showReminderPopup: StateFlow<Boolean> = _showReminderPopup.asStateFlow()
+
+  private val _popupDhikr = MutableStateFlow(DhikrCatalog.items.first())
+  val popupDhikr: StateFlow<DhikrItem> = _popupDhikr.asStateFlow()
+
+  // 5s Non-Blocking Floating Top Banner State (Matches user design)
+  private val _showFloatingBanner = MutableStateFlow(false)
+  val showFloatingBanner: StateFlow<Boolean> = _showFloatingBanner.asStateFlow()
+
+  private val _floatingBannerDhikr = MutableStateFlow(DhikrCatalog.items.first())
+  val floatingBannerDhikr: StateFlow<DhikrItem> = _floatingBannerDhikr.asStateFlow()
+
   // Streak & Statistics calculation
-  val streakCount: StateFlow<Int> = allLogs.combine(todayLogs) { logs, today ->
+  val streakCount: StateFlow<Int> = allLogs.combine(todayLogs) { logs, _ ->
     calculateStreak(logs)
   }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 21)
 
@@ -111,6 +132,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         repository.seedInitialDataIfEmpty()
       }
     }
+
+    // Schedule 1-hour periodic notification reminder by default as requested
+    NotificationHelper.createNotificationChannel(application)
+    NotificationHelper.scheduleReminder(application, 60L)
   }
 
   fun navigateTo(screen: Screen) {
@@ -139,6 +164,39 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     if (startImmediately) {
       startTimer()
     }
+  }
+
+  fun triggerPopupNotification(dhikr: DhikrItem? = null) {
+    val targetDhikr = dhikr ?: allItems.value.randomOrNull() ?: DhikrCatalog.items.first()
+    _popupDhikr.value = targetDhikr
+    _showReminderPopup.value = true
+  }
+
+  fun dismissReminderPopup() {
+    _showReminderPopup.value = false
+  }
+
+  fun triggerFloatingBanner(dhikr: DhikrItem? = null) {
+    val targetDhikr = dhikr ?: DhikrCatalog.getRandomNotificationDhikr(getApplication())
+    _floatingBannerDhikr.value = targetDhikr
+    _showFloatingBanner.value = true
+    soundAndHaptics.playBeep()
+  }
+
+  fun dismissFloatingBanner() {
+    _showFloatingBanner.value = false
+  }
+
+  fun sendTestNotificationNow() {
+    // Pick from the curated essential lessons of Juz 30 (Jannat, Jahannam, Hukam, Nabi ki muhabbat)
+    val dhikr = DhikrCatalog.getRandomNotificationDhikr(getApplication())
+    // Play requested "Beep" sound
+    soundAndHaptics.playBeep()
+    // Trigger in-app 5s non-blocking floating banner
+    _floatingBannerDhikr.value = dhikr
+    _showFloatingBanner.value = true
+    // Also trigger system notification & floating overlay
+    NotificationHelper.showDhikrNotification(getApplication(), dhikr)
   }
 
   fun toggleTimer() {
@@ -235,6 +293,32 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
   }
 
+  fun updateAccountProfile(name: String, email: String) {
+    viewModelScope.launch {
+      val current = userSettings.value
+      repository.updateSettings(
+        current.copy(
+          userName = name.trim(),
+          userEmail = email.trim(),
+          isSignedIn = true
+        )
+      )
+    }
+  }
+
+  fun signOutAccount() {
+    viewModelScope.launch {
+      val current = userSettings.value
+      repository.updateSettings(
+        current.copy(
+          userName = "مہمان کاربر (Guest Seeker)",
+          userEmail = "guest@15secondsforallah.com",
+          isSignedIn = false
+        )
+      )
+    }
+  }
+
   fun updateDailyGoal(goal: Int) {
     viewModelScope.launch {
       val current = userSettings.value
@@ -246,6 +330,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     viewModelScope.launch {
       val current = userSettings.value
       repository.updateSettings(current.copy(reminderInterval = interval))
+
+      val minutes = when {
+        interval.contains("15") -> 15L
+        interval.contains("30") -> 30L
+        interval.contains("2") -> 120L
+        else -> 60L // Default 1 hour
+      }
+      NotificationHelper.scheduleReminder(getApplication(), minutes)
     }
   }
 
@@ -278,6 +370,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
   }
 
+  fun handleIntent(intent: Intent?) {
+    val target = intent?.getStringExtra("TARGET_SCREEN")
+    val dhikrId = intent?.getStringExtra("DHIKR_ID")
+    if (target == "MOMENT" && dhikrId != null) {
+      val item = allItems.value.firstOrNull { it.id == dhikrId } ?: DhikrCatalog.items.first()
+      selectDhikrForMoment(item, startImmediately = true)
+    }
+  }
+
   private fun calculateStreak(logs: List<MomentLogEntity>): Int {
     if (logs.isEmpty()) return 0
     val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -287,9 +388,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     var streak = 0
     val todayKey = dateFormat.format(cal.time)
 
-    // Check if today has at least one completion
     if (!datesSet.contains(todayKey)) {
-      // Check yesterday
       cal.add(Calendar.DAY_OF_YEAR, -1)
       val yesterdayKey = dateFormat.format(cal.time)
       if (!datesSet.contains(yesterdayKey)) {
@@ -297,7 +396,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
       }
     }
 
-    // Traverse backwards
     while (true) {
       val key = dateFormat.format(cal.time)
       if (datesSet.contains(key)) {
@@ -317,8 +415,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val cal = Calendar.getInstance()
     val todayKey = dateFormat.format(cal.time)
 
-    // Generate 35 days (5 weeks of 7 days) ending today
-    // Shift cal back 34 days
     cal.add(Calendar.DAY_OF_YEAR, -34)
 
     val grid = mutableListOf<DayActivity>()

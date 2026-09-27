@@ -2,11 +2,28 @@ package com.example.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.example.R
 
-// Marcellus-inspired Serif for titles, and Work Sans-inspired clean sans-serif for body
+// High-fidelity local fonts for Quranic Calligraphy and Authentic Urdu Nastaliq
+val ArabicFontFamily = FontFamily(
+  Font(R.font.amiri, FontWeight.Normal)
+)
+
+val QuranCalligraphyFontFamily = FontFamily(
+  Font(R.font.scheherazade_new, FontWeight.Normal)
+)
+
+val UrduNastaliqFontFamily = FontFamily(
+  Font(R.font.noto_nastaliq_urdu, FontWeight.Normal)
+)
+
+// Aliases for compatibility
+val UrduFontFamily = UrduNastaliqFontFamily
+
 val Typography = Typography(
   displayLarge = TextStyle(
     fontFamily = FontFamily.Serif,
