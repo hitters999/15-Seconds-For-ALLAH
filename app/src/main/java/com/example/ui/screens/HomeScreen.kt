@@ -143,7 +143,8 @@ fun HomeScreen(
     }
   }
 
-  val (urduGreeting, salamText) by viewModel.dynamicGreeting.collectAsState()
+  val dynamicGreeting by viewModel.dynamicGreeting.collectAsState()
+  val (urduGreeting, salamText) = dynamicGreeting
   val currentDateFormatted by viewModel.currentDateFormatted.collectAsState()
   val currentTimeFormatted by viewModel.currentTimeFormatted.collectAsState()
   var showTimezoneDialog by remember { mutableStateOf(false) }
@@ -1150,11 +1151,24 @@ fun HomeScreen(
                   )
                 )
               }
-            }
+            },
+            currentTimeFormatted = currentTimeFormatted,
+            onOpenTimezoneClick = { showTimezoneDialog = true }
           )
         }
       }
     }
+  }
+
+  // Timezone Selection Dialog
+  if (showTimezoneDialog) {
+    TimezoneSelectionDialog(
+      selectedTimezoneId = userSettings.selectedTimezone,
+      onDismissRequest = { showTimezoneDialog = false },
+      onSelectTimezone = { tzId ->
+        viewModel.updateSelectedTimezone(tzId)
+      }
+    )
   }
 }
 
@@ -1358,19 +1372,4 @@ private fun QuickActionCard(
       )
     }
   }
-}
-
-private fun getDynamicGreeting(): Pair<String, String> {
-  val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-  return when (hour) {
-    in 4..11 -> Pair("صبح بخیر • Good morning", "السلام علیکم")
-    in 12..16 -> Pair("دوپہر بخیر • Good afternoon", "السلام علیکم")
-    in 17..19 -> Pair("شام بخیر • Good evening", "السلام علیکم")
-    else -> Pair("شب بخیر • Blessed Night", "السلام علیکم")
-  }
-}
-
-private fun getFormattedCurrentDate(): String {
-  val sdf = SimpleDateFormat("EEEE, d MMMM yyyy", Locale.ENGLISH)
-  return sdf.format(Date())
 }

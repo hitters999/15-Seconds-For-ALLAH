@@ -77,6 +77,8 @@ import com.example.notification.FloatingPopupManager
 import com.example.ui.MainViewModel
 import com.example.ui.Screen
 import com.example.ui.components.ParchmentBackground
+import com.example.ui.components.TimezoneSelectionDialog
+import com.example.util.AppTimeHelper
 import com.example.ui.theme.ArabicFontFamily
 import com.example.ui.theme.BronzeGold
 import com.example.ui.theme.BronzeGoldLight
@@ -108,6 +110,8 @@ fun ProfileScreen(
   var showIntervalDialog by remember { mutableStateOf(false) }
   var showGoalDialog by remember { mutableStateOf(false) }
   var showClearDialog by remember { mutableStateOf(false) }
+  var showTimezoneDialog by remember { mutableStateOf(false) }
+  val currentTimeFormatted by viewModel.currentTimeFormatted.collectAsState()
   var tempName by remember { mutableStateOf("") }
   var tempIdentifier by remember { mutableStateOf("") }
   var selectedAuthTab by remember { mutableIntStateOf(0) } // 0: Google, 1: Mobile, 2: Email
@@ -593,6 +597,13 @@ fun ProfileScreen(
             onClick = { showGoalDialog = true }
           )
 
+          val tzOption = AppTimeHelper.getTimezoneOption(userSettings.selectedTimezone)
+          SettingRow(
+            title = "وقت اور ٹائم زون (Time & Timezone)",
+            value = "${tzOption.flagEmoji} ${tzOption.urduName.split(" ")[0]} ($currentTimeFormatted)",
+            onClick = { showTimezoneDialog = true }
+          )
+
           // Floating window permission
           val hasOverlay = FloatingPopupManager.canDrawOverlays(context)
           Row(
@@ -880,6 +891,17 @@ fun ProfileScreen(
       },
       confirmButton = {
         TextButton(onClick = { showGoalDialog = false }) { Text("ٹھیک ہے", color = BronzeGold) }
+      }
+    )
+  }
+
+  // Timezone Dialog
+  if (showTimezoneDialog) {
+    TimezoneSelectionDialog(
+      selectedTimezoneId = userSettings.selectedTimezone,
+      onDismissRequest = { showTimezoneDialog = false },
+      onSelectTimezone = { tzId ->
+        viewModel.updateSelectedTimezone(tzId)
       }
     )
   }

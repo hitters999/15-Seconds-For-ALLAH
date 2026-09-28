@@ -33,58 +33,6 @@ import com.example.ui.theme.QuranCalligraphyFontFamily
 import com.example.ui.theme.UrduNastaliqFontFamily
 
 @Composable
-fun BismillahCalligraphyHeader(
-  modifier: Modifier = Modifier,
-  isDarkTheme: Boolean = false
-) {
-  Box(
-    contentAlignment = Alignment.Center,
-    modifier = modifier
-      .fillMaxWidth()
-      .padding(vertical = 4.dp)
-  ) {
-    Surface(
-      shape = RoundedCornerShape(14.dp),
-      color = if (isDarkTheme) Color(0x33000000) else Color(0x22B8863B),
-      border = BorderStroke(1.dp, if (isDarkTheme) Color(0x44B8863B) else BronzeGold.copy(alpha = 0.35f)),
-      modifier = Modifier
-        .clip(RoundedCornerShape(14.dp))
-    ) {
-      Row(
-        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
-      ) {
-        Text(
-          text = "۞",
-          fontSize = 12.sp,
-          color = BronzeGoldLight,
-          modifier = Modifier.padding(end = 6.dp)
-        )
-
-        // Bismillah written in distinct Quranic Calligraphy Font (Scheherazade New)
-        Text(
-          text = "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
-          fontFamily = QuranCalligraphyFontFamily,
-          fontWeight = FontWeight.Normal,
-          fontSize = 17.5.sp,
-          lineHeight = 24.sp,
-          color = if (isDarkTheme) BronzeGoldLight else Color(0xFF6B4810),
-          textAlign = TextAlign.Center
-        )
-
-        Text(
-          text = "۞",
-          fontSize = 12.sp,
-          color = BronzeGoldLight,
-          modifier = Modifier.padding(start = 6.dp)
-        )
-      }
-    }
-  }
-}
-
-@Composable
 fun SacredTextBlock(
   arabicText: String,
   urduText: String,
