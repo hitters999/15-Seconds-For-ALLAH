@@ -64,6 +64,8 @@ fun PrayerTimesSection(
   prayerState: PrayerTimesState,
   onRefreshClick: () -> Unit,
   onRequestLocationClick: () -> Unit,
+  currentTimeFormatted: String? = null,
+  onOpenTimezoneClick: (() -> Unit)? = null,
   modifier: Modifier = Modifier
 ) {
   val scrollState = rememberScrollState()
@@ -121,13 +123,34 @@ fun PrayerTimesSection(
                 color = TextSoft
               )
             }
-            Text(
-              text = "${prayerState.hijriDate} | ${prayerState.locationName}",
-              fontFamily = FontFamily.SansSerif,
-              fontSize = 10.5.sp,
-              color = BronzeGold,
-              maxLines = 1
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Text(
+                text = "${prayerState.hijriDate} | ${prayerState.locationName}",
+                fontFamily = FontFamily.SansSerif,
+                fontSize = 10.5.sp,
+                color = BronzeGold,
+                maxLines = 1
+              )
+              if (currentTimeFormatted != null) {
+                Spacer(modifier = Modifier.width(6.dp))
+                Surface(
+                  shape = RoundedCornerShape(6.dp),
+                  color = InkTeal.copy(alpha = 0.1f),
+                  modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .then(if (onOpenTimezoneClick != null) Modifier.clickable { onOpenTimezoneClick() } else Modifier)
+                ) {
+                  Text(
+                    text = "🕒 $currentTimeFormatted",
+                    fontFamily = FontFamily.SansSerif,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = InkTeal,
+                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
+                  )
+                }
+              }
+            }
           }
         }
 

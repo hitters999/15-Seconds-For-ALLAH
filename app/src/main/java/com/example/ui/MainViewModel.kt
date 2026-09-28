@@ -14,8 +14,10 @@ import com.example.data.PrayerTimesState
 import com.example.data.UserAccountEntity
 import com.example.data.UserSettingsEntity
 import com.example.notification.NotificationHelper
+import com.example.util.AppTimeHelper
 import com.example.util.LocationHelper
 import com.example.util.SoundAndHaptics
+import java.util.TimeZone
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -130,9 +132,28 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     calculateActivityGrid(logs)
   }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+  // Clock ticker updated every 30 seconds
+  private val _clockTicker = MutableStateFlow(System.currentTimeMillis())
+
+  val activeTimeZone: StateFlow<TimeZone> = userSettings.map { settings ->
+    AppTimeHelper.getEffectiveTimeZone(settings.selectedTimezone)
+  }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppTimeHelper.getEffectiveTimeZone("Asia/Karachi"))
+
+  val currentTimeFormatted: StateFlow<String> = combine(activeTimeZone, _clockTicker) { tz, _ ->
+    AppTimeHelper.formatCurrentTime(tz)
+  }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppTimeHelper.formatCurrentTime(AppTimeHelper.getEffectiveTimeZone("Asia/Karachi")))
+
+  val currentDateFormatted: StateFlow<String> = combine(activeTimeZone, _clockTicker) { tz, _ ->
+    AppTimeHelper.formatCurrentDate(tz)
+  }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppTimeHelper.formatCurrentDate(AppTimeHelper.getEffectiveTimeZone("Asia/Karachi")))
+
+  val dynamicGreeting: StateFlow<Pair<String, String>> = combine(activeTimeZone, _clockTicker) { tz, _ ->
+    AppTimeHelper.getDynamicGreeting(tz)
+  }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppTimeHelper.getDynamicGreeting(AppTimeHelper.getEffectiveTimeZone("Asia/Karachi")))
+
   // Prayer Times State based on Public API & Geolocation
   private val _prayerTimesState = MutableStateFlow(
-    PrayerTimesService.computeDefaultPrayerState("کراچی، پاکستان (طے شدہ)")
+    PrayerTimesService.computeDefaultPrayerState("پاکستان کا معیاری وقت (PKT)", AppTimeHelper.getEffectiveTimeZone("Asia/Karachi"))
   )
   val prayerTimesState: StateFlow<PrayerTimesState> = _prayerTimesState.asStateFlow()
 
@@ -151,18 +172,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // Initial Prayer Times Fetch (tries GPS location or fallback)
     fetchPrayerTimes(useGps = true)
 
-    // Periodic 2-hour rotation checker loop & Prayer Times countdown ticker
+    // Periodic 30-second loop: updates clock ticker, dynamic greeting, and prayer countdown
     viewModelScope.launch {
       while (true) {
         val remaining = DhikrCatalog.getRemainingTimeInTwoHourWindowMillis()
-        delay(60_000L)
-        // Refresh prayer countdown & active prayer item dynamically every minute
+        delay(30_000L)
+        _clockTicker.value = System.currentTimeMillis()
+        // Refresh prayer countdown & active prayer item dynamically
         refreshPrayerCountdownOnly()
         // Trigger recomposition of rotated item if 2 hours elapsed
-        if (remaining <= 60_000L) {
+        if (remaining <= 30_000L) {
           _manualRotationOffset.value = _manualRotationOffset.value
         }
       }
+    }
+  }
+
+  fun updateSelectedTimezone(timezoneId: String) {
+    viewModelScope.launch {
+      val current = userSettings.value
+      val updated = current.copy(selectedTimezone = timezoneId)
+      repository.updateSettings(updated)
+      _clockTicker.value = System.currentTimeMillis()
+      fetchPrayerTimes(useGps = false)
     }
   }
 
@@ -182,7 +214,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
       }
 
-      val result = PrayerTimesService.fetchPrayerTimes(lat, lng, locationName)
+      val tzId = userSettings.value.selectedTimezone
+      val result = PrayerTimesService.fetchPrayerTimes(lat, lng, locationName, tzId)
       _prayerTimesState.value = result
     }
   }
@@ -197,6 +230,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val maghrib = current.items.find { it.id == "maghrib" }?.time24 ?: "18:18"
     val isha = current.items.find { it.id == "isha" }?.time24 ?: "19:32"
 
+    val tz = AppTimeHelper.getEffectiveTimeZone(userSettings.value.selectedTimezone)
     val updated = PrayerTimesService.computePrayerState(
       fajr = fajr,
       sunrise = sunrise,
@@ -206,7 +240,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
       isha = isha,
       locationName = current.locationName,
       hijriDate = current.hijriDate,
-      isGps = current.isGpsEnabled
+      isGps = current.isGpsEnabled,
+      timeZone = tz
     )
     _prayerTimesState.value = updated
   }
@@ -438,10 +473,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
   private fun calculateStreak(logs: List<MomentLogEntity>): Int {
     if (logs.isEmpty()) return 0
-    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    val tz = AppTimeHelper.getEffectiveTimeZone(userSettings.value.selectedTimezone)
+    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
+      timeZone = tz
+    }
     val datesSet = logs.map { it.dateKey }.toSet()
 
-    val cal = Calendar.getInstance()
+    val cal = Calendar.getInstance(tz)
     var streak = 0
     val todayKey = dateFormat.format(cal.time)
 
@@ -466,10 +504,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
   }
 
   private fun calculateActivityGrid(logs: List<MomentLogEntity>): List<DayActivity> {
-    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    val tz = AppTimeHelper.getEffectiveTimeZone(userSettings.value.selectedTimezone)
+    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).apply {
+      timeZone = tz
+    }
     val countsByDate = logs.groupingBy { it.dateKey }.eachCount()
 
-    val cal = Calendar.getInstance()
+    val cal = Calendar.getInstance(tz)
     val todayKey = dateFormat.format(cal.time)
 
     cal.add(Calendar.DAY_OF_YEAR, -34)

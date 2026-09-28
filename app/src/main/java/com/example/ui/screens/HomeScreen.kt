@@ -33,6 +33,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
@@ -82,6 +83,8 @@ import com.example.ui.components.BismillahCalligraphyHeader
 import com.example.ui.components.ParchmentBackground
 import com.example.ui.components.PrayerTimesSection
 import com.example.ui.components.SerenePrimaryButton
+import com.example.ui.components.TimezoneSelectionDialog
+import com.example.util.AppTimeHelper
 import com.example.ui.theme.ArabicFontFamily
 import com.example.ui.theme.BronzeGold
 import com.example.ui.theme.BronzeGoldDark
@@ -140,8 +143,11 @@ fun HomeScreen(
     }
   }
 
-  val (urduGreeting, salamText) = getDynamicGreeting()
-  val currentDateFormatted = getFormattedCurrentDate()
+  val (urduGreeting, salamText) by viewModel.dynamicGreeting.collectAsState()
+  val currentDateFormatted by viewModel.currentDateFormatted.collectAsState()
+  val currentTimeFormatted by viewModel.currentTimeFormatted.collectAsState()
+  var showTimezoneDialog by remember { mutableStateOf(false) }
+
   val dailyGoal = userSettings.dailyGoal.coerceAtLeast(1)
   val todayCount = todayLogs.size
 
@@ -196,14 +202,54 @@ fun HomeScreen(
             }
           }
 
-          Spacer(modifier = Modifier.height(2.dp))
+          Spacer(modifier = Modifier.height(3.dp))
 
-          Text(
-            text = "🌙 ${prayerTimesState.hijriDate}  •  $currentDateFormatted",
-            fontFamily = FontFamily.SansSerif,
-            fontSize = 11.sp,
-            color = subtitleColor
-          )
+          // Date & Clickable Timezone/Clock Pill
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+          ) {
+            Text(
+              text = "🌙 ${prayerTimesState.hijriDate}",
+              fontFamily = FontFamily.SansSerif,
+              fontSize = 10.5.sp,
+              color = subtitleColor
+            )
+
+            Spacer(modifier = Modifier.width(6.dp))
+
+            // Time & Timezone Pill
+            val tzOption = AppTimeHelper.getTimezoneOption(userSettings.selectedTimezone)
+            Surface(
+              shape = RoundedCornerShape(8.dp),
+              color = goldColor.copy(alpha = 0.12f),
+              border = BorderStroke(0.8.dp, goldColor.copy(alpha = 0.4f)),
+              modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .clickable { showTimezoneDialog = true }
+                .testTag("timezone_badge")
+            ) {
+              Row(
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                Icon(
+                  imageVector = Icons.Filled.AccessTime,
+                  contentDescription = "Timezone",
+                  tint = goldColor,
+                  modifier = Modifier.size(11.dp)
+                )
+                Spacer(modifier = Modifier.width(3.dp))
+                Text(
+                  text = "$currentTimeFormatted • ${tzOption.flagEmoji} ${tzOption.offsetLabel}",
+                  fontFamily = FontFamily.SansSerif,
+                  fontSize = 10.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = titleColor
+                )
+              }
+            }
+          }
         }
 
         // Actions: Quick Prayer Times Dialog Button & Brand Logo

@@ -37,7 +37,8 @@ data class UserSettingsEntity(
   val totalScore: Int = 340,
   val spiritualRank: String = "صاحبِ استقامت (Master of Devotion)",
   val isSignedIn: Boolean = false,
-  val authProvider: String = "Guest" // "Google", "Email", "Phone", "Guest"
+  val authProvider: String = "Guest", // "Google", "Email", "Phone", "Guest"
+  val selectedTimezone: String = "Asia/Karachi"
 )
 
 @Entity(tableName = "registered_accounts")

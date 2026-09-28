@@ -2,6 +2,7 @@ package com.example.data
 
 import android.content.Context
 import android.util.Log
+import com.example.util.AppTimeHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -22,22 +23,19 @@ object PrayerTimesService {
   suspend fun fetchPrayerTimes(
     latitude: Double?,
     longitude: Double?,
-    locationNameOverride: String? = null
+    locationNameOverride: String? = null,
+    timezoneId: String? = null
   ): PrayerTimesState = withContext(Dispatchers.IO) {
+    val targetTz = AppTimeHelper.getEffectiveTimeZone(timezoneId)
+    val tzOption = AppTimeHelper.getTimezoneOption(timezoneId)
+
     try {
       val now = System.currentTimeMillis() / 1000
       val urlString = if (latitude != null && longitude != null) {
         "https://api.aladhan.com/v1/timings/$now?latitude=$latitude&longitude=$longitude&method=1"
       } else {
-        // Fallback to Karachi or timezone city
-        val tz = TimeZone.getDefault().id
-        val city = if (tz.contains("Karachi") || tz.contains("Pakistan")) "Karachi"
-                   else if (tz.contains("London")) "London"
-                   else if (tz.contains("New_York")) "New York"
-                   else if (tz.contains("Dubai")) "Dubai"
-                   else if (tz.contains("Riyadh")) "Riyadh"
-                   else "Karachi"
-        val country = if (city == "Karachi") "Pakistan" else ""
+        val city = tzOption.city
+        val country = tzOption.country
         "https://api.aladhan.com/v1/timingsByCity?city=$city&country=$country&method=1"
       }
 
@@ -61,8 +59,6 @@ object PrayerTimesService {
           val timings = data.getJSONObject("timings")
           val dateObj = data.optJSONObject("date")
           val hijriObj = dateObj?.optJSONObject("hijri")
-          val metaObj = data.optJSONObject("meta")
-          val timezone = metaObj?.optString("timezone") ?: TimeZone.getDefault().id
 
           val fajr = cleanTimeString(timings.getString("Fajr"))
           val sunrise = cleanTimeString(timings.getString("Sunrise"))
@@ -79,7 +75,7 @@ object PrayerTimesService {
 
           val locationLabel = locationNameOverride
             ?: if (latitude != null) "موجودہ مقام (GPS)"
-            else "کراچی (طے شدہ وقت)"
+            else "${tzOption.urduName} (${tzOption.offsetLabel})"
 
           return@withContext computePrayerState(
             fajr = fajr,
@@ -90,7 +86,8 @@ object PrayerTimesService {
             isha = isha,
             locationName = locationLabel,
             hijriDate = formattedHijri,
-            isGps = latitude != null
+            isGps = latitude != null,
+            timeZone = targetTz
           )
         }
       }
@@ -99,7 +96,8 @@ object PrayerTimesService {
     }
 
     // Return sensible fallback if API network error
-    computeDefaultPrayerState(locationNameOverride ?: "کراچی، پاکستان (طے شدہ وقت)")
+    val fallbackLabel = locationNameOverride ?: "${tzOption.urduName} (${tzOption.offsetLabel})"
+    computeDefaultPrayerState(fallbackLabel, targetTz)
   }
 
   private fun cleanTimeString(raw: String): String {
@@ -128,9 +126,10 @@ object PrayerTimesService {
     isha: String,
     locationName: String,
     hijriDate: String,
-    isGps: Boolean
+    isGps: Boolean,
+    timeZone: TimeZone = AppTimeHelper.getEffectiveTimeZone(null)
   ): PrayerTimesState {
-    val calendar = Calendar.getInstance()
+    val calendar = Calendar.getInstance(timeZone)
     val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
     val currentMinute = calendar.get(Calendar.MINUTE)
     val currentTotalMinutes = currentHour * 60 + currentMinute
@@ -185,7 +184,9 @@ object PrayerTimesService {
       )
     }
 
-    val gregorianFmt = SimpleDateFormat("dd MMMM yyyy", Locale("ur", "PK"))
+    val gregorianFmt = SimpleDateFormat("dd MMMM yyyy", Locale("ur", "PK")).apply {
+      this.timeZone = timeZone
+    }
     val gregorianDate = gregorianFmt.format(Date())
 
     return PrayerTimesState(
@@ -212,7 +213,10 @@ object PrayerTimesService {
     }
   }
 
-  fun computeDefaultPrayerState(locationName: String): PrayerTimesState {
+  fun computeDefaultPrayerState(
+    locationName: String,
+    timeZone: TimeZone = AppTimeHelper.getEffectiveTimeZone(null)
+  ): PrayerTimesState {
     return computePrayerState(
       fajr = "05:08",
       sunrise = "06:22",
@@ -222,7 +226,9 @@ object PrayerTimesService {
       isha = "19:32",
       locationName = locationName,
       hijriDate = "16 ربیع الثانی 1448ھ",
-      isGps = false
+      isGps = false,
+      timeZone = timeZone
     )
   }
 }
+
