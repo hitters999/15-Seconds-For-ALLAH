@@ -37,6 +37,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,6 +56,7 @@ import com.example.ui.Screen
 import com.example.ui.components.BismillahCalligraphyHeader
 import com.example.ui.components.MechanicalClock15s
 import com.example.ui.components.ParchmentBackground
+import com.example.ui.components.PosterPreviewDialog
 import com.example.ui.theme.ArabicFontFamily
 import com.example.ui.theme.BronzeGold
 import com.example.ui.theme.BronzeGoldLight
@@ -83,6 +87,7 @@ fun MomentScreen(
   val scrollState = rememberScrollState()
   val context = LocalContext.current
   val isDark = isSystemInDarkTheme()
+  var showPosterPreview by remember { mutableStateOf(false) }
 
   val cardBg = if (isDark) DarkCardSurface else ParchmentCard
   val cardBorder = if (isDark) DarkCardBorder else ParchmentBorder
@@ -139,7 +144,7 @@ fun MomentScreen(
 
         Row(verticalAlignment = Alignment.CenterVertically) {
           IconButton(
-            onClick = { ShareHelper.shareDhikrPoster(context, selectedDhikr) },
+            onClick = { showPosterPreview = true },
             modifier = Modifier.size(36.dp)
           ) {
             Icon(
@@ -315,34 +320,72 @@ fun MomentScreen(
 
       Spacer(modifier = Modifier.height(14.dp))
 
-      // Direct WhatsApp Poster Share Button
-      Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = Color(0xFF25D366),
-        modifier = Modifier
-          .fillMaxWidth()
-          .clip(RoundedCornerShape(12.dp))
-          .clickable {
-            ShareHelper.shareToWhatsApp(context, selectedDhikr)
-          }
+      // Poster Share & Preview Buttons Row
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
       ) {
-        Row(
-          modifier = Modifier.padding(vertical = 12.dp),
-          horizontalArrangement = Arrangement.Center,
-          verticalAlignment = Alignment.CenterVertically
+        Surface(
+          shape = RoundedCornerShape(12.dp),
+          color = Color(0xFF25D366),
+          modifier = Modifier
+            .weight(1.3f)
+            .clip(RoundedCornerShape(12.dp))
+            .clickable {
+              ShareHelper.shareToWhatsApp(context, selectedDhikr)
+            }
         ) {
-          Icon(Icons.Filled.Share, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
-          Spacer(modifier = Modifier.width(8.dp))
-          Text(
-            text = "واٹس ایپ اسٹیٹس پر پوسٹر شیئر کریں (WhatsApp Status)",
-            fontFamily = FontFamily.SansSerif,
-            fontSize = 12.5.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White
-          )
+          Row(
+            modifier = Modifier.padding(vertical = 12.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Icon(Icons.Filled.Share, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+              text = "واٹس ایپ اسٹیٹس",
+              fontFamily = UrduFontFamily,
+              fontSize = 12.5.sp,
+              fontWeight = FontWeight.Bold,
+              color = Color.White
+            )
+          }
+        }
+
+        Surface(
+          shape = RoundedCornerShape(12.dp),
+          color = cardBg,
+          border = BorderStroke(1.dp, goldColor),
+          modifier = Modifier
+            .weight(1f)
+            .clip(RoundedCornerShape(12.dp))
+            .clickable {
+              showPosterPreview = true
+            }
+        ) {
+          Row(
+            modifier = Modifier.padding(vertical = 12.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Text(
+              text = "پوسٹر دیکھیں",
+              fontFamily = UrduFontFamily,
+              fontSize = 12.5.sp,
+              fontWeight = FontWeight.Bold,
+              color = titleColor
+            )
+          }
         }
       }
     }
+  }
+
+  if (showPosterPreview) {
+    PosterPreviewDialog(
+      dhikr = selectedDhikr,
+      onDismiss = { showPosterPreview = false }
+    )
   }
 }
 

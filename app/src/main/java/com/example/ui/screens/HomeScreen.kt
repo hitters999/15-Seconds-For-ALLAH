@@ -81,6 +81,7 @@ import com.example.ui.MainViewModel
 import com.example.ui.Screen
 import com.example.ui.components.BismillahCalligraphyHeader
 import com.example.ui.components.ParchmentBackground
+import com.example.ui.components.PosterPreviewDialog
 import com.example.ui.components.PrayerTimesSection
 import com.example.ui.components.SerenePrimaryButton
 import com.example.ui.components.TimezoneSelectionDialog
@@ -148,6 +149,7 @@ fun HomeScreen(
   val currentDateFormatted by viewModel.currentDateFormatted.collectAsState()
   val currentTimeFormatted by viewModel.currentTimeFormatted.collectAsState()
   var showTimezoneDialog by remember { mutableStateOf(false) }
+  var previewPosterItem by remember { mutableStateOf<DhikrItem?>(null) }
 
   val dailyGoal = userSettings.dailyGoal.coerceAtLeast(1)
   val todayCount = todayLogs.size
@@ -846,13 +848,13 @@ fun HomeScreen(
 
             Surface(
               shape = RoundedCornerShape(10.dp),
-              color = goldColor.copy(alpha = 0.10f),
-              border = BorderStroke(1.dp, goldColor.copy(alpha = 0.3f)),
+              color = goldColor.copy(alpha = 0.14f),
+              border = BorderStroke(1.dp, goldColor.copy(alpha = 0.4f)),
               modifier = Modifier
-                .weight(1f)
+                .weight(1.1f)
                 .clip(RoundedCornerShape(10.dp))
                 .clickable {
-                  ShareHelper.shareDhikrPoster(context, featuredItem)
+                  previewPosterItem = featuredItem
                 }
                 .testTag("all_share_button")
             ) {
@@ -862,18 +864,18 @@ fun HomeScreen(
                 verticalAlignment = Alignment.CenterVertically
               ) {
                 Icon(
-                  imageVector = Icons.Filled.Share,
+                  imageVector = Icons.Filled.AutoAwesome,
                   contentDescription = null,
                   tint = goldColor,
                   modifier = Modifier.size(14.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                  text = "شیئر (All)",
-                  fontFamily = FontFamily.SansSerif,
-                  fontSize = 11.sp,
+                  text = "پوسٹر دیکھیں",
+                  fontFamily = UrduFontFamily,
+                  fontSize = 11.5.sp,
                   fontWeight = FontWeight.Bold,
-                  color = goldColor
+                  color = titleColor
                 )
               }
             }
@@ -1168,6 +1170,14 @@ fun HomeScreen(
       onSelectTimezone = { tzId ->
         viewModel.updateSelectedTimezone(tzId)
       }
+    )
+  }
+
+  // Islamic Poster Full-Screen Preview Dialog
+  previewPosterItem?.let { item ->
+    PosterPreviewDialog(
+      dhikr = item,
+      onDismiss = { previewPosterItem = null }
     )
   }
 }
