@@ -16,15 +16,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
@@ -54,15 +55,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.data.DhikrItem
 import com.example.ui.theme.BronzeGold
-import com.example.ui.theme.DarkCardSurface
-import com.example.ui.theme.InkTeal
+import com.example.ui.theme.BronzeGoldLight
 import com.example.ui.theme.UrduFontFamily
 import com.example.util.PosterGenerator
 import com.example.util.ShareHelper
@@ -78,6 +77,7 @@ fun PosterPreviewDialog(
   val context = LocalContext.current
   var posterBitmap by remember { mutableStateOf<Bitmap?>(null) }
   var isLoading by remember { mutableStateOf(true) }
+  val dialogScrollState = rememberScrollState()
 
   LaunchedEffect(dhikr.id) {
     isLoading = true
@@ -93,16 +93,19 @@ fun PosterPreviewDialog(
     properties = DialogProperties(usePlatformDefaultWidth = false)
   ) {
     Card(
-      shape = RoundedCornerShape(24.dp),
+      shape = RoundedCornerShape(26.dp),
       colors = CardDefaults.cardColors(containerColor = Color(0xFF061B17)),
       border = BorderStroke(1.5.dp, BronzeGold),
       modifier = Modifier
-        .fillMaxWidth(0.92f)
-        .padding(vertical = 16.dp)
+        .fillMaxWidth(0.94f)
+        .padding(vertical = 12.dp)
         .testTag("poster_preview_dialog")
     ) {
       Column(
-        modifier = Modifier.padding(16.dp),
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(14.dp)
+          .verticalScroll(dialogScrollState),
         horizontalAlignment = Alignment.CenterHorizontally
       ) {
         // Header
@@ -124,14 +127,14 @@ fun PosterPreviewDialog(
             Spacer(modifier = Modifier.width(10.dp))
             Column {
               Text(
-                text = "پوسٹر کا منظر (Islamic Poster)",
+                text = "15 Seconds 4 Allah • پوسٹر منظر",
                 fontFamily = UrduFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
                 color = Color(0xFFF5E6BE)
               )
               Text(
-                text = "WhatsApp Status & Stories HD Poster",
+                text = "WhatsApp Status & Social Stories HD Ready",
                 fontFamily = FontFamily.SansSerif,
                 fontSize = 10.sp,
                 color = Color(0xFF94A3B8)
@@ -147,30 +150,29 @@ fun PosterPreviewDialog(
           }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
-        // Poster Preview Frame (Aspect Ratio 9:16)
+        // Poster Preview Surface (Entire image fitted with full visibility)
         Surface(
           shape = RoundedCornerShape(16.dp),
           color = Color(0xFF030E0B),
           border = BorderStroke(1.dp, BronzeGold.copy(alpha = 0.5f)),
           modifier = Modifier
             .fillMaxWidth()
-            .heightIn(max = 440.dp)
-            .aspectRatio(9f / 15f)
+            .heightIn(min = 360.dp, max = 500.dp)
         ) {
           Box(
             modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
           ) {
             if (isLoading || posterBitmap == null) {
-              Column(horizontalAlignment = Alignment.CenterHorizontally) {
+              Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
                 CircularProgressIndicator(color = BronzeGold, strokeWidth = 2.5.dp, modifier = Modifier.size(36.dp))
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                  text = "پوسٹر تیار ہو رہا ہے...",
+                  text = "شاہکار پوسٹر تیار ہو رہا ہے...",
                   fontFamily = UrduFontFamily,
-                  fontSize = 13.sp,
+                  fontSize = 13.5.sp,
                   color = Color(0xFFE2E8F0)
                 )
               }
@@ -187,7 +189,7 @@ fun PosterPreviewDialog(
           }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         // Action Buttons Row
         Row(
@@ -207,16 +209,16 @@ fun PosterPreviewDialog(
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
               .weight(1.3f)
-              .height(44.dp)
+              .height(46.dp)
               .testTag("preview_share_whatsapp")
           ) {
             Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-              text = "WhatsApp اسٹیٹس",
+              text = "واٹس ایپ اسٹیٹس",
               fontFamily = UrduFontFamily,
               fontWeight = FontWeight.Bold,
-              fontSize = 12.5.sp
+              fontSize = 13.sp
             )
           }
 
@@ -234,14 +236,14 @@ fun PosterPreviewDialog(
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
               .weight(1f)
-              .height(44.dp)
+              .height(46.dp)
               .testTag("preview_share_all")
           ) {
             Text(
               text = "دیگر ایپس",
               fontFamily = UrduFontFamily,
               fontWeight = FontWeight.Bold,
-              fontSize = 12.sp
+              fontSize = 12.5.sp
             )
           }
 
@@ -253,11 +255,11 @@ fun PosterPreviewDialog(
               }
             },
             modifier = Modifier
-              .size(44.dp)
+              .size(46.dp)
               .background(BronzeGold.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
               .testTag("preview_save_gallery")
           ) {
-            Icon(Icons.Filled.Download, contentDescription = "Save to Gallery", tint = BronzeGold, modifier = Modifier.size(20.dp))
+            Icon(Icons.Filled.Download, contentDescription = "Save to Gallery", tint = BronzeGoldLight, modifier = Modifier.size(22.dp))
           }
         }
       }
@@ -267,7 +269,7 @@ fun PosterPreviewDialog(
 
 private fun savePosterToGallery(context: Context, bitmap: Bitmap, title: String) {
   try {
-    val filename = "15Seconds_${title}_${System.currentTimeMillis()}.png"
+    val filename = "15Seconds4Allah_${title}_${System.currentTimeMillis()}.png"
     var fos: OutputStream? = null
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -290,7 +292,7 @@ private fun savePosterToGallery(context: Context, bitmap: Bitmap, title: String)
 
     fos?.use {
       bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
-      Toast.makeText(context, "پوسٹر گیلری میں محفوظ ہو گیا! ✓", Toast.LENGTH_SHORT).show()
+      Toast.makeText(context, "پوسٹر کامیابی سے گیلری میں محفوظ ہو گیا! ✓", Toast.LENGTH_SHORT).show()
     } ?: run {
       Toast.makeText(context, "پوسٹر محفوظ ہو گیا۔", Toast.LENGTH_SHORT).show()
     }

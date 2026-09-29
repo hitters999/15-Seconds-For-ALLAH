@@ -119,15 +119,15 @@ fun LibraryScreen(
         Text(
           text = "Sacred Library • مقدس ذخیرہ",
           fontFamily = FontFamily.Serif,
-          fontSize = 24.sp,
+          fontSize = 22.sp,
           fontWeight = FontWeight.Bold,
           color = titleColor
         )
-        Spacer(modifier = Modifier.height(2.dp))
+        Spacer(modifier = Modifier.height(3.dp))
         Text(
           text = "${allItems.size}+ تمام اذکار، دعائیں اور 30ویں سپارے کی آیات مع اردو ترجمہ",
-          fontFamily = FontFamily.SansSerif,
-          fontSize = 11.5.sp,
+          fontFamily = UrduFontFamily,
+          fontSize = 13.sp,
           color = subtitleColor
         )
       }
@@ -139,7 +139,7 @@ fun LibraryScreen(
         placeholder = {
           Text(
             text = "تلاش کریں (Search dhikr, du'a, urdu…)",
-            fontFamily = FontFamily.SansSerif,
+            fontFamily = UrduFontFamily,
             fontSize = 12.5.sp,
             color = subtitleColor
           )
@@ -187,7 +187,7 @@ fun LibraryScreen(
             label = {
               Text(
                 text = category,
-                fontFamily = FontFamily.SansSerif,
+                fontFamily = UrduFontFamily,
                 fontSize = 12.sp,
                 color = if (isSelected) Color.White else titleColor
               )
@@ -276,8 +276,8 @@ private fun DhikrItemCard(
         ) {
           Text(
             text = item.category,
-            fontFamily = FontFamily.SansSerif,
-            fontSize = 10.sp,
+            fontFamily = UrduFontFamily,
+            fontSize = 11.sp,
             color = goldColor,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
@@ -287,8 +287,9 @@ private fun DhikrItemCard(
         Row(verticalAlignment = Alignment.CenterVertically) {
           Text(
             text = "15s",
-            fontFamily = FontFamily.SansSerif,
+            fontFamily = FontFamily.Serif,
             fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
             color = subtitleColor,
             modifier = Modifier.padding(end = 4.dp)
           )
@@ -364,10 +365,10 @@ private fun DhikrItemCard(
       // English Translation
       Text(
         text = item.translation,
-        fontFamily = FontFamily.SansSerif,
-        fontSize = 11.sp,
+        fontFamily = FontFamily.Serif,
+        fontSize = 11.5.sp,
         color = subtitleColor,
-        lineHeight = 16.sp
+        lineHeight = 17.sp
       )
     }
   }

@@ -28,6 +28,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,6 +43,7 @@ import com.example.notification.NotificationHelper
 import com.example.ui.MainViewModel
 import com.example.ui.Screen
 import com.example.ui.components.FloatingReminderBanner
+import com.example.ui.components.OnboardingPermissionDialog
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.InsightsScreen
 import com.example.ui.screens.LibraryScreen
@@ -58,10 +62,11 @@ class MainActivity : ComponentActivity() {
 
   private val viewModel: MainViewModel by viewModels()
 
-  private val requestPermissionLauncher = registerForActivityResult(
-    ActivityResultContracts.RequestPermission()
-  ) { isGranted ->
-    if (isGranted) {
+  private val requestPermissionsLauncher = registerForActivityResult(
+    ActivityResultContracts.RequestMultiplePermissions()
+  ) { permissions ->
+    val notifGranted = permissions[Manifest.permission.POST_NOTIFICATIONS] ?: true
+    if (notifGranted) {
       NotificationHelper.scheduleReminder(this, 60L)
     }
   }
@@ -70,12 +75,25 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
     enableEdgeToEdge()
 
-    // Ensure Notification Permission is requested on Android 13+ (API 33+)
+    // Create Notification Channels immediately
+    NotificationHelper.createNotificationChannel(this)
+
+    // Request all critical permissions upfront on startup so user never has to search settings
+    val permissionsToRequest = mutableListOf<String>()
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
       if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-        requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
       }
     }
+    if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+      permissionsToRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+    }
+    if (permissionsToRequest.isNotEmpty()) {
+      requestPermissionsLauncher.launch(permissionsToRequest.toTypedArray())
+    }
+
+    // Ensure reminders are always scheduled and active
+    NotificationHelper.scheduleReminder(this, 60L)
 
     viewModel.handleIntent(intent)
 
@@ -94,9 +112,20 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainApp(viewModel: MainViewModel) {
+  val context = LocalContext.current
   val currentScreen by viewModel.currentScreen.collectAsState()
   val showFloatingBanner by viewModel.showFloatingBanner.collectAsState()
   val floatingBannerDhikr by viewModel.floatingBannerDhikr.collectAsState()
+
+  var showOnboardingPermission by remember {
+    mutableStateOf(!NotificationHelper.hasNotificationPermission(context))
+  }
+
+  if (showOnboardingPermission) {
+    OnboardingPermissionDialog(
+      onDismiss = { showOnboardingPermission = false }
+    )
+  }
 
   Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(

@@ -123,7 +123,7 @@ fun FloatingReminderBanner(
 
           Column {
             Text(
-              text = "15 Seconds for Allah",
+              text = "15 Seconds 4 Allah",
               fontFamily = FontFamily.Serif,
               fontWeight = FontWeight.Bold,
               fontSize = 13.sp,
@@ -131,8 +131,8 @@ fun FloatingReminderBanner(
             )
             Text(
               text = "یاد دہانی • ${dhikr.source}",
-              fontFamily = FontFamily.SansSerif,
-              fontSize = 10.sp,
+              fontFamily = UrduFontFamily,
+              fontSize = 11.sp,
               color = BronzeGoldLight
             )
           }
@@ -178,7 +178,7 @@ fun FloatingReminderBanner(
       Text(
         text = dhikr.translationUrdu,
         fontFamily = UrduFontFamily,
-        fontSize = 12.sp,
+        fontSize = 12.5.sp,
         color = Color(0xFFE0E0E0),
         textAlign = TextAlign.Right,
         maxLines = 2,
@@ -207,9 +207,9 @@ fun FloatingReminderBanner(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
           ) {
-            Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(13.dp))
+            Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color(0xFF09221D), modifier = Modifier.size(14.dp))
             Spacer(modifier = Modifier.width(4.dp))
-            Text("15s ذکر شروع کریں", fontFamily = FontFamily.SansSerif, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("15s ذکر شروع کریں", fontFamily = UrduFontFamily, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = Color(0xFF09221D))
           }
         }
 
@@ -228,7 +228,7 @@ fun FloatingReminderBanner(
           ) {
             Icon(Icons.Filled.Share, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
             Spacer(modifier = Modifier.width(4.dp))
-            Text("پوسٹر WhatsApp", fontFamily = FontFamily.SansSerif, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("پوسٹر WhatsApp", fontFamily = UrduFontFamily, fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = Color.White)
           }
         }
 

@@ -71,9 +71,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.accounts.AccountManager
+import android.app.Activity
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 import com.example.R
 import com.example.data.DhikrItem
 import com.example.notification.FloatingPopupManager
+import com.example.notification.NotificationHelper
 import com.example.ui.MainViewModel
 import com.example.ui.Screen
 import com.example.ui.components.ParchmentBackground
@@ -91,6 +100,7 @@ import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSoft
 import com.example.ui.theme.UrduFontFamily
 import com.example.util.ShareHelper
+import java.util.Locale
 
 @Composable
 fun ProfileScreen(
@@ -115,6 +125,85 @@ fun ProfileScreen(
   var tempName by remember { mutableStateOf("") }
   var tempIdentifier by remember { mutableStateOf("") }
   var selectedAuthTab by remember { mutableIntStateOf(0) } // 0: Google, 1: Mobile, 2: Email
+
+  // -------------------------------------------------------------
+  // Real Google Sign-In & System Account Picker Setup
+  // -------------------------------------------------------------
+  val gso = remember {
+    GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+      .requestEmail()
+      .requestProfile()
+      .build()
+  }
+  val googleSignInClient = remember { GoogleSignIn.getClient(context, gso) }
+
+  val systemAccountPickerLauncher = rememberLauncherForActivityResult(
+    ActivityResultContracts.StartActivityForResult()
+  ) { result ->
+    if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+      val accountName = result.data?.getStringExtra(AccountManager.KEY_ACCOUNT_NAME)
+      if (!accountName.isNullOrBlank()) {
+        val displayName = accountName.substringBefore("@")
+          .replace(".", " ")
+          .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+        viewModel.updateAccountProfile(accountName, displayName, "Google")
+        Toast.makeText(context, "گوگل اکاؤنٹ منسلک: $displayName", Toast.LENGTH_LONG).show()
+        showAuthDialog = false
+      }
+    }
+  }
+
+  val googleSignInLauncher = rememberLauncherForActivityResult(
+    ActivityResultContracts.StartActivityForResult()
+  ) { result ->
+    val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+    try {
+      val account = task.getResult(ApiException::class.java)
+      val email = account.email ?: "user@gmail.com"
+      val name = account.displayName ?: account.givenName ?: email.substringBefore("@")
+      viewModel.updateAccountProfile(email, name, "Google")
+      Toast.makeText(context, "خوش آمدید! گوگل اکاؤنٹ منسلک: $name", Toast.LENGTH_LONG).show()
+      showAuthDialog = false
+    } catch (e: Exception) {
+      // Fallback to Android System Account Picker if Play Services client fails
+      try {
+        val pickerIntent = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+          AccountManager.newChooseAccountIntent(null, null, arrayOf("com.google"), null, null, null, null)
+        } else {
+          AccountManager.newChooseAccountIntent(null, null, arrayOf("com.google"), false, null, null, null, null)
+        }
+        systemAccountPickerLauncher.launch(pickerIntent)
+      } catch (_: Exception) {
+        Toast.makeText(context, "گوگل اکاؤنٹ کا انتخاب کریں", Toast.LENGTH_SHORT).show()
+      }
+    }
+  }
+
+  val notificationPermissionLauncher = rememberLauncherForActivityResult(
+    ActivityResultContracts.RequestPermission()
+  ) { isGranted ->
+    if (isGranted) {
+      NotificationHelper.scheduleReminder(context, 60L)
+      Toast.makeText(context, "نوٹیفکیشن کی اجازت فعال کر دی گئی ہے ✓", Toast.LENGTH_SHORT).show()
+    }
+  }
+
+  fun launchGoogleSignIn() {
+    try {
+      googleSignInLauncher.launch(googleSignInClient.signInIntent)
+    } catch (_: Exception) {
+      try {
+        val pickerIntent = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+          AccountManager.newChooseAccountIntent(null, null, arrayOf("com.google"), null, null, null, null)
+        } else {
+          AccountManager.newChooseAccountIntent(null, null, arrayOf("com.google"), false, null, null, null, null)
+        }
+        systemAccountPickerLauncher.launch(pickerIntent)
+      } catch (_: Exception) {
+        showAuthDialog = true
+      }
+    }
+  }
 
   ParchmentBackground(modifier = modifier, showMadinahBackdrop = false) {
     Column(
@@ -273,11 +362,48 @@ fun ProfileScreen(
               Spacer(modifier = Modifier.width(6.dp))
               Text(
                 text = userSettings.spiritualRank,
-                fontFamily = FontFamily.Serif,
+                fontFamily = UrduFontFamily,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color(0xFFFFE8B2)
               )
+            }
+          }
+
+          if (!userSettings.isSignedIn) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Surface(
+              shape = RoundedCornerShape(12.dp),
+              color = Color.White,
+              border = BorderStroke(1.dp, Color(0xFFD4AF37)),
+              shadowElevation = 3.dp,
+              modifier = Modifier
+                .fillMaxWidth(0.92f)
+                .clip(RoundedCornerShape(12.dp))
+                .clickable { launchGoogleSignIn() }
+                .testTag("header_google_signin_btn")
+            ) {
+              Row(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+              ) {
+                Text(
+                  text = "G",
+                  fontFamily = FontFamily.Serif,
+                  fontWeight = FontWeight.Bold,
+                  fontSize = 18.sp,
+                  color = Color(0xFF4285F4)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                  text = "گوگل سے لاگ ان کریں (Sign In with Google)",
+                  fontFamily = UrduFontFamily,
+                  fontWeight = FontWeight.Bold,
+                  fontSize = 12.5.sp,
+                  color = Color(0xFF1F2937)
+                )
+              }
             }
           }
         }
@@ -663,12 +789,101 @@ fun ProfileScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
           ) {
-            Text("گھنٹی اور بیپ (Beep & Chime)", fontFamily = FontFamily.SansSerif, fontSize = 13.5.sp, color = TextPrimary)
+            Text("گھنٹی اور بیپ (Beep & Chime)", fontFamily = UrduFontFamily, fontSize = 13.5.sp, color = TextPrimary)
             Switch(
               checked = userSettings.soundEnabled,
               onCheckedChange = { viewModel.toggleSound(it) },
               colors = SwitchDefaults.colors(checkedThumbColor = InkTeal, checkedTrackColor = BronzeGoldLight)
             )
+          }
+          DividerLine()
+
+          // Notification Permission Status Check
+          val hasNotificationPerm = NotificationHelper.hasNotificationPermission(context)
+          Row(
+            modifier = Modifier
+              .fillMaxWidth()
+              .padding(vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
+              Text(
+                text = "نوٹیفکیشن کی حالت (Notification Status)",
+                fontFamily = UrduFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.5.sp,
+                color = TextPrimary
+              )
+              Text(
+                text = if (hasNotificationPerm) "ہر گھنٹے بعد ذکر و دعا کی یاد دہانی فعال ہے ✓" else "سسٹم نوٹیفکیشن کی اجازت درکار ہے",
+                fontFamily = UrduFontFamily,
+                fontSize = 11.5.sp,
+                color = if (hasNotificationPerm) Color(0xFF2E7D32) else Color(0xFFD32F2F)
+              )
+            }
+            Surface(
+              shape = RoundedCornerShape(8.dp),
+              color = if (hasNotificationPerm) Color(0xFF1B5E20) else BronzeGold,
+              modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .clickable {
+                  if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU && !hasNotificationPerm) {
+                    notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                  } else {
+                    NotificationHelper.scheduleReminder(context, 60L)
+                    Toast.makeText(context, "یاد دہانیاں شیڈول ہیں ✓", Toast.LENGTH_SHORT).show()
+                  }
+                }
+            ) {
+              Text(
+                text = if (hasNotificationPerm) "فعال ✓" else "اجازت دیں",
+                fontFamily = UrduFontFamily,
+                fontSize = 11.5.sp,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+              )
+            }
+          }
+
+          DividerLine()
+
+          // Instant Test Notification Button
+          Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = BronzeGold.copy(alpha = 0.14f),
+            border = BorderStroke(1.dp, BronzeGold.copy(alpha = 0.4f)),
+            modifier = Modifier
+              .fillMaxWidth()
+              .clip(RoundedCornerShape(12.dp))
+              .clickable {
+                val dhikr = viewModel.rotatingFeaturedDhikr.value
+                NotificationHelper.showDhikrNotification(context, dhikr)
+                Toast.makeText(context, "🔔 ٹیسٹ نوٹیفکیشن اور بیپ روانہ کر دی گئی ہے!", Toast.LENGTH_SHORT).show()
+              }
+              .testTag("send_test_notification_btn")
+          ) {
+            Row(
+              modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.Center
+            ) {
+              Icon(
+                imageVector = Icons.Filled.NotificationsActive,
+                contentDescription = null,
+                tint = BronzeGold,
+                modifier = Modifier.size(18.dp)
+              )
+              Spacer(modifier = Modifier.width(8.dp))
+              Text(
+                text = "🔔 فوری ٹیسٹ نوٹیفکیشن بھیجیں (Send Test Notification)",
+                fontFamily = UrduFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.sp,
+                color = InkTeal
+              )
+            }
           }
         }
       }
@@ -691,37 +906,105 @@ fun ProfileScreen(
       text = {
         Column {
           TabRow(selectedTabIndex = selectedAuthTab) {
-            Tab(selected = selectedAuthTab == 0, onClick = { selectedAuthTab = 0 }, text = { Text("Google", fontSize = 11.sp) })
-            Tab(selected = selectedAuthTab == 1, onClick = { selectedAuthTab = 1 }, text = { Text("موبائل نمبر", fontSize = 11.sp) })
-            Tab(selected = selectedAuthTab == 2, onClick = { selectedAuthTab = 2 }, text = { Text("Email", fontSize = 11.sp) })
+            Tab(selected = selectedAuthTab == 0, onClick = { selectedAuthTab = 0 }, text = { Text("Google", fontFamily = FontFamily.Serif, fontSize = 11.5.sp) })
+            Tab(selected = selectedAuthTab == 1, onClick = { selectedAuthTab = 1 }, text = { Text("موبائل نمبر", fontFamily = UrduFontFamily, fontSize = 11.5.sp) })
+            Tab(selected = selectedAuthTab == 2, onClick = { selectedAuthTab = 2 }, text = { Text("Email", fontFamily = FontFamily.Serif, fontSize = 11.5.sp) })
           }
 
           Spacer(modifier = Modifier.height(14.dp))
 
           when (selectedAuthTab) {
             0 -> {
-              Text(
-                text = "اپنے گوگل اکاؤنٹ سے سائن ان کریں تاکہ آپ کا اسکور، محفوظ آیات اور ہسٹری محفوظ رہیں:",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 11.5.sp,
-                color = TextSoft
-              )
-              Spacer(modifier = Modifier.height(10.dp))
-              OutlinedTextField(
-                value = tempName,
-                onValueChange = { tempName = it },
-                label = { Text("آپ کا نام (Your Name)") },
-                singleLine = true,
+              Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = Color(0xFFF9FBFB),
+                border = BorderStroke(1.dp, BronzeGold.copy(alpha = 0.35f)),
                 modifier = Modifier.fillMaxWidth()
-              )
-              Spacer(modifier = Modifier.height(8.dp))
-              OutlinedTextField(
-                value = tempIdentifier,
-                onValueChange = { tempIdentifier = it },
-                label = { Text("Google Email") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-              )
+              ) {
+                Column(
+                  modifier = Modifier.padding(14.dp),
+                  horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                  Text(
+                    text = "گوگل اکاؤنٹ سے خودکار کنکشن",
+                    fontFamily = UrduFontFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = InkTeal,
+                    textAlign = TextAlign.Center
+                  )
+                  Spacer(modifier = Modifier.height(4.dp))
+                  Text(
+                    text = "اپنے موبائل میں موجود گوگل اکاؤنٹ سے منسلک ہوں تاکہ آپ کا اسکور، محفوظ آیات اور تسلسل محفوظ رہیں۔",
+                    fontFamily = UrduFontFamily,
+                    fontSize = 11.5.sp,
+                    color = TextSoft,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 18.sp
+                  )
+                  Spacer(modifier = Modifier.height(12.dp))
+
+                  // Prominent Google Sign-In Action Button
+                  Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color.White,
+                    border = BorderStroke(1.2.dp, Color(0xFFD4AF37)),
+                    shadowElevation = 2.dp,
+                    modifier = Modifier
+                      .fillMaxWidth()
+                      .clip(RoundedCornerShape(12.dp))
+                      .clickable { launchGoogleSignIn() }
+                      .testTag("auth_dialog_google_btn")
+                  ) {
+                    Row(
+                      modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
+                      verticalAlignment = Alignment.CenterVertically,
+                      horizontalArrangement = Arrangement.Center
+                    ) {
+                      Text(
+                        text = "G",
+                        fontFamily = FontFamily.Serif,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = Color(0xFF4285F4)
+                      )
+                      Spacer(modifier = Modifier.width(10.dp))
+                      Text(
+                        text = "موبائل گوگل اکاؤنٹ منتخب کریں (Sign In)",
+                        fontFamily = UrduFontFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        color = Color(0xFF1F2937)
+                      )
+                    }
+                  }
+
+                  Spacer(modifier = Modifier.height(12.dp))
+
+                  Text(
+                    text = "یا اگر چاہیں تو دستی درج کریں:",
+                    fontFamily = UrduFontFamily,
+                    fontSize = 10.5.sp,
+                    color = TextSoft
+                  )
+                  Spacer(modifier = Modifier.height(6.dp))
+                  OutlinedTextField(
+                    value = tempName,
+                    onValueChange = { tempName = it },
+                    label = { Text("آپ کا نام (Your Name)", fontFamily = UrduFontFamily) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                  )
+                  Spacer(modifier = Modifier.height(6.dp))
+                  OutlinedTextField(
+                    value = tempIdentifier,
+                    onValueChange = { tempIdentifier = it },
+                    label = { Text("Google Email", fontFamily = FontFamily.Serif) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                  )
+                }
+              }
             }
             1 -> {
               Text(

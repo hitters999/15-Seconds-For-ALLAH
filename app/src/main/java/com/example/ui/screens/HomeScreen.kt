@@ -172,142 +172,152 @@ fun HomeScreen(
       Spacer(modifier = Modifier.height(12.dp))
 
       // ==========================================
-      // SECTION 1: HEADER & GREETING
+      // SECTION 1: ROYAL ISLAMIC BRAND BAR & SPIRITUAL MARQUEE
       // ==========================================
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+      Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = cardBg),
+        border = BorderStroke(1.2.dp, goldColor.copy(alpha = 0.5f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        modifier = Modifier.fillMaxWidth()
       ) {
-        Column(modifier = Modifier.weight(1f)) {
-          Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-              text = urduGreeting,
-              fontFamily = UrduFontFamily,
-              fontWeight = FontWeight.Bold,
-              fontSize = 18.sp,
-              color = titleColor
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Surface(
-              shape = RoundedCornerShape(10.dp),
-              color = goldColor.copy(alpha = 0.16f),
-              border = BorderStroke(0.8.dp, goldColor.copy(alpha = 0.35f))
-            ) {
-              Text(
-                text = "✨ $salamText",
-                fontFamily = UrduFontFamily,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = goldColor,
-                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
-              )
-            }
-          }
-
-          Spacer(modifier = Modifier.height(3.dp))
-
-          // Date & Clickable Timezone/Clock Pill
+        Column(
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(14.dp)
+        ) {
+          // Top Row: Logo + App Name + Live Timezone Capsule
           Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
           ) {
-            Text(
-              text = "🌙 ${prayerTimesState.hijriDate}",
-              fontFamily = FontFamily.SansSerif,
-              fontSize = 10.5.sp,
-              color = subtitleColor
-            )
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              modifier = Modifier.clickable { viewModel.navigateTo(Screen.Profile) }
+            ) {
+              Box(
+                modifier = Modifier
+                  .size(44.dp)
+                  .clip(CircleShape)
+                  .border(1.5.dp, goldColor, CircleShape)
+                  .background(Color.White)
+                  .testTag("home_brand_logo"),
+                contentAlignment = Alignment.Center
+              ) {
+                Image(
+                  painter = painterResource(id = R.drawable.app_brand_logo),
+                  contentDescription = "App Logo",
+                  modifier = Modifier.size(38.dp),
+                  contentScale = ContentScale.Fit
+                )
+              }
+              Spacer(modifier = Modifier.width(10.dp))
+              Column {
+                Text(
+                  text = "15 Seconds for Allah",
+                  fontFamily = FontFamily.Serif,
+                  fontWeight = FontWeight.Bold,
+                  fontSize = 16.5.sp,
+                  color = titleColor,
+                  letterSpacing = 0.3.sp
+                )
+                Text(
+                  text = "۱۵ سیکنڈز برائے اللہ • لمحہِ ذکر و دعا",
+                  fontFamily = UrduFontFamily,
+                  fontSize = 11.5.sp,
+                  color = goldColor
+                )
+              }
+            }
 
-            Spacer(modifier = Modifier.width(6.dp))
-
-            // Time & Timezone Pill
+            // Live Clock & Timezone Pill
             val tzOption = AppTimeHelper.getTimezoneOption(userSettings.selectedTimezone)
             Surface(
-              shape = RoundedCornerShape(8.dp),
+              shape = RoundedCornerShape(16.dp),
               color = goldColor.copy(alpha = 0.12f),
-              border = BorderStroke(0.8.dp, goldColor.copy(alpha = 0.4f)),
+              border = BorderStroke(1.dp, goldColor.copy(alpha = 0.40f)),
               modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(16.dp))
                 .clickable { showTimezoneDialog = true }
                 .testTag("timezone_badge")
             ) {
               Row(
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
                 verticalAlignment = Alignment.CenterVertically
               ) {
-                Icon(
-                  imageVector = Icons.Filled.AccessTime,
-                  contentDescription = "Timezone",
-                  tint = goldColor,
-                  modifier = Modifier.size(11.dp)
-                )
-                Spacer(modifier = Modifier.width(3.dp))
+                Icon(Icons.Filled.AccessTime, contentDescription = null, tint = goldColor, modifier = Modifier.size(12.dp))
+                Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                  text = "$currentTimeFormatted • ${tzOption.flagEmoji} ${tzOption.offsetLabel}",
-                  fontFamily = FontFamily.SansSerif,
-                  fontSize = 10.sp,
+                  text = "$currentTimeFormatted • ${tzOption.flagEmoji}",
+                  fontFamily = FontFamily.Serif,
+                  fontSize = 11.sp,
                   fontWeight = FontWeight.Bold,
                   color = titleColor
                 )
               }
             }
           }
-        }
 
-        // Actions: Quick Prayer Times Dialog Button & Brand Logo
-        Row(
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-          // Subtle, non-intrusive Prayer Times trigger
-          Surface(
-            shape = RoundedCornerShape(12.dp),
-            color = cardBg,
-            border = BorderStroke(1.dp, cardBorder),
-            modifier = Modifier
-              .clip(RoundedCornerShape(12.dp))
-              .clickable { showPrayerTimesDialog = true }
-              .testTag("open_prayer_times_button")
-          ) {
-            Row(
-              modifier = Modifier.padding(horizontal = 9.dp, vertical = 7.dp),
-              verticalAlignment = Alignment.CenterVertically
-            ) {
-              Icon(
-                imageVector = Icons.Filled.Mosque,
-                contentDescription = "Prayer Times",
-                tint = goldColor,
-                modifier = Modifier.size(15.dp)
-              )
-              Spacer(modifier = Modifier.width(4.dp))
-              Text(
-                text = "نماز",
-                fontFamily = UrduFontFamily,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = titleColor
-              )
-            }
-          }
+          Spacer(modifier = Modifier.height(10.dp))
 
-          // Official Brand Logo in Header
+          // Subtle hairline divider
           Box(
             modifier = Modifier
-              .size(44.dp)
-              .clip(CircleShape)
-              .border(1.5.dp, goldColor, CircleShape)
-              .background(cardBg)
-              .clickable { viewModel.navigateTo(Screen.Profile) }
-              .testTag("home_brand_logo"),
-            contentAlignment = Alignment.Center
+              .fillMaxWidth()
+              .height(0.8.dp)
+              .background(goldColor.copy(alpha = 0.25f))
+          )
+
+          Spacer(modifier = Modifier.height(10.dp))
+
+          // Bottom Row: Salam & Dynamic Greeting + Prayer Times Action
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
           ) {
-            Image(
-              painter = painterResource(id = R.drawable.app_brand_logo),
-              contentDescription = "15 Seconds for Allah Logo",
-              modifier = Modifier.size(40.dp),
-              contentScale = ContentScale.Fit
-            )
+            Column(modifier = Modifier.weight(1f)) {
+              Text(
+                text = "السلام علیکم ورحمۃ اللہ",
+                fontFamily = UrduFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp,
+                color = titleColor
+              )
+              Text(
+                text = "$urduGreeting • $salamText",
+                fontFamily = UrduFontFamily,
+                fontSize = 12.sp,
+                color = goldColor
+              )
+            }
+
+            // Prayer Times Button
+            Surface(
+              shape = RoundedCornerShape(12.dp),
+              color = goldColor.copy(alpha = 0.14f),
+              border = BorderStroke(1.dp, goldColor.copy(alpha = 0.45f)),
+              modifier = Modifier
+                .clip(RoundedCornerShape(12.dp))
+                .clickable { showPrayerTimesDialog = true }
+                .testTag("open_prayer_times_button")
+            ) {
+              Row(
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                Icon(Icons.Filled.Mosque, contentDescription = null, tint = goldColor, modifier = Modifier.size(15.dp))
+                Spacer(modifier = Modifier.width(5.dp))
+                Text(
+                  text = "اوقاتِ نماز",
+                  fontFamily = UrduFontFamily,
+                  fontSize = 12.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = titleColor
+                )
+              }
+            }
           }
         }
       }
@@ -838,8 +848,8 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                   text = "پوسٹر WhatsApp",
-                  fontFamily = FontFamily.SansSerif,
-                  fontSize = 11.sp,
+                  fontFamily = UrduFontFamily,
+                  fontSize = 11.5.sp,
                   fontWeight = FontWeight.Bold,
                   color = Color(0xFF1E8E3E)
                 )

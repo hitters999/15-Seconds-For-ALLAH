@@ -66,17 +66,62 @@ object NotificationHelper {
     // Play requested "Beep" sound
     SoundAndHaptics(context).playBeep()
 
-    // Ensure status bar notification tray is canceled so NO single long line notification appears
+    // 1. Post a high-priority heads-up notification in the notification bar
+    val openIntent = Intent(context, MainActivity::class.java).apply {
+      flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+      putExtra("OPEN_DHIKR_ID", dhikr.id)
+    }
+    val contentPendingIntent = PendingIntent.getActivity(
+      context,
+      NOTIFICATION_ID,
+      openIntent,
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
+    // Full screen intent to wake up screen
+    val popupIntent = Intent(context, PopupNotificationActivity::class.java).apply {
+      flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+      putExtra("DHIKR_ID", dhikr.id)
+    }
+    val fullScreenPendingIntent = PendingIntent.getActivity(
+      context,
+      NOTIFICATION_ID + 1,
+      popupIntent,
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
+    val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+      .setSmallIcon(R.drawable.app_brand_logo)
+      .setContentTitle("✨ 15 Seconds 4 Allah • یاد دہانی")
+      .setContentText("${dhikr.arabic} • ${dhikr.translationUrdu}")
+      .setStyle(
+        NotificationCompat.BigTextStyle()
+          .bigText("${dhikr.arabic}\n\n📖 اردو: ${dhikr.translationUrdu}\n\n📍 ${dhikr.source}")
+          .setSummaryText("15 Seconds 4 Allah • یادِ الٰہی")
+      )
+      .setPriority(NotificationCompat.PRIORITY_MAX)
+      .setCategory(NotificationCompat.CATEGORY_ALARM)
+      .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+      .setAutoCancel(true)
+      .setContentIntent(contentPendingIntent)
+      .setFullScreenIntent(fullScreenPendingIntent, true)
+      .addAction(
+        R.drawable.ic_launcher_fg_img,
+        "15s ذکر شروع کریں",
+        contentPendingIntent
+      )
+      .build()
+
     try {
-      val notificationManager = NotificationManagerCompat.from(context)
-      notificationManager.cancel(NOTIFICATION_ID)
+      if (hasNotificationPermission(context)) {
+        NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
+      }
     } catch (_: Exception) {}
 
-    // ONLY SHOW THE HERO POPUP NOTIFICATION / WINDOW ("Sirf Popup notification/Window rakhni hy , bs")
+    // 2. Also trigger the floating window / popup
     if (FloatingPopupManager.canDrawOverlays(context)) {
       FloatingPopupManager.showFloatingPopup(context, dhikr)
     } else {
-      // If overlay permission not granted yet, display the transparent popup window directly!
       PopupNotificationActivity.start(context, dhikr)
     }
   }

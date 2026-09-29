@@ -134,8 +134,8 @@ fun MomentScreen(
         ) {
           Text(
             text = selectedDhikr.source,
-            fontFamily = FontFamily.SansSerif,
-            fontSize = 11.sp,
+            fontFamily = FontFamily.Serif,
+            fontSize = 11.5.sp,
             color = goldColor,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
@@ -290,11 +290,11 @@ fun MomentScreen(
           // English Translation
           Text(
             text = selectedDhikr.translation,
-            fontFamily = FontFamily.SansSerif,
-            fontSize = 11.5.sp,
+            fontFamily = FontFamily.Serif,
+            fontSize = 12.sp,
             color = titleColor,
             textAlign = TextAlign.Center,
-            lineHeight = 16.sp,
+            lineHeight = 17.sp,
             modifier = Modifier.fillMaxWidth()
           )
 

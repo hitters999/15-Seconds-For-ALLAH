@@ -21,8 +21,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -50,12 +53,10 @@ import com.example.data.DhikrItem
 import com.example.ui.theme.ArabicFontFamily
 import com.example.ui.theme.BronzeGold
 import com.example.ui.theme.BronzeGoldLight
+import com.example.ui.theme.DarkCardBorder
+import com.example.ui.theme.DarkCardSurface
 import com.example.ui.theme.InkTeal
-import com.example.ui.theme.ParchmentBorder
-import com.example.ui.theme.ParchmentCard
-import com.example.ui.theme.ParchmentSubtle
-import com.example.ui.theme.ParchmentSurface
-import com.example.ui.theme.TextSoft
+import com.example.ui.theme.UrduFontFamily
 import com.example.ui.theme.UrduNastaliqFontFamily
 import com.example.util.ShareHelper
 
@@ -75,7 +76,7 @@ fun DhikrReminderPopupDialog(
   ) {
     Card(
       shape = RoundedCornerShape(26.dp),
-      colors = CardDefaults.cardColors(containerColor = ParchmentSurface),
+      colors = CardDefaults.cardColors(containerColor = Color(0xFF071F1B)),
       border = BorderStroke(1.5.dp, BronzeGold),
       elevation = CardDefaults.cardElevation(defaultElevation = 16.dp),
       modifier = modifier
@@ -87,7 +88,7 @@ fun DhikrReminderPopupDialog(
         modifier = Modifier
           .fillMaxWidth()
           .verticalScroll(scrollState)
-          .padding(20.dp),
+          .padding(18.dp),
         horizontalAlignment = Alignment.CenterHorizontally
       ) {
         // Top Row: Dismiss icon & Share Icon
@@ -98,14 +99,15 @@ fun DhikrReminderPopupDialog(
         ) {
           Surface(
             shape = RoundedCornerShape(10.dp),
-            color = ParchmentSubtle
+            color = Color(0x33B8863B),
+            border = BorderStroke(0.8.dp, BronzeGold.copy(alpha = 0.4f))
           ) {
             Text(
               text = "وقت ہو گیا ہے • یاد دہانی",
-              fontFamily = FontFamily.SansSerif,
-              fontWeight = FontWeight.Medium,
-              fontSize = 11.sp,
-              color = BronzeGold,
+              fontFamily = UrduFontFamily,
+              fontWeight = FontWeight.Bold,
+              fontSize = 11.5.sp,
+              color = BronzeGoldLight,
               modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
             )
           }
@@ -114,7 +116,7 @@ fun DhikrReminderPopupDialog(
             // Share Button
             Surface(
               shape = CircleShape,
-              color = ParchmentSubtle,
+              color = Color(0x33B8863B),
               modifier = Modifier
                 .size(32.dp)
                 .clip(CircleShape)
@@ -124,7 +126,7 @@ fun DhikrReminderPopupDialog(
                 Icon(
                   imageVector = Icons.Filled.Share,
                   contentDescription = "Share",
-                  tint = BronzeGold,
+                  tint = BronzeGoldLight,
                   modifier = Modifier.size(16.dp)
                 )
               }
@@ -139,20 +141,20 @@ fun DhikrReminderPopupDialog(
               Icon(
                 imageVector = Icons.Filled.Close,
                 contentDescription = "Close",
-                tint = TextSoft,
+                tint = Color(0xFF94A3B8),
                 modifier = Modifier.size(20.dp)
               )
             }
           }
         }
 
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         // Official Brand Logo in the Notification Popup
         Box(
           contentAlignment = Alignment.Center,
           modifier = Modifier
-            .size(76.dp)
+            .size(72.dp)
             .clip(CircleShape)
             .border(2.dp, BronzeGold, CircleShape)
             .background(Color.White)
@@ -160,8 +162,8 @@ fun DhikrReminderPopupDialog(
         ) {
           Image(
             painter = painterResource(id = R.drawable.app_brand_logo),
-            contentDescription = "15 Seconds for Allah Logo",
-            modifier = Modifier.size(72.dp),
+            contentDescription = "15 Seconds 4 Allah Logo",
+            modifier = Modifier.size(68.dp),
             contentScale = ContentScale.Fit
           )
         }
@@ -169,21 +171,20 @@ fun DhikrReminderPopupDialog(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-          text = "15 Seconds for Allah • ۱۵ سیکنڈز",
-          fontFamily = FontFamily.Serif,
-          fontSize = 16.sp,
+          text = "15 Seconds 4 Allah • یادِ الٰہی",
+          fontFamily = UrduFontFamily,
+          fontSize = 16.5.sp,
           fontWeight = FontWeight.Bold,
-          color = InkTeal,
-          letterSpacing = 0.5.sp
+          color = Color(0xFFFFF4D6)
         )
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // Sacred Content Box
+        // Sacred Content Box (Emerald Glass Frame)
         Surface(
-          shape = RoundedCornerShape(16.dp),
-          color = ParchmentCard,
-          border = BorderStroke(1.dp, ParchmentBorder),
+          shape = RoundedCornerShape(18.dp),
+          color = Color(0x4003110E),
+          border = BorderStroke(1.dp, BronzeGold.copy(alpha = 0.4f)),
           modifier = Modifier.fillMaxWidth()
         ) {
           Column(
@@ -194,7 +195,7 @@ fun DhikrReminderPopupDialog(
           ) {
             // Distinct Bismillah Header if Quranic Ayah
             if (dhikr.isQuranic) {
-              BismillahCalligraphyHeader(isDarkTheme = false)
+              BismillahCalligraphyHeader(isDarkTheme = true)
               Spacer(modifier = Modifier.height(8.dp))
             }
 
@@ -202,14 +203,14 @@ fun DhikrReminderPopupDialog(
             Text(
               text = dhikr.arabic,
               fontFamily = ArabicFontFamily,
-              fontWeight = FontWeight.Normal,
-              fontSize = if (dhikr.arabic.length > 70) 22.sp else 24.sp,
-              lineHeight = if (dhikr.arabic.length > 70) 33.sp else 36.sp,
-              color = InkTeal,
+              fontWeight = FontWeight.Bold,
+              fontSize = if (dhikr.arabic.length > 70) 22.sp else 25.sp,
+              lineHeight = if (dhikr.arabic.length > 70) 34.sp else 38.sp,
+              color = Color(0xFFFFFFFF),
               textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Urdu Translation with Authentic Noto Nastaliq Font
             Text(
@@ -217,149 +218,121 @@ fun DhikrReminderPopupDialog(
               fontFamily = UrduNastaliqFontFamily,
               fontWeight = FontWeight.Normal,
               fontSize = 14.sp,
-              color = Color(0xFF784508),
+              color = Color(0xFFFFE8B2),
               textAlign = TextAlign.Center,
               lineHeight = 24.sp
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // English Translation
-            Text(
-              text = dhikr.translation,
-              fontFamily = FontFamily.Serif,
-              fontSize = 11.5.sp,
-              color = TextSoft,
-              textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
+            if (dhikr.translation.isNotBlank()) {
+              Text(
+                text = dhikr.translation,
+                fontFamily = FontFamily.Serif,
+                fontSize = 11.5.sp,
+                color = Color(0xFFD4DCE8),
+                textAlign = TextAlign.Center
+              )
+              Spacer(modifier = Modifier.height(4.dp))
+            }
 
             // Source reference
             Text(
-              text = dhikr.source,
-              fontFamily = FontFamily.SansSerif,
-              fontSize = 10.5.sp,
-              color = BronzeGold,
+              text = "📍 ${dhikr.source}",
+              fontFamily = UrduFontFamily,
+              fontSize = 11.sp,
+              color = BronzeGoldLight,
               textAlign = TextAlign.Center
             )
           }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
-        // Quick Share Bar for WhatsApp, Facebook, X (Twitter)
+        // Big Action Button: Begin 15s Moment
+        Button(
+          onClick = onStartMoment,
+          colors = ButtonDefaults.buttonColors(
+            containerColor = BronzeGold,
+            contentColor = Color(0xFF09221D)
+          ),
+          shape = RoundedCornerShape(14.dp),
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .testTag("popup_start_moment_btn")
+        ) {
+          Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
+          Spacer(modifier = Modifier.width(8.dp))
+          Text(
+            text = "15 سیکنڈ کا ذکر شروع کریں (Begin Moment)",
+            fontFamily = UrduFontFamily,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold
+          )
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Quick Share Bar
         Row(
           modifier = Modifier.fillMaxWidth(),
           horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
           Surface(
-            shape = RoundedCornerShape(12.dp),
-            color = Color(0xFF25D366).copy(alpha = 0.12f),
+            shape = RoundedCornerShape(10.dp),
+            color = Color(0xFF25D366).copy(alpha = 0.16f),
             border = BorderStroke(1.dp, Color(0xFF25D366).copy(alpha = 0.5f)),
             modifier = Modifier
               .weight(1f)
-              .clip(RoundedCornerShape(12.dp))
+              .clip(RoundedCornerShape(10.dp))
               .clickable { ShareHelper.shareToWhatsApp(context, dhikr) }
           ) {
             Text(
-              text = "WhatsApp",
-              fontFamily = FontFamily.SansSerif,
-              fontWeight = FontWeight.SemiBold,
+              text = "واٹس ایپ اسٹیٹس",
+              fontFamily = UrduFontFamily,
+              fontWeight = FontWeight.Bold,
               fontSize = 11.5.sp,
-              color = Color(0xFF0F8A3C),
+              color = Color(0xFF25D366),
               textAlign = TextAlign.Center,
               modifier = Modifier.padding(vertical = 7.dp)
             )
           }
 
           Surface(
-            shape = RoundedCornerShape(12.dp),
-            color = Color(0xFF1877F2).copy(alpha = 0.12f),
-            border = BorderStroke(1.dp, Color(0xFF1877F2).copy(alpha = 0.5f)),
+            shape = RoundedCornerShape(10.dp),
+            color = BronzeGold.copy(alpha = 0.14f),
+            border = BorderStroke(1.dp, BronzeGold.copy(alpha = 0.4f)),
             modifier = Modifier
               .weight(1f)
-              .clip(RoundedCornerShape(12.dp))
-              .clickable { ShareHelper.shareToFacebook(context, dhikr) }
+              .clip(RoundedCornerShape(10.dp))
+              .clickable { ShareHelper.shareDhikrPoster(context, dhikr) }
           ) {
             Text(
-              text = "Facebook",
-              fontFamily = FontFamily.SansSerif,
-              fontWeight = FontWeight.SemiBold,
+              text = "پوسٹر شیئر کریں",
+              fontFamily = UrduFontFamily,
+              fontWeight = FontWeight.Bold,
               fontSize = 11.5.sp,
-              color = Color(0xFF1877F2),
-              textAlign = TextAlign.Center,
-              modifier = Modifier.padding(vertical = 7.dp)
-            )
-          }
-
-          Surface(
-            shape = RoundedCornerShape(12.dp),
-            color = Color(0xFF1DA1F2).copy(alpha = 0.12f),
-            border = BorderStroke(1.dp, Color(0xFF1DA1F2).copy(alpha = 0.5f)),
-            modifier = Modifier
-              .weight(1f)
-              .clip(RoundedCornerShape(12.dp))
-              .clickable { ShareHelper.shareToTwitter(context, dhikr) }
-          ) {
-            Text(
-              text = "X (Twitter)",
-              fontFamily = FontFamily.SansSerif,
-              fontWeight = FontWeight.SemiBold,
-              fontSize = 11.5.sp,
-              color = Color(0xFF0C7ABF),
+              color = BronzeGoldLight,
               textAlign = TextAlign.Center,
               modifier = Modifier.padding(vertical = 7.dp)
             )
           }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Big Action Button: Start 15s Moment
-        Surface(
-          shape = RoundedCornerShape(22.dp),
-          color = InkTeal,
-          border = BorderStroke(1.dp, BronzeGoldLight),
-          modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(22.dp))
-            .clickable(onClick = onStartMoment)
-            .testTag("popup_start_moment_btn")
-        ) {
-          Row(
-            modifier = Modifier.padding(vertical = 12.dp, horizontal = 16.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-          ) {
-            Icon(
-              imageVector = Icons.Filled.Timer,
-              contentDescription = null,
-              tint = BronzeGoldLight,
-              modifier = Modifier.size(18.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-              text = "15 سیکنڈ کا ذکر شروع کریں",
-              fontFamily = FontFamily.Serif,
-              fontSize = 14.sp,
-              fontWeight = FontWeight.Medium,
-              color = Color.White
-            )
-          }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         // Remind Later Button
         Text(
           text = "1 گھنٹے بعد دوبارہ یاد دلائیں",
-          fontFamily = FontFamily.SansSerif,
+          fontFamily = UrduFontFamily,
           fontSize = 12.sp,
-          color = TextSoft,
+          color = Color(0xFF94A3B8),
           modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
             .clickable(onClick = onDismiss)
-            .padding(6.dp)
+            .padding(horizontal = 12.dp, vertical = 4.dp)
         )
       }
     }

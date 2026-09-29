@@ -97,14 +97,14 @@ fun InsightsScreen(
         Text(
           text = "Spiritual Streak • روحانی استقامت",
           fontFamily = FontFamily.Serif,
-          fontSize = 24.sp,
+          fontSize = 22.sp,
           fontWeight = FontWeight.Bold,
           color = InkTeal
         )
         Text(
           text = "مسلسل اذکار کا ریکارڈ اور روحانی درجات کا مقابلہ",
           fontFamily = UrduFontFamily,
-          fontSize = 12.5.sp,
+          fontSize = 13.sp,
           color = BronzeGold
         )
       }
@@ -246,15 +246,15 @@ fun InsightsScreen(
               Column {
                 Text(
                   text = "روحانی لیگ (Devotion League)",
-                  fontFamily = FontFamily.Serif,
+                  fontFamily = UrduFontFamily,
                   fontWeight = FontWeight.Bold,
                   fontSize = 14.5.sp,
                   color = InkTeal
                 )
                 Text(
                   text = "روزانہ اذکار کا روحانی مقابلہ",
-                  fontFamily = FontFamily.SansSerif,
-                  fontSize = 10.5.sp,
+                  fontFamily = UrduFontFamily,
+                  fontSize = 11.sp,
                   color = TextSoft
                 )
               }
@@ -266,8 +266,8 @@ fun InsightsScreen(
             ) {
               Text(
                 text = "${userSettings.totalScore} pts",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 11.sp,
+                fontFamily = FontFamily.Serif,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = BronzeGoldLight,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -303,15 +303,15 @@ fun InsightsScreen(
             Column {
               Text(
                 text = "35 روزہ حاضری نامہ (Presence Grid)",
-                fontFamily = FontFamily.Serif,
+                fontFamily = UrduFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
                 color = InkTeal
               )
               Text(
                 text = "ہر بلاک ایک دن کے اذکار کی نشاندہی کرتا ہے",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 10.5.sp,
+                fontFamily = UrduFontFamily,
+                fontSize = 11.sp,
                 color = TextSoft
               )
             }
@@ -322,8 +322,8 @@ fun InsightsScreen(
             ) {
               Text(
                 text = "$totalMoments مکمل",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 10.5.sp,
+                fontFamily = UrduFontFamily,
+                fontSize = 11.sp,
                 color = BronzeGold,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
               )
@@ -373,8 +373,8 @@ private fun LeagueRow(
         ) {
           Text(
             text = rank,
-            fontFamily = FontFamily.SansSerif,
-            fontSize = 11.sp,
+            fontFamily = FontFamily.Serif,
+            fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             color = if (isCurrent) Color.White else TextPrimary
           )
@@ -382,8 +382,8 @@ private fun LeagueRow(
         Spacer(modifier = Modifier.width(10.dp))
         Text(
           text = title,
-          fontFamily = FontFamily.SansSerif,
-          fontSize = 12.sp,
+          fontFamily = UrduFontFamily,
+          fontSize = 13.sp,
           fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
           color = if (isCurrent) InkTeal else TextPrimary
         )
@@ -391,8 +391,8 @@ private fun LeagueRow(
 
       Text(
         text = if (isCurrent) "آپ کا درجہ ★" else pts,
-        fontFamily = FontFamily.SansSerif,
-        fontSize = 11.sp,
+        fontFamily = if (isCurrent) UrduFontFamily else FontFamily.Serif,
+        fontSize = 12.sp,
         fontWeight = FontWeight.Bold,
         color = if (isCurrent) BronzeGold else TextSoft
       )
