@@ -859,8 +859,8 @@ fun ProfileScreen(
               .clip(RoundedCornerShape(12.dp))
               .clickable {
                 val dhikr = viewModel.rotatingFeaturedDhikr.value
-                NotificationHelper.showDhikrNotification(context, dhikr)
-                Toast.makeText(context, "🔔 ٹیسٹ نوٹیفکیشن اور بیپ روانہ کر دی گئی ہے!", Toast.LENGTH_SHORT).show()
+                viewModel.sendTestNotificationNow(dhikr)
+                Toast.makeText(context, "🔔 پاپ اپ نوٹیفکیشن اور بیپ فعال ہے!", Toast.LENGTH_SHORT).show()
               }
               .testTag("send_test_notification_btn")
           ) {

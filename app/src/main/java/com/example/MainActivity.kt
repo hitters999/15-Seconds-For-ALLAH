@@ -42,7 +42,7 @@ import androidx.core.content.ContextCompat
 import com.example.notification.NotificationHelper
 import com.example.ui.MainViewModel
 import com.example.ui.Screen
-import com.example.ui.components.FloatingReminderBanner
+import com.example.ui.components.DhikrReminderPopupDialog
 import com.example.ui.components.OnboardingPermissionDialog
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.InsightsScreen
@@ -114,8 +114,8 @@ class MainActivity : ComponentActivity() {
 fun MainApp(viewModel: MainViewModel) {
   val context = LocalContext.current
   val currentScreen by viewModel.currentScreen.collectAsState()
-  val showFloatingBanner by viewModel.showFloatingBanner.collectAsState()
-  val floatingBannerDhikr by viewModel.floatingBannerDhikr.collectAsState()
+  val showReminderPopup by viewModel.showReminderPopup.collectAsState()
+  val reminderPopupDhikr by viewModel.reminderPopupDhikr.collectAsState()
 
   var showOnboardingPermission by remember {
     mutableStateOf(!NotificationHelper.hasNotificationPermission(context))
@@ -182,34 +182,16 @@ fun MainApp(viewModel: MainViewModel) {
       }
     }
 
-    // In-App 5-Second Non-Blocking Floating Top Banner
-    if (showFloatingBanner) {
-      val context = LocalContext.current
-      androidx.compose.runtime.LaunchedEffect(showFloatingBanner) {
-        kotlinx.coroutines.delay(5500L)
-        viewModel.dismissFloatingBanner()
-      }
-      Box(
-        modifier = Modifier
-          .align(Alignment.TopCenter)
-          .padding(top = 40.dp)
-      ) {
-        FloatingReminderBanner(
-          dhikr = floatingBannerDhikr,
-          countdownSeconds = 5,
-          onDismiss = { viewModel.dismissFloatingBanner() },
-          onBegin = {
-            viewModel.dismissFloatingBanner()
-            viewModel.selectDhikrForMoment(floatingBannerDhikr, startImmediately = true)
-          },
-          onShare = {
-            ShareHelper.shareDhikrPoster(context, floatingBannerDhikr)
-          },
-          onWhatsAppShare = {
-            ShareHelper.shareToWhatsApp(context, floatingBannerDhikr)
-          }
-        )
-      }
+    // Sacred Hero Popup Notification Dialog (Pure Dialog - No WhatsApp-like top banner)
+    if (showReminderPopup) {
+      DhikrReminderPopupDialog(
+        dhikr = reminderPopupDhikr,
+        onStartMoment = {
+          viewModel.dismissReminderPopup()
+          viewModel.selectDhikrForMoment(reminderPopupDhikr, startImmediately = true)
+        },
+        onDismiss = { viewModel.dismissReminderPopup() }
+      )
     }
   }
 }

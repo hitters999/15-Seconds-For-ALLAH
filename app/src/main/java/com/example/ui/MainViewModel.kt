@@ -112,12 +112,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
   private val _selectedCategory = MutableStateFlow("All (تمام 1000+)")
   val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
 
-  // 5s Non-Blocking Floating Top Banner State
-  private val _showFloatingBanner = MutableStateFlow(false)
-  val showFloatingBanner: StateFlow<Boolean> = _showFloatingBanner.asStateFlow()
+  // Sacred Popup Reminder Dialog State (Single unified popup - No WhatsApp-like double banner)
+  private val _showReminderPopup = MutableStateFlow(false)
+  val showReminderPopup: StateFlow<Boolean> = _showReminderPopup.asStateFlow()
 
-  private val _floatingBannerDhikr = MutableStateFlow(DhikrCatalog.items.first())
-  val floatingBannerDhikr: StateFlow<DhikrItem> = _floatingBannerDhikr.asStateFlow()
+  private val _reminderPopupDhikr = MutableStateFlow(DhikrCatalog.items.first())
+  val reminderPopupDhikr: StateFlow<DhikrItem> = _reminderPopupDhikr.asStateFlow()
+
+  // Backward compatibility aliases
+  val showFloatingBanner: StateFlow<Boolean> get() = _showReminderPopup.asStateFlow()
+  val floatingBannerDhikr: StateFlow<DhikrItem> get() = _reminderPopupDhikr.asStateFlow()
 
   // Streak & Statistics calculation
   val streakCount: StateFlow<Int> = allLogs.combine(todayLogs) { logs, _ ->
@@ -279,22 +283,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
   }
 
-  fun triggerFloatingBanner(dhikr: DhikrItem? = null) {
+  fun triggerReminderPopup(dhikr: DhikrItem? = null) {
     val targetDhikr = dhikr ?: rotatingFeaturedDhikr.value
-    _floatingBannerDhikr.value = targetDhikr
-    _showFloatingBanner.value = true
+    _reminderPopupDhikr.value = targetDhikr
+    _showReminderPopup.value = true
     soundAndHaptics.playBeep()
+  }
+
+  fun dismissReminderPopup() {
+    _showReminderPopup.value = false
+  }
+
+  fun triggerFloatingBanner(dhikr: DhikrItem? = null) {
+    triggerReminderPopup(dhikr)
   }
 
   fun dismissFloatingBanner() {
-    _showFloatingBanner.value = false
+    dismissReminderPopup()
   }
 
-  fun sendTestNotificationNow() {
-    val dhikr = rotatingFeaturedDhikr.value
-    soundAndHaptics.playBeep()
-    _floatingBannerDhikr.value = dhikr
-    _showFloatingBanner.value = true
+  fun sendTestNotificationNow(dhikr: DhikrItem? = null) {
+    triggerReminderPopup(dhikr)
   }
 
   fun toggleTimer() {

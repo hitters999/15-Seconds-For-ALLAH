@@ -531,9 +531,9 @@ fun HomeScreen(
             Column {
               Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                  text = "ہیرو پاپ اپ ونڈو (Popup Only)",
-                  fontFamily = FontFamily.SansSerif,
-                  fontSize = 12.sp,
+                  text = "ہیرو پاپ اپ نوٹیفکیشن (Just Popup)",
+                  fontFamily = UrduFontFamily,
+                  fontSize = 13.sp,
                   fontWeight = FontWeight.Bold,
                   color = titleColor
                 )
@@ -543,19 +543,19 @@ fun HomeScreen(
                   color = Color(0xFF2E7D32).copy(alpha = 0.15f)
                 ) {
                   Text(
-                    text = "فعال",
+                    text = "فعال ✓",
                     fontFamily = UrduFontFamily,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF2E7D32),
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
                   )
                 }
               }
               Text(
-                text = "صرف خوبصورت پاپ اپ ونڈو اور بیپ (کوئی سنگل ٹرے لائن نہیں)",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 10.sp,
+                text = "صرف خوبصورت پاپ اپ ونڈو اور بیپ (کوئی ڈبل / اسٹیٹس بینر نہیں)",
+                fontFamily = UrduFontFamily,
+                fontSize = 11.sp,
                 color = subtitleColor
               )
             }
@@ -563,7 +563,7 @@ fun HomeScreen(
 
           Spacer(modifier = Modifier.width(8.dp))
 
-          // 1-Click Test Button for 5-Second Hero Popup Window
+          // 1-Click Test Button for Hero Popup Window
           Surface(
             shape = RoundedCornerShape(8.dp),
             color = goldColor,
@@ -584,9 +584,9 @@ fun HomeScreen(
               )
               Spacer(modifier = Modifier.width(4.dp))
               Text(
-                text = "ٹیسٹ 5s",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 11.5.sp,
+                text = "ٹیسٹ پاپ اپ",
+                fontFamily = UrduFontFamily,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
               )

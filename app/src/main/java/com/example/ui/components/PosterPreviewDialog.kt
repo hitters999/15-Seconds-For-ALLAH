@@ -134,7 +134,7 @@ fun PosterPreviewDialog(
                 color = Color(0xFFF5E6BE)
               )
               Text(
-                text = "WhatsApp Status & Social Stories HD Ready",
+                text = "WhatsApp Channels & Facebook 1:1 HD Ready • مکمل بغیر کٹنگ",
                 fontFamily = FontFamily.SansSerif,
                 fontSize = 10.sp,
                 color = Color(0xFF94A3B8)
@@ -152,14 +152,14 @@ fun PosterPreviewDialog(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // Poster Preview Surface (Entire image fitted with full visibility)
+        // Poster Preview Surface (4:5 Social Media Aspect Ratio - No Cropping!)
         Surface(
           shape = RoundedCornerShape(16.dp),
           color = Color(0xFF030E0B),
           border = BorderStroke(1.dp, BronzeGold.copy(alpha = 0.5f)),
           modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 360.dp, max = 500.dp)
+            .padding(horizontal = 4.dp)
         ) {
           Box(
             modifier = Modifier.fillMaxWidth(),
@@ -215,10 +215,10 @@ fun PosterPreviewDialog(
             Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-              text = "واٹس ایپ اسٹیٹس",
+              text = "واٹس ایپ و چینل",
               fontFamily = UrduFontFamily,
               fontWeight = FontWeight.Bold,
-              fontSize = 13.sp
+              fontSize = 12.5.sp
             )
           }
 
@@ -240,10 +240,10 @@ fun PosterPreviewDialog(
               .testTag("preview_share_all")
           ) {
             Text(
-              text = "دیگر ایپس",
+              text = "دیگر ایپس (Facebook)",
               fontFamily = UrduFontFamily,
               fontWeight = FontWeight.Bold,
-              fontSize = 12.5.sp
+              fontSize = 11.5.sp
             )
           }
 
