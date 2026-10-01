@@ -3,6 +3,7 @@ package com.example.ui.screens
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,11 +13,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Clear
@@ -50,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.DhikrCatalog
 import com.example.data.DhikrItem
 import com.example.ui.MainViewModel
+import com.example.ui.Screen
 import com.example.ui.components.BismillahCalligraphyHeader
 import com.example.ui.components.ParchmentBackground
 import com.example.ui.theme.ArabicFontFamily
@@ -95,6 +99,13 @@ fun LibraryScreen(
     val matchesCategory = when {
       selectedCategory.startsWith("All") -> true
       selectedCategory.contains("Saved") || selectedCategory.contains("محفوظ") -> item.isBookmarked
+      selectedCategory.contains("بخاری") -> item.source.contains("بخاری") || item.category.contains("بخاری")
+      selectedCategory.contains("مسلم") -> item.source.contains("مسلم") || item.category.contains("مسلم")
+      selectedCategory.contains("ترمذی") -> item.source.contains("ترمذی") || item.category.contains("ترمذی")
+      selectedCategory.contains("داؤد") -> item.source.contains("داؤد") || item.category.contains("داؤد")
+      selectedCategory.contains("نسائی") -> item.source.contains("نسائی") || item.category.contains("نسائی")
+      selectedCategory.contains("ماجہ") -> item.source.contains("ماجہ") || item.category.contains("ماجہ")
+      selectedCategory.contains("مالک") -> item.source.contains("مالک") || item.category.contains("مالک")
       else -> item.category.contains(selectedCategory.take(10), ignoreCase = true) ||
         selectedCategory.contains(item.category.take(10), ignoreCase = true)
     }
@@ -103,6 +114,7 @@ fun LibraryScreen(
       item.translationUrdu.contains(searchQuery, ignoreCase = true) ||
       item.translation.contains(searchQuery, ignoreCase = true) ||
       item.category.contains(searchQuery, ignoreCase = true) ||
+      item.source.contains(searchQuery, ignoreCase = true) ||
       item.arabic.contains(searchQuery)
     matchesCategory && matchesSearch
   }
@@ -131,6 +143,83 @@ fun LibraryScreen(
           color = subtitleColor
         )
       }
+
+      // 36,000+ Complete Hadith Explorer Banner
+      Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isDark) Color(0xFF09292F) else Color(0xFFEAF5F3)),
+        border = BorderStroke(1.2.dp, goldColor.copy(alpha = 0.5f)),
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 22.dp)
+          .clip(RoundedCornerShape(16.dp))
+          .clickable { viewModel.navigateTo(Screen.HadithExplorer) }
+          .testTag("open_hadith_explorer_banner")
+      ) {
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+          Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+            Surface(
+              shape = RoundedCornerShape(10.dp),
+              color = goldColor.copy(alpha = 0.2f),
+              border = BorderStroke(1.dp, goldColor.copy(alpha = 0.4f)),
+              modifier = Modifier.size(42.dp)
+            ) {
+              Box(contentAlignment = Alignment.Center) {
+                Text("📚", fontSize = 20.sp)
+              }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column {
+              Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                  text = "مکمل صحاح ستہ و کتبِ سبعہ",
+                  fontFamily = UrduFontFamily,
+                  fontSize = 13.5.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = titleColor
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Surface(
+                  shape = RoundedCornerShape(4.dp),
+                  color = Color(0xFF2E7D32).copy(alpha = 0.15f)
+                ) {
+                  Text(
+                    text = "36,000+ احادیث",
+                    fontFamily = UrduFontFamily,
+                    fontSize = 9.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF2E7D32),
+                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                  )
+                }
+              }
+              Text(
+                text = "بخاری، مسلم، ترمذی وغیرہ کی ہر حدیث نمبر وار پڑھیں ➔",
+                fontFamily = UrduFontFamily,
+                fontSize = 11.sp,
+                color = subtitleColor
+              )
+            }
+          }
+
+          Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+            contentDescription = "Open Hadith Explorer",
+            tint = goldColor,
+            modifier = Modifier.size(18.dp)
+          )
+        }
+      }
+
+      Spacer(modifier = Modifier.height(12.dp))
 
       // Search Bar
       OutlinedTextField(
@@ -171,7 +260,31 @@ fun LibraryScreen(
           .testTag("library_search_input")
       )
 
-      Spacer(modifier = Modifier.height(12.dp))
+      Spacer(modifier = Modifier.height(10.dp))
+
+      Row(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 22.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Text(
+          text = "مجموعہ کتب و ابواب (Hadith Books & Categories)",
+          fontFamily = UrduFontFamily,
+          fontSize = 12.sp,
+          fontWeight = FontWeight.Bold,
+          color = subtitleColor
+        )
+        Text(
+          text = "${filteredItems.size} اذکار و احادیث",
+          fontFamily = UrduFontFamily,
+          fontSize = 11.5.sp,
+          color = goldColor
+        )
+      }
+
+      Spacer(modifier = Modifier.height(6.dp))
 
       // Category Filter Chips
       LazyRow(
@@ -370,6 +483,24 @@ private fun DhikrItemCard(
         color = subtitleColor,
         lineHeight = 17.sp
       )
+
+      if (item.source.isNotBlank()) {
+        Spacer(modifier = Modifier.height(6.dp))
+        Surface(
+          shape = RoundedCornerShape(6.dp),
+          color = goldColor.copy(alpha = 0.1f),
+          border = BorderStroke(0.6.dp, goldColor.copy(alpha = 0.3f))
+        ) {
+          Text(
+            text = "📖 ${item.source}",
+            fontFamily = UrduFontFamily,
+            fontSize = 11.sp,
+            color = goldColor,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+          )
+        }
+      }
     }
   }
 }

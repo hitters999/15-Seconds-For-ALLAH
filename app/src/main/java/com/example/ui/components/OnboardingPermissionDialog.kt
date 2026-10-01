@@ -75,7 +75,7 @@ fun OnboardingPermissionDialog(
     ActivityResultContracts.RequestPermission()
   ) { isGranted ->
     hasNotifPerm = isGranted
-    NotificationHelper.scheduleReminder(context, 60L)
+    NotificationHelper.scheduleReminder(context)
     if (isGranted) {
       onDismiss()
     }
@@ -179,7 +179,7 @@ fun OnboardingPermissionDialog(
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
               permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             } else {
-              NotificationHelper.scheduleReminder(context, 60L)
+              NotificationHelper.scheduleReminder(context)
               onDismiss()
             }
           },
@@ -207,7 +207,7 @@ fun OnboardingPermissionDialog(
 
         OutlinedButton(
           onClick = {
-            NotificationHelper.scheduleReminder(context, 60L)
+            NotificationHelper.scheduleReminder(context)
             onDismiss()
           },
           shape = RoundedCornerShape(14.dp),

@@ -531,7 +531,7 @@ fun HomeScreen(
             Column {
               Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                  text = "ہیرو پاپ اپ نوٹیفکیشن (Just Popup)",
+                  text = "فلوٹنگ پاپ اپ بینر (5s Non-Blocking)",
                   fontFamily = UrduFontFamily,
                   fontSize = 13.sp,
                   fontWeight = FontWeight.Bold,
@@ -543,7 +543,7 @@ fun HomeScreen(
                   color = Color(0xFF2E7D32).copy(alpha = 0.15f)
                 ) {
                   Text(
-                    text = "فعال ✓",
+                    text = "5 سیکنڈز • فعال ✓",
                     fontFamily = UrduFontFamily,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
@@ -553,7 +553,7 @@ fun HomeScreen(
                 }
               }
               Text(
-                text = "صرف خوبصورت پاپ اپ ونڈو اور بیپ (کوئی ڈبل / اسٹیٹس بینر نہیں)",
+                text = "5 سیکنڈز نان بلاکنگ پاپ اپ • بغیر رکے کام جاری رہے گا (15 منٹ شیڈول)",
                 fontFamily = UrduFontFamily,
                 fontSize = 11.sp,
                 color = subtitleColor
@@ -584,9 +584,9 @@ fun HomeScreen(
               )
               Spacer(modifier = Modifier.width(4.dp))
               Text(
-                text = "ٹیسٹ پاپ اپ",
+                text = "ٹیسٹ 5s پاپ اپ",
                 fontFamily = UrduFontFamily,
-                fontSize = 12.sp,
+                fontSize = 11.5.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
               )

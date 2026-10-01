@@ -50,3 +50,17 @@ data class UserAccountEntity(
   val totalScore: Int = 0,
   val joinedTimestamp: Long = System.currentTimeMillis()
 )
+
+@Entity(tableName = "hadith_cache", primaryKeys = ["bookKey", "hadithNumber"])
+data class HadithEntity(
+  val bookKey: String,
+  val hadithNumber: Int,
+  val bookNameUrdu: String,
+  val chapterName: String,
+  val arabicText: String,
+  val urduText: String,
+  val englishText: String = "",
+  val isBookmarked: Boolean = false,
+  val cachedAt: Long = System.currentTimeMillis()
+)
+

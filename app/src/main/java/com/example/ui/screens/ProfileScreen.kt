@@ -183,7 +183,7 @@ fun ProfileScreen(
     ActivityResultContracts.RequestPermission()
   ) { isGranted ->
     if (isGranted) {
-      NotificationHelper.scheduleReminder(context, 60L)
+      NotificationHelper.scheduleReminder(context)
       Toast.makeText(context, "نوٹیفکیشن کی اجازت فعال کر دی گئی ہے ✓", Toast.LENGTH_SHORT).show()
     }
   }
@@ -831,7 +831,7 @@ fun ProfileScreen(
                   if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU && !hasNotificationPerm) {
                     notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
                   } else {
-                    NotificationHelper.scheduleReminder(context, 60L)
+                    NotificationHelper.scheduleReminder(context)
                     Toast.makeText(context, "یاد دہانیاں شیڈول ہیں ✓", Toast.LENGTH_SHORT).show()
                   }
                 }
@@ -849,6 +849,74 @@ fun ProfileScreen(
 
           DividerLine()
 
+          // Popup Duration Controls (5s Non-blocking, 8s, 10s)
+          var currentPopupDuration by remember { mutableStateOf(NotificationHelper.getPopupDurationSeconds(context)) }
+          Column(
+            modifier = Modifier
+              .fillMaxWidth()
+              .padding(vertical = 10.dp)
+          ) {
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Text(
+                text = "پاپ اپ دورانیہ (Popup Duration)",
+                fontFamily = UrduFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.sp,
+                color = TextPrimary
+              )
+              Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = BronzeGold.copy(alpha = 0.2f)
+              ) {
+                Text(
+                  text = "5s Non-blocking • تجویز کردہ",
+                  fontFamily = UrduFontFamily,
+                  fontSize = 10.sp,
+                  color = BronzeGold,
+                  modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+              }
+            }
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+              listOf(5 to "5 سیکنڈز", 8 to "8 سیکنڈز", 10 to "10 سیکنڈز").forEach { (sec, label) ->
+                val isSelected = currentPopupDuration == sec
+                Surface(
+                  shape = RoundedCornerShape(10.dp),
+                  color = if (isSelected) InkTeal else Color(0x1A1B4E48),
+                  border = BorderStroke(1.dp, if (isSelected) BronzeGold else Color(0x331B4E48)),
+                  modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable {
+                      currentPopupDuration = sec
+                      NotificationHelper.savePopupDurationSeconds(context, sec)
+                      Toast.makeText(context, "پاپ اپ دورانیہ: $label سیٹ ہو گیا ✓", Toast.LENGTH_SHORT).show()
+                    }
+                ) {
+                  Text(
+                    text = label,
+                    fontFamily = UrduFontFamily,
+                    fontSize = 11.5.sp,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    color = if (isSelected) Color.White else TextPrimary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                  )
+                }
+              }
+            }
+          }
+
+          DividerLine()
+
           // Instant Test Notification Button
           Surface(
             shape = RoundedCornerShape(12.dp),
@@ -860,7 +928,7 @@ fun ProfileScreen(
               .clickable {
                 val dhikr = viewModel.rotatingFeaturedDhikr.value
                 viewModel.sendTestNotificationNow(dhikr)
-                Toast.makeText(context, "🔔 پاپ اپ نوٹیفکیشن اور بیپ فعال ہے!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "🔔 فلوٹنگ پاپ اپ بینر اور بیپ فعال ہے!", Toast.LENGTH_SHORT).show()
               }
               .testTag("send_test_notification_btn")
           ) {
@@ -877,7 +945,7 @@ fun ProfileScreen(
               )
               Spacer(modifier = Modifier.width(8.dp))
               Text(
-                text = "🔔 فوری ٹیسٹ نوٹیفکیشن بھیجیں (Send Test Notification)",
+                text = "🔔 5s فلوٹنگ پاپ اپ کا ٹیسٹ کریں (Preview 5s Popup)",
                 fontFamily = UrduFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 13.sp,

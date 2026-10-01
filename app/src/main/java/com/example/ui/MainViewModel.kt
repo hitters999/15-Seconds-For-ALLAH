@@ -8,6 +8,10 @@ import com.example.data.AppDatabase
 import com.example.data.DhikrCatalog
 import com.example.data.DhikrItem
 import com.example.data.DhikrRepository
+import com.example.data.HadithBookInfo
+import com.example.data.HadithCollections
+import com.example.data.HadithItemDetail
+import com.example.data.HadithRepository
 import com.example.data.MomentLogEntity
 import com.example.data.PrayerTimesService
 import com.example.data.PrayerTimesState
@@ -38,6 +42,7 @@ sealed class Screen(val route: String) {
   object Home : Screen("home")
   object Moment : Screen("moment")
   object Library : Screen("library")
+  object HadithExplorer : Screen("hadith_explorer")
   object Insights : Screen("insights")
   object Profile : Screen("profile")
 }
@@ -161,6 +166,79 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
   )
   val prayerTimesState: StateFlow<PrayerTimesState> = _prayerTimesState.asStateFlow()
 
+  // ==========================================
+  // 36,000+ HADITH EXPLORER (7 AUTHENTIC BOOKS)
+  // ==========================================
+  private val _selectedHadithBook = MutableStateFlow<HadithBookInfo>(HadithCollections.books[0])
+  val selectedHadithBook: StateFlow<HadithBookInfo> = _selectedHadithBook.asStateFlow()
+
+  private val _currentHadithNumber = MutableStateFlow<Int>(1)
+  val currentHadithNumber: StateFlow<Int> = _currentHadithNumber.asStateFlow()
+
+  private val _hadithLoading = MutableStateFlow<Boolean>(false)
+  val hadithLoading: StateFlow<Boolean> = _hadithLoading.asStateFlow()
+
+  private val _currentHadithDetail = MutableStateFlow<HadithItemDetail?>(null)
+  val currentHadithDetail: StateFlow<HadithItemDetail?> = _currentHadithDetail.asStateFlow()
+
+  private val _hadithErrorMessage = MutableStateFlow<String?>(null)
+  val hadithErrorMessage: StateFlow<String?> = _hadithErrorMessage.asStateFlow()
+
+  fun selectHadithBook(book: HadithBookInfo) {
+    _selectedHadithBook.value = book
+    _currentHadithNumber.value = 1
+    fetchCurrentHadith(book.id, 1)
+  }
+
+  fun fetchCurrentHadith(bookId: String = _selectedHadithBook.value.id, number: Int = _currentHadithNumber.value) {
+    val maxNumber = _selectedHadithBook.value.totalHadiths
+    val safeNumber = number.coerceIn(1, maxNumber)
+    _currentHadithNumber.value = safeNumber
+    _hadithLoading.value = true
+    _hadithErrorMessage.value = null
+
+    viewModelScope.launch {
+      val result = HadithRepository.getHadith(getApplication(), bookId, safeNumber)
+      _hadithLoading.value = false
+      result.onSuccess { detail ->
+        _currentHadithDetail.value = detail
+      }.onFailure { err ->
+        _hadithErrorMessage.value = err.message ?: "حدیث لوڈ نہ ہو سکی۔ انٹرنیٹ چیک کریں۔"
+      }
+    }
+  }
+
+  fun loadNextHadith() {
+    val next = _currentHadithNumber.value + 1
+    if (next <= _selectedHadithBook.value.totalHadiths) {
+      fetchCurrentHadith(number = next)
+    }
+  }
+
+  fun loadPreviousHadith() {
+    val prev = _currentHadithNumber.value - 1
+    if (prev >= 1) {
+      fetchCurrentHadith(number = prev)
+    }
+  }
+
+  fun loadRandomHadith() {
+    val randomNum = (1.._selectedHadithBook.value.totalHadiths).random()
+    fetchCurrentHadith(number = randomNum)
+  }
+
+  fun toggleHadithBookmark(hadith: HadithItemDetail) {
+    viewModelScope.launch {
+      HadithRepository.toggleBookmark(
+        getApplication(),
+        hadith.bookId,
+        hadith.hadithNumber,
+        hadith.isBookmarked
+      )
+      _currentHadithDetail.value = hadith.copy(isBookmarked = !hadith.isBookmarked)
+    }
+  }
+
   init {
     viewModelScope.launch {
       val existingLogs = repository.allLogs.first()
@@ -169,9 +247,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
       }
     }
 
+    // Preload Hadith 1 of Sahih al-Bukhari
+    fetchCurrentHadith("bukhari", 1)
+
     // Initialize Notification System (AlarmManager + WorkManager)
     NotificationHelper.createNotificationChannel(application)
-    NotificationHelper.scheduleReminder(application, 60L)
+    NotificationHelper.scheduleReminder(application)
 
     // Initial Prayer Times Fetch (tries GPS location or fallback)
     fetchPrayerTimes(useGps = true)
@@ -303,7 +384,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
   }
 
   fun sendTestNotificationNow(dhikr: DhikrItem? = null) {
-    triggerReminderPopup(dhikr)
+    val target = dhikr ?: rotatingFeaturedDhikr.value
+    triggerReminderPopup(target)
+    NotificationHelper.showDhikrNotification(getApplication(), target)
   }
 
   fun toggleTimer() {

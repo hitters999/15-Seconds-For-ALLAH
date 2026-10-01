@@ -10,9 +10,10 @@ import androidx.room.RoomDatabase
     MomentLogEntity::class,
     BookmarkEntity::class,
     UserSettingsEntity::class,
-    UserAccountEntity::class
+    UserAccountEntity::class,
+    HadithEntity::class
   ],
-  version = 3,
+  version = 4,
   exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

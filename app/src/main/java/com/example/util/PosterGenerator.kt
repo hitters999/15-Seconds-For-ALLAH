@@ -450,6 +450,12 @@ object PosterGenerator {
    * - Crisp citation and contemplative wisdom
    * - Fully balanced to never cut off at top or bottom
    */
+  /**
+   * Main Content Layout in 1:1 format:
+   * - Giant, Zoomed-In, Bold Arabic Calligraphy (Deep contrast, crystal clear from far away!)
+   * - Perfectly Centered and Auto-Fitted Urdu Nastaliq that NEVER overflows or goes out of line
+   * - Responsive Space Budgeting: Handles short and lengthy Ayats/Hadiths gracefully
+   */
   private fun drawSacredCardContent(
     context: Context,
     canvas: Canvas,
@@ -457,195 +463,169 @@ object PosterGenerator {
     cardRect: RectF
   ) {
     val cx = cardRect.centerX()
-    val contentWidth = (cardRect.width() - 64f).toInt()
+    val contentWidth = (cardRect.width() - 56f).toInt()
+    val layoutLeft = cardRect.left + (cardRect.width() - contentWidth) / 2f
 
     // -------------------------------------------------------------
     // A. Top Badges Row
     // -------------------------------------------------------------
-    val topBadgesY = cardRect.top + 42f
+    val topBadgesY = cardRect.top + 38f
 
     val leftBadgeText = if (dhikr.isQuranic) "✨ درسِ قرآن • مسنون ذکر ✨" else "✨ مسنون ذکر و دعا ✨"
-    val leftBadgeRect = RectF(cardRect.left + 26f, topBadgesY - 20f, cardRect.left + 440f, topBadgesY + 20f)
-    drawCardPill(canvas, leftBadgeRect, leftBadgeText, getUrduTypeface(context), 22f, Color.parseColor("#1A332C"), Color.parseColor("#FBF6EB"), Color.parseColor("#D4AF37"))
+    val leftBadgeRect = RectF(cardRect.left + 22f, topBadgesY - 18f, cardRect.left + 420f, topBadgesY + 18f)
+    drawCardPill(canvas, leftBadgeRect, leftBadgeText, getUrduTypeface(context), 21f, Color.parseColor("#1A332C"), Color.parseColor("#FBF6EB"), Color.parseColor("#D4AF37"))
 
-    val rightBadgeRect = RectF(cardRect.right - 210f, topBadgesY - 20f, cardRect.right - 26f, topBadgesY + 20f)
-    drawCardPill(canvas, rightBadgeRect, "15s ذکر ✦", Typeface.create(Typeface.SERIF, Typeface.BOLD), 19.5f, Color.parseColor("#8A5A1A"), Color.parseColor("#FBF6EB"), Color.parseColor("#D4AF37"))
+    val rightBadgeRect = RectF(cardRect.right - 200f, topBadgesY - 18f, cardRect.right - 22f, topBadgesY + 18f)
+    drawCardPill(canvas, rightBadgeRect, "15s ذکر ✦", Typeface.create(Typeface.SERIF, Typeface.BOLD), 19f, Color.parseColor("#8A5A1A"), Color.parseColor("#FBF6EB"), Color.parseColor("#D4AF37"))
 
-    var currentY = topBadgesY + 44f
+    var currentY = topBadgesY + 36f
 
     // B. Bismillah Calligraphy (Cartouche)
     if (dhikr.isQuranic) {
       val bismillahPaint = TextPaint().apply {
-        color = Color.parseColor("#0A4D3C")
+        color = Color.parseColor("#063A2E")
         textSize = 28f
         typeface = getArabicTypeface(context)
         textAlign = Paint.Align.CENTER
+        isFakeBoldText = true
         isAntiAlias = true
       }
-      canvas.drawText("۞ بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ ۞", cx, currentY + 4f, bismillahPaint)
-      currentY += 40f
+      canvas.drawText("۞ بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ ۞", cx, currentY + 6f, bismillahPaint)
+      currentY += 38f
     } else {
-      currentY += 8f
+      currentY += 6f
     }
 
     // -------------------------------------------------------------
-    // C. MAGNIFIED, ZOOMED-IN ARABIC CALLIGRAPHY (Visible from afar!)
+    // C. MAGNIFIED, CRYSTAL-CLEAR ARABIC CALLIGRAPHY (Visible from afar!)
     // -------------------------------------------------------------
+    val arabicLength = dhikr.arabic.length
+    val arabicTextSize = when {
+      arabicLength < 35 -> 80f // Grand, bold and readable across the room
+      arabicLength < 70 -> 66f
+      arabicLength < 120 -> 54f
+      arabicLength < 180 -> 44f
+      else -> 38f
+    }
+
     val arabicPaint = TextPaint().apply {
-      color = Color.parseColor("#043B2E") // Deep Royal Islamic Emerald Green
-      textSize = when {
-        dhikr.arabic.length < 35 -> 88f // Giant & Majestic! Readable across the room!
-        dhikr.arabic.length < 65 -> 74f
-        dhikr.arabic.length < 105 -> 62f
-        else -> 50f
-      }
+      color = Color.parseColor("#022B21") // Intense Deep Islamic Emerald Black (Maximum Contrast)
+      textSize = arabicTextSize
       typeface = getArabicTypeface(context)
       textAlign = Paint.Align.CENTER
+      isFakeBoldText = true // Extra bold weight so glyphs, nuktas & harkat are unmistakably clear
       isAntiAlias = true
-      // Subtle gold drop shadow to give 3D calligraphy depth
-      setShadowLayer(3.5f, 1f, 1.5f, Color.parseColor("#33D4AF37"))
+      setShadowLayer(4f, 1f, 1.5f, Color.parseColor("#38C5A059")) // Warm 24K gold soft drop shadow
     }
 
     val arabicLayout = createCenteredLayout(dhikr.arabic, arabicPaint, contentWidth, 1.34f)
     canvas.save()
-    canvas.translate(cx, currentY)
+    canvas.translate(layoutLeft, currentY)
     arabicLayout.draw(canvas)
     canvas.restore()
 
     currentY += arabicLayout.height + 16f
 
     // -------------------------------------------------------------
-    // D. Transliteration (Serif in Slate Charcoal)
+    // D. Urdu Translation (Auto-Scaled so it NEVER cuts off or goes out of line!)
     // -------------------------------------------------------------
-    if (dhikr.transliteration.isNotBlank()) {
-      val transPaint = TextPaint().apply {
-        color = Color.parseColor("#4A5568")
-        textSize = 22f
-        typeface = Typeface.create(Typeface.SERIF, Typeface.NORMAL)
-        textAlign = Paint.Align.CENTER
-        isAntiAlias = true
-      }
-      val transLayout = createCenteredLayout(dhikr.transliteration, transPaint, contentWidth, 1.2f)
-      canvas.save()
-      canvas.translate(cx, currentY)
-      transLayout.draw(canvas)
-      canvas.restore()
+    // Available remaining vertical budget inside card before bottom bounds
+    val cardBottomLimit = cardRect.bottom - 18f
+    val citationReservedHeight = 54f // For source citation pill
+    val availableSpaceForUrdu = (cardBottomLimit - currentY - citationReservedHeight).coerceAtLeast(80f)
 
-      currentY += transLayout.height + 14f
+    val urduLength = dhikr.translationUrdu.length
+    var initialUrduSize = when {
+      urduLength < 45 -> 34f
+      urduLength < 90 -> 29f
+      urduLength < 150 -> 25f
+      else -> 22f
     }
 
-    // -------------------------------------------------------------
-    // E. Urdu Translation (Warm Persian Walnut Ink in Noto Nastaliq!)
-    // -------------------------------------------------------------
     val urduPaint = TextPaint().apply {
-      color = Color.parseColor("#6E200A") // Deep warm walnut ink
-      textSize = when {
-        dhikr.translationUrdu.length < 50 -> 36f
-        dhikr.translationUrdu.length < 100 -> 31f
-        else -> 27f
-      }
+      color = Color.parseColor("#631D08") // Deep Persian walnut ink
       typeface = getUrduTypeface(context)
       textAlign = Paint.Align.CENTER
       isAntiAlias = true
     }
 
-    val urduLayout = createCenteredLayout(dhikr.translationUrdu, urduPaint, contentWidth - 20, 1.36f)
+    // Dynamically scale down Urdu text size if necessary so it 100% fits within availableSpaceForUrdu
+    var urduLayout: StaticLayout
+    while (true) {
+      urduPaint.textSize = initialUrduSize
+      urduLayout = createCenteredLayout(dhikr.translationUrdu, urduPaint, contentWidth - 24, 1.35f)
+      if (urduLayout.height <= availableSpaceForUrdu || initialUrduSize <= 19f) {
+        break
+      }
+      initialUrduSize -= 1.5f
+    }
+
     canvas.save()
-    canvas.translate(cx, currentY)
+    canvas.translate(layoutLeft + 12f, currentY)
     urduLayout.draw(canvas)
     canvas.restore()
 
-    currentY += urduLayout.height + 14f
+    currentY += urduLayout.height + 18f
 
     // -------------------------------------------------------------
-    // F. English Translation (Clean Serif in Slate)
-    // -------------------------------------------------------------
-    if (dhikr.translation.isNotBlank()) {
-      val engPaint = TextPaint().apply {
-        color = Color.parseColor("#334155")
-        textSize = 20f
-        typeface = Typeface.create(Typeface.SERIF, Typeface.NORMAL)
-        textAlign = Paint.Align.CENTER
-        isAntiAlias = true
-      }
-      val engLayout = createCenteredLayout(dhikr.translation, engPaint, contentWidth - 40, 1.2f)
-      canvas.save()
-      canvas.translate(cx, currentY)
-      engLayout.draw(canvas)
-      canvas.restore()
-
-      currentY += engLayout.height + 16f
-    }
-
-    // -------------------------------------------------------------
-    // G. Source Citation Pill Ribbon
+    // E. Source Citation Pill Ribbon (Always safely placed above card bottom!)
     // -------------------------------------------------------------
     val sourceLabel = "📖 ${dhikr.source}"
     val sourcePaint = TextPaint().apply {
       color = Color.parseColor("#8A5A1A")
-      textSize = 22f
+      textSize = 21f
       typeface = Typeface.create(Typeface.SERIF, Typeface.BOLD)
       isAntiAlias = true
     }
     val sourceTextWidth = sourcePaint.measureText(sourceLabel)
-    val sourcePillWidth = (sourceTextWidth + 44f).coerceAtLeast(220f)
-    val sourcePillRect = RectF(cx - sourcePillWidth / 2f, currentY, cx + sourcePillWidth / 2f, currentY + 40f)
-    drawCardPill(canvas, sourcePillRect, sourceLabel, Typeface.create(Typeface.SERIF, Typeface.BOLD), 21f, Color.parseColor("#8A5A1A"), Color.parseColor("#FAF3E2"), Color.parseColor("#D4AF37"))
+    val sourcePillWidth = (sourceTextWidth + 44f).coerceAtLeast(210f)
+    val pillTop = currentY.coerceAtMost(cardBottomLimit - 42f)
+    val sourcePillRect = RectF(cx - sourcePillWidth / 2f, pillTop, cx + sourcePillWidth / 2f, pillTop + 38f)
+    drawCardPill(canvas, sourcePillRect, sourceLabel, Typeface.create(Typeface.SERIF, Typeface.BOLD), 20f, Color.parseColor("#8A5A1A"), Color.parseColor("#FAF3E2"), Color.parseColor("#D4AF37"))
 
-    currentY += 52f
+    currentY = pillTop + 48f
 
     // -------------------------------------------------------------
-    // H. "سبق و تدبر" Contemplative Wisdom Card (Auto-fitted, proportional)
+    // F. "سبق و تدبر" Contemplative Wisdom Card (Only if ample space remains!)
     // -------------------------------------------------------------
-    val noteText = if (dhikr.contemplativeNote.isNotBlank()) {
-      dhikr.contemplativeNote
-    } else {
-      "رسول اللہ ﷺ کے سنہری ارشادات جو زندگی کو روشن کرتے ہیں۔ پندرہ سیکنڈ سکون کے ساتھ یادِ الٰہی میں گزاریں۔"
+    val remainingForTadabbur = cardBottomLimit - currentY
+    if (remainingForTadabbur >= 85f && dhikr.contemplativeNote.isNotBlank()) {
+      val notePaint = TextPaint().apply {
+        color = Color.parseColor("#4A3B2C")
+        textSize = 21f
+        typeface = getUrduTypeface(context)
+        textAlign = Paint.Align.CENTER
+        isAntiAlias = true
+      }
+
+      val fullNote = "سبق و تدبر: ${dhikr.contemplativeNote}"
+      val tadabburWidth = cardRect.width() - 50f
+      val noteLayout = createCenteredLayout(fullNote, notePaint, (tadabburWidth - 44f).toInt(), 1.32f)
+
+      val boxHeight = (noteLayout.height + 26f).coerceAtMost(remainingForTadabbur)
+      if (boxHeight >= 55f) {
+        val tadabburRect = RectF(cardRect.left + 25f, currentY, cardRect.right - 25f, currentY + boxHeight)
+
+        val tadabburBg = Paint().apply {
+          color = Color.parseColor("#FFFDF5")
+          isAntiAlias = true
+        }
+        val tadabburBorder = Paint().apply {
+          color = Color.parseColor("#EADBB6")
+          style = Paint.Style.STROKE
+          strokeWidth = 1.2f
+          isAntiAlias = true
+        }
+        canvas.drawRoundRect(tadabburRect, 14f, 14f, tadabburBg)
+        canvas.drawRoundRect(tadabburRect, 14f, 14f, tadabburBorder)
+
+        val noteY = tadabburRect.centerY() - (noteLayout.height / 2f)
+        canvas.save()
+        canvas.translate(layoutLeft + 12f, noteY)
+        noteLayout.draw(canvas)
+        canvas.restore()
+      }
     }
-
-    val notePaint = TextPaint().apply {
-      color = Color.parseColor("#4A3B2C")
-      textSize = 23f
-      typeface = getUrduTypeface(context)
-      textAlign = Paint.Align.CENTER
-      isAntiAlias = true
-    }
-
-    val fullNote = "سبق و تدبر: $noteText"
-    val tadabburWidth = cardRect.width() - 50f
-    val noteLayout = createCenteredLayout(fullNote, notePaint, (tadabburWidth - 40f).toInt(), 1.35f)
-
-    val maxTadabburHeight = (cardRect.bottom - currentY - 14f).coerceAtLeast(80f)
-    val tadabburHeight = (noteLayout.height + 40f).coerceIn(80f, maxTadabburHeight)
-    val tadabburRect = RectF(cardRect.left + 25f, currentY, cardRect.right - 25f, currentY + tadabburHeight)
-
-    val tadabburBg = Paint().apply {
-      color = Color.parseColor("#FFFDF5")
-      isAntiAlias = true
-    }
-    val tadabburBorder = Paint().apply {
-      color = Color.parseColor("#EADBB6")
-      style = Paint.Style.STROKE
-      strokeWidth = 1.3f
-      isAntiAlias = true
-    }
-    canvas.drawRoundRect(tadabburRect, 16f, 16f, tadabburBg)
-    canvas.drawRoundRect(tadabburRect, 16f, 16f, tadabburBorder)
-
-    // Quotation mark
-    val quotePaint = TextPaint().apply {
-      color = Color.parseColor("#C5A059")
-      textSize = 34f
-      typeface = Typeface.create(Typeface.SERIF, Typeface.BOLD)
-      isAntiAlias = true
-    }
-    canvas.drawText("❝", tadabburRect.left + 14f, tadabburRect.top + 34f, quotePaint)
-
-    val noteY = tadabburRect.centerY() - (noteLayout.height / 2f)
-    canvas.save()
-    canvas.translate(cx, noteY)
-    noteLayout.draw(canvas)
-    canvas.restore()
   }
 
   private fun drawCardPill(

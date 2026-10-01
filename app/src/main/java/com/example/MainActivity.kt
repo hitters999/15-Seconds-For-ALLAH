@@ -10,9 +10,15 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.Home
@@ -49,6 +55,7 @@ import com.example.ui.screens.InsightsScreen
 import com.example.ui.screens.LibraryScreen
 import com.example.ui.screens.MomentScreen
 import com.example.ui.screens.ProfileScreen
+import com.example.ui.screens.HadithExplorerScreen
 import com.example.ui.theme.BronzeGold
 import com.example.ui.theme.BronzeGoldLight
 import com.example.ui.theme.InkTeal
@@ -67,7 +74,7 @@ class MainActivity : ComponentActivity() {
   ) { permissions ->
     val notifGranted = permissions[Manifest.permission.POST_NOTIFICATIONS] ?: true
     if (notifGranted) {
-      NotificationHelper.scheduleReminder(this, 60L)
+      NotificationHelper.scheduleReminder(this)
     }
   }
 
@@ -92,8 +99,8 @@ class MainActivity : ComponentActivity() {
       requestPermissionsLauncher.launch(permissionsToRequest.toTypedArray())
     }
 
-    // Ensure reminders are always scheduled and active
-    NotificationHelper.scheduleReminder(this, 60L)
+    // Ensure reminders are always scheduled and active with user's saved interval (e.g. 15 minutes)
+    NotificationHelper.scheduleReminder(this)
 
     viewModel.handleIntent(intent)
 
@@ -176,14 +183,23 @@ fun MainApp(viewModel: MainViewModel) {
           is Screen.Home -> HomeScreen(viewModel = viewModel)
           is Screen.Moment -> MomentScreen(viewModel = viewModel)
           is Screen.Library -> LibraryScreen(viewModel = viewModel)
+          is Screen.HadithExplorer -> HadithExplorerScreen(viewModel = viewModel)
           is Screen.Insights -> InsightsScreen(viewModel = viewModel)
           is Screen.Profile -> ProfileScreen(viewModel = viewModel)
         }
       }
     }
 
-    // Sacred Hero Popup Notification Dialog (Pure Dialog - No WhatsApp-like top banner)
-    if (showReminderPopup) {
+    // Custom Wide Hero Popup Notification (Top-anchored, NOT full screen!)
+    AnimatedVisibility(
+      visible = showReminderPopup,
+      enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+      exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
+      modifier = Modifier
+        .align(Alignment.TopCenter)
+        .statusBarsPadding()
+        .padding(top = 4.dp)
+    ) {
       DhikrReminderPopupDialog(
         dhikr = reminderPopupDhikr,
         onStartMoment = {

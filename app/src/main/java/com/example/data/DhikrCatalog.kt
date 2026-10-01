@@ -20,9 +20,26 @@ data class DhikrItem(
 
 object DhikrCatalog {
 
+  val hadithBooks = listOf(
+    "صحیح البخاری (Sahih Bukhari)",
+    "صحیح مسلم (Sahih Muslim)",
+    "جامع ترمذی (Jami Tirmidhi)",
+    "سنن ابو داؤد (Sunan Abu Dawud)",
+    "سنن نسائی (Sunan an-Nasa'i)",
+    "سنن ابن ماجہ (Sunan Ibn Majah)",
+    "موطا امام مالک (Muwatta Malik)"
+  )
+
   val categories = listOf(
     "All (تمام 1000+)",
     "Saved (محفوظ آیات)",
+    "صحیح البخاری (Sahih Bukhari)",
+    "صحیح مسلم (Sahih Muslim)",
+    "جامع ترمذی (Jami Tirmidhi)",
+    "سنن ابو داؤد (Sunan Abu Dawud)",
+    "سنن نسائی (Sunan an-Nasa'i)",
+    "سنن ابن ماجہ (Sunan Ibn Majah)",
+    "موطا امام مالک (Muwatta Malik)",
     "Juz 30 (تیسواں پارہ)",
     "Asma ul Husna",
     "Quranic Duas (قرآنی دعائیں)",
@@ -119,6 +136,11 @@ object DhikrCatalog {
 
   private var cachedCatalog: List<DhikrItem>? = null
 
+  private const val PREFS_NAME = "dhikr_rotation_prefs"
+  private const val KEY_SHOWN_IDS = "shown_dhikr_ids_set"
+  private const val KEY_CURRENT_FEATURED_ID = "current_featured_dhikr_id"
+  private const val KEY_FEATURED_TIMESTAMP = "current_featured_timestamp"
+
   fun loadFullCatalog(context: Context): List<DhikrItem> {
     cachedCatalog?.let { return it }
 
@@ -158,16 +180,89 @@ object DhikrCatalog {
     return loadedList
   }
 
+  // -------------------------------------------------------------------------
+  // Strict Anti-Repetition Rotation Engine:
+  // "Ak din agar ak Dhikr ya Ayat nazar aajy to dobara nazar na aay until baqi 1000+ use na hojain"
+  // Guarantees zero duplicates until all 1000+ items have cycled completely!
+  // -------------------------------------------------------------------------
+
+  private fun getShownIds(context: Context): MutableSet<String> {
+    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    return prefs.getStringSet(KEY_SHOWN_IDS, emptySet())?.toMutableSet() ?: mutableSetOf()
+  }
+
+  private fun saveShownIds(context: Context, ids: Set<String>) {
+    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    prefs.edit().putStringSet(KEY_SHOWN_IDS, ids).apply()
+  }
+
+  /**
+   * Returns the progress of the 1000+ cycle: (shownCount, totalCount)
+   */
+  fun getRotationCycleProgress(context: Context): Pair<Int, Int> {
+    val fullList = loadFullCatalog(context)
+    val shownCount = getShownIds(context).size
+    return Pair(shownCount, fullList.size)
+  }
+
+  /**
+   * Retrieves the next distinct, unshown Dhikr or Ayah from the 1000+ pool.
+   * If all 1000+ items have been shown, the pool resets cleanly and starts the cycle over.
+   */
+  @Synchronized
+  fun getNextNonRepeatingDhikr(context: Context): DhikrItem {
+    val fullList = loadFullCatalog(context)
+    val shownIds = getShownIds(context)
+
+    // Filter out all already shown dhikrs
+    val unshownList = fullList.filter { it.id !in shownIds }
+
+    val nextItem: DhikrItem = if (unshownList.isNotEmpty()) {
+      // Pick next unshown item (balanced pseudo-random selection)
+      unshownList.random()
+    } else {
+      // All 1000+ items have been displayed! Reset shown set and restart pool
+      shownIds.clear()
+      fullList.random()
+    }
+
+    // Mark as shown persistently
+    shownIds.add(nextItem.id)
+    saveShownIds(context, shownIds)
+
+    return nextItem
+  }
+
   // 2-Hour Auto-Rotation Algorithm for Landing Page (Home Screen):
-  // Every 2 hours (120 minutes), a distinct Ayat, Hadith, or Dua is featured automatically!
+  // Keeps the same Dhikr for 2 hours, then strictly advances to an unshown item from the 1000+ pool!
   fun getTwoHourRotatedDhikr(context: Context, offsetHours: Int = 0): DhikrItem {
     val fullList = loadFullCatalog(context)
-    val totalHours = (System.currentTimeMillis() / (1000L * 60L * 60L)) + offsetHours
-    val twoHourSlot = (totalHours / 2L).toInt()
+    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    // Consistent pseudo-random distribution based on 2-hour window
-    val index = Math.floorMod(twoHourSlot * 31 + 7, fullList.size)
-    return fullList[index]
+    if (offsetHours != 0) {
+      val totalHours = (System.currentTimeMillis() / (1000L * 60L * 60L)) + offsetHours
+      val index = Math.floorMod((totalHours / 2L).toInt() * 31 + 7, fullList.size)
+      return fullList[index]
+    }
+
+    val currentFeaturedId = prefs.getString(KEY_CURRENT_FEATURED_ID, null)
+    val timestamp = prefs.getLong(KEY_FEATURED_TIMESTAMP, 0L)
+    val now = System.currentTimeMillis()
+    val twoHoursMillis = 2L * 3600L * 1000L
+
+    if (currentFeaturedId != null && (now - timestamp) in 0 until twoHoursMillis) {
+      val existing = fullList.find { it.id == currentFeaturedId }
+      if (existing != null) return existing
+    }
+
+    // Window expired or no item featured: pull next unshown dhikr
+    val newItem = getNextNonRepeatingDhikr(context)
+    prefs.edit()
+      .putString(KEY_CURRENT_FEATURED_ID, newItem.id)
+      .putLong(KEY_FEATURED_TIMESTAMP, now)
+      .apply()
+
+    return newItem
   }
 
   // Time remaining in current 2-hour window (in milliseconds)
@@ -179,14 +274,8 @@ object DhikrCatalog {
   }
 
   fun getRandomNotificationDhikr(context: Context): DhikrItem {
-    val fullList = loadFullCatalog(context)
-    val importantList = fullList.filter {
-      it.category.contains("Juz 30") || it.category.contains("Quranic") || it.category.contains("Hadith")
-    }
-    return if (importantList.isNotEmpty()) {
-      importantList.random()
-    } else {
-      essentialNotificationAyat.random()
-    }
+    // Strictly uses the non-repeating queue so notifications never repeat any Dhikr
+    // until all 1000+ have been delivered!
+    return getNextNonRepeatingDhikr(context)
   }
 }

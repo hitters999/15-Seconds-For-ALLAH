@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.os.Build
+import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -32,6 +33,29 @@ object NotificationHelper {
   const val NOTIFICATION_ID = 1001
   const val ALARM_REQUEST_CODE = 2001
   const val ACTION_SHARE_NOTIFICATION = "com.example.ACTION_SHARE_NOTIFICATION"
+  private const val PREFS_NOTIFICATION = "notification_reminder_prefs"
+  private const val KEY_SAVED_INTERVAL = "saved_reminder_interval_minutes"
+  private const val KEY_POPUP_DURATION = "popup_duration_seconds"
+
+  fun getSavedIntervalMinutes(context: Context): Long {
+    val prefs = context.getSharedPreferences(PREFS_NOTIFICATION, Context.MODE_PRIVATE)
+    return prefs.getLong(KEY_SAVED_INTERVAL, 15L) // Default is 15 minutes
+  }
+
+  fun saveIntervalMinutes(context: Context, minutes: Long) {
+    val prefs = context.getSharedPreferences(PREFS_NOTIFICATION, Context.MODE_PRIVATE)
+    prefs.edit().putLong(KEY_SAVED_INTERVAL, minutes).apply()
+  }
+
+  fun getPopupDurationSeconds(context: Context): Int {
+    val prefs = context.getSharedPreferences(PREFS_NOTIFICATION, Context.MODE_PRIVATE)
+    return prefs.getInt(KEY_POPUP_DURATION, 5) // 5 seconds default matching design
+  }
+
+  fun savePopupDurationSeconds(context: Context, seconds: Int) {
+    val prefs = context.getSharedPreferences(PREFS_NOTIFICATION, Context.MODE_PRIVATE)
+    prefs.edit().putInt(KEY_POPUP_DURATION, seconds).apply()
+  }
 
   fun hasNotificationPermission(context: Context): Boolean {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -46,8 +70,8 @@ object NotificationHelper {
 
   fun createNotificationChannel(context: Context) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      val name = "15 Seconds for Allah • یاد دہانی"
-      val descriptionText = "ہر گھنٹے بعد قرآن و سنت کے اذکار کی یاد دہانی اور بیپ"
+      val name = "15 Seconds 4 Allah • یاد دہانی"
+      val descriptionText = "قرآن و سنت کے اذکار و دعاؤں کی یاد دہانی اور بیپ"
       val importance = NotificationManager.IMPORTANCE_HIGH
       val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
         description = descriptionText
@@ -60,24 +84,49 @@ object NotificationHelper {
     }
   }
 
+  /**
+   * Displays the Sacred Dhikr Reminder:
+   * 1. Plays the requested sacred beep sound.
+   * 2. Shows EXCLUSIVELY the floating 5-second popup banner matching user's design.
+   * 3. Absolutely NO WhatsApp-like heads-up or drawer notification!
+   */
   fun showDhikrNotification(context: Context, dhikr: DhikrItem) {
-    createNotificationChannel(context)
-
     // Play requested "Beep" sound
-    SoundAndHaptics(context).playBeep()
+    try {
+      SoundAndHaptics(context).playBeep()
+    } catch (_: Exception) {}
 
-    // Strictly show ONLY the sacred Hero Popup Notification window (no duplicate WhatsApp-like banner or drawer line)
-    PopupNotificationActivity.start(context, dhikr)
+    // Cancel any accidental status bar notification
+    try {
+      NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
+    } catch (_: Exception) {}
+
+    // Strictly launch ONLY the floating top popup window
+    try {
+      PopupNotificationActivity.start(context, dhikr)
+    } catch (_: Exception) {}
   }
 
-  // Reliable Dual Scheduling: Uses AlarmManager for exact time + WorkManager as fail-safe backup!
-  fun scheduleReminder(context: Context, intervalMinutes: Long = 60) {
+  /**
+   * Ultra-Reliable Exact Alarm Scheduling:
+   * Uses AlarmManager.setAlarmClock (which bypasses Doze mode and battery savers on all Android versions)
+   * Ensures 15-minute (or selected interval) reminders fire on the exact second!
+   */
+  fun scheduleReminder(context: Context, intervalMinutes: Long? = null) {
     createNotificationChannel(context)
+
+    val actualMinutes = if (intervalMinutes != null) {
+      saveIntervalMinutes(context, intervalMinutes)
+      intervalMinutes
+    } else {
+      getSavedIntervalMinutes(context)
+    }
+
     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
 
     val intent = Intent(context, ReminderBroadcastReceiver::class.java).apply {
       action = "com.example.ACTION_DHIKR_HOURLY_REMINDER"
-      putExtra("INTERVAL_MINUTES", intervalMinutes)
+      putExtra("INTERVAL_MINUTES", actualMinutes)
     }
 
     val pendingIntent = PendingIntent.getBroadcast(
@@ -87,25 +136,39 @@ object NotificationHelper {
       PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
-    val triggerAtMillis = System.currentTimeMillis() + (intervalMinutes * 60 * 1000L)
+    val triggerAtMillis = System.currentTimeMillis() + (actualMinutes * 60 * 1000L)
 
     try {
       alarmManager?.let { am ->
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-          am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
-        } else {
-          am.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
-        }
+        // setAlarmClock is Android's most reliable exact alarm mechanism (exempt from Doze mode)
+        val showIntent = Intent(context, MainActivity::class.java)
+        val showPendingIntent = PendingIntent.getActivity(
+          context,
+          0,
+          showIntent,
+          PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val alarmClockInfo = AlarmManager.AlarmClockInfo(triggerAtMillis, showPendingIntent)
+        am.setAlarmClock(alarmClockInfo, pendingIntent)
       }
     } catch (_: Exception) {
-      // Fallback if exact alarm not permitted
-      alarmManager?.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+      try {
+        alarmManager?.let { am ->
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+          } else {
+            am.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+          }
+        }
+      } catch (_: Exception) {
+        alarmManager?.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+      }
     }
 
-    // WorkManager Periodic Backup (ensures notifications survive deep sleep/doze)
+    // WorkManager Periodic Backup (ensures fail-safe triggers if app process was force stopped)
     try {
       val periodicWork = PeriodicWorkRequestBuilder<ReminderWorker>(
-        intervalMinutes.coerceAtLeast(15), TimeUnit.MINUTES
+        actualMinutes.coerceAtLeast(15), TimeUnit.MINUTES
       ).build()
 
       WorkManager.getInstance(context).enqueueUniquePeriodicWork(

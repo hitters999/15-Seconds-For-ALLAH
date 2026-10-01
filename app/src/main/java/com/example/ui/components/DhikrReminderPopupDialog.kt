@@ -1,5 +1,8 @@
 package com.example.ui.components
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -15,51 +18,326 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.example.R
 import com.example.data.DhikrItem
 import com.example.ui.theme.ArabicFontFamily
-import com.example.ui.theme.BronzeGold
-import com.example.ui.theme.BronzeGoldLight
-import com.example.ui.theme.DarkCardBorder
-import com.example.ui.theme.DarkCardSurface
-import com.example.ui.theme.InkTeal
-import com.example.ui.theme.UrduFontFamily
 import com.example.ui.theme.UrduNastaliqFontFamily
-import com.example.util.ShareHelper
+import kotlinx.coroutines.delay
 
+/**
+ * Custom Hero Popup Notification Banner
+ * Exactly matched to user's design reference:
+ * - "5 seconds • non-blocking • work continues"
+ * - Midnight teal gradient card with glowing cyan/teal border
+ * - Top row: App icon ("15 Seconds for Allah"), "A moment. A brighter day.", "now"
+ * - Center: Illuminated golden ornate crescent moon on left, magnificent Arabic calligraphy & translation on right
+ * - Bottom: 5s countdown progress bar on left, "Later" pill button on right
+ * - Auto-dismisses in 5 seconds without blocking ongoing work
+ */
+@Composable
+fun HeroPopupNotificationCard(
+  dhikr: DhikrItem,
+  onStartMoment: () -> Unit,
+  onDismiss: () -> Unit,
+  countdownSeconds: Int = 5,
+  modifier: Modifier = Modifier
+) {
+  var progressTarget by remember { mutableFloatStateOf(1f) }
+
+  LaunchedEffect(dhikr.id) {
+    progressTarget = 0f
+  }
+
+  val animatedProgress by animateFloatAsState(
+    targetValue = progressTarget,
+    animationSpec = tween(
+      durationMillis = countdownSeconds * 1000,
+      easing = LinearEasing
+    ),
+    label = "popupCountdown"
+  )
+
+  // 5-second automatic dismissal (non-blocking)
+  LaunchedEffect(dhikr.id) {
+    delay(countdownSeconds * 1000L)
+    onDismiss()
+  }
+
+  Card(
+    shape = RoundedCornerShape(26.dp),
+    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+    border = BorderStroke(
+      1.4.dp,
+      Brush.horizontalGradient(
+        listOf(
+          Color(0xFF2C7A7B),
+          Color(0xFF4FD1C5),
+          Color(0xFF285E61)
+        )
+      )
+    ),
+    elevation = CardDefaults.cardElevation(defaultElevation = 18.dp),
+    modifier = modifier
+      .fillMaxWidth()
+      .padding(horizontal = 10.dp, vertical = 6.dp)
+      .shadow(16.dp, RoundedCornerShape(26.dp), spotColor = Color(0xFF319795))
+      .clip(RoundedCornerShape(26.dp))
+      .background(
+        Brush.verticalGradient(
+          listOf(
+            Color(0xFF09292F),
+            Color(0xFF051B20),
+            Color(0xFF021014)
+          )
+        )
+      )
+      .clickable(onClick = onStartMoment)
+      .testTag("hero_popup_notification_card")
+  ) {
+    Column(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 16.dp, vertical = 14.dp)
+    ) {
+      // 1. Top Header Row: App Icon + App Name + Slogan + "now"
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          modifier = Modifier.weight(1f)
+        ) {
+          // Dark Teal Squircle App Icon with Dome
+          Surface(
+            shape = RoundedCornerShape(10.dp),
+            color = Color(0xFF0D3337),
+            border = BorderStroke(1.dp, Color(0xFF319795)),
+            modifier = Modifier.size(36.dp)
+          ) {
+            Image(
+              painter = painterResource(id = R.drawable.app_brand_logo),
+              contentDescription = "App Logo",
+              modifier = Modifier
+                .padding(4.dp)
+                .size(28.dp),
+              contentScale = ContentScale.Fit
+            )
+          }
+
+          Spacer(modifier = Modifier.width(10.dp))
+
+          Column {
+            Text(
+              text = "15 Seconds for Allah",
+              fontFamily = FontFamily.SansSerif,
+              fontWeight = FontWeight.Bold,
+              fontSize = 13.5.sp,
+              color = Color.White
+            )
+            Text(
+              text = "A moment. A brighter day.",
+              fontFamily = FontFamily.SansSerif,
+              fontSize = 11.5.sp,
+              color = Color(0xFF8BA5AA)
+            )
+          }
+        }
+
+        Text(
+          text = "now",
+          fontFamily = FontFamily.SansSerif,
+          fontSize = 11.5.sp,
+          color = Color(0xFF6B8B90)
+        )
+      }
+
+      Spacer(modifier = Modifier.height(12.dp))
+
+      // 2. Middle Row: Glowing Golden Crescent Moon on left + Arabic Calligraphy & Translation on right
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        // Glowing Ornate Islamic Crescent Moon
+        Box(
+          modifier = Modifier
+            .size(76.dp)
+            .clip(RoundedCornerShape(16.dp)),
+          contentAlignment = Alignment.Center
+        ) {
+          Image(
+            painter = painterResource(id = R.drawable.golden_crescent_ornate),
+            contentDescription = "Crescent Moon",
+            modifier = Modifier.size(74.dp),
+            contentScale = ContentScale.Fit
+          )
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // Arabic Calligraphy + Translations + Source
+        Column(
+          modifier = Modifier.weight(1f),
+          horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+          // Large, crisp, prominent white Arabic
+          Text(
+            text = dhikr.arabic,
+            fontFamily = ArabicFontFamily,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            textAlign = TextAlign.Center,
+            lineHeight = 28.sp,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth()
+          )
+
+          Spacer(modifier = Modifier.height(3.dp))
+
+          // English Translation (like screenshot: "Indeed, with hardship comes ease.")
+          val englishText = if (dhikr.translation.isNotBlank()) {
+            dhikr.translation
+          } else {
+            dhikr.translationUrdu
+          }
+          Text(
+            text = englishText,
+            fontFamily = FontFamily.Serif,
+            fontStyle = FontStyle.Normal,
+            fontSize = 13.sp,
+            color = Color(0xFFE2E8F0),
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth()
+          )
+
+          // Urdu translation snippet
+          if (dhikr.translationUrdu.isNotBlank() && dhikr.translation.isNotBlank()) {
+            Text(
+              text = dhikr.translationUrdu,
+              fontFamily = UrduNastaliqFontFamily,
+              fontSize = 12.sp,
+              color = Color(0xFFCBD5E1),
+              textAlign = TextAlign.Center,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis,
+              modifier = Modifier.fillMaxWidth()
+            )
+          }
+
+          Spacer(modifier = Modifier.height(3.dp))
+
+          // Citation (e.g. Qur’an — Surah Ash-Sharh 94:5)
+          val sourceText = if (dhikr.isQuranic) "Qur’an — ${dhikr.source}" else dhikr.source
+          Text(
+            text = sourceText,
+            fontFamily = FontFamily.SansSerif,
+            fontSize = 10.5.sp,
+            color = Color(0xFF7FA3A9),
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+          )
+        }
+      }
+
+      Spacer(modifier = Modifier.height(12.dp))
+
+      // 3. Bottom Row: 5s Countdown Progress Bar on Left + "Later" Pill Button on Right
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        // Countdown Bar + 5s
+        Row(
+          modifier = Modifier.weight(1f),
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          LinearProgressIndicator(
+            progress = { animatedProgress },
+            modifier = Modifier
+              .weight(1f)
+              .height(4.dp)
+              .clip(RoundedCornerShape(3.dp)),
+            color = Color(0xFF5CE1E6), // Glowing cyan
+            trackColor = Color(0xFF13383E)
+          )
+
+          Spacer(modifier = Modifier.width(8.dp))
+
+          Text(
+            text = "${countdownSeconds}s",
+            fontFamily = FontFamily.SansSerif,
+            fontWeight = FontWeight.Bold,
+            fontSize = 11.5.sp,
+            color = Color(0xFF5CE1E6)
+          )
+        }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        // "Later" Pill Button
+        Surface(
+          shape = RoundedCornerShape(16.dp),
+          color = Color(0xFF174340), // Dark cyan-teal pill
+          border = BorderStroke(1.dp, Color(0xFF2C6861)),
+          modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onDismiss)
+            .testTag("later_button")
+        ) {
+          Text(
+            text = "Later",
+            fontFamily = FontFamily.SansSerif,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 12.sp,
+            color = Color(0xFFE2E8F0),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+          )
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Drop-in wrapper keeping existing callers compatible.
+ */
 @Composable
 fun DhikrReminderPopupDialog(
   dhikr: DhikrItem,
@@ -67,274 +345,11 @@ fun DhikrReminderPopupDialog(
   onDismiss: () -> Unit,
   modifier: Modifier = Modifier
 ) {
-  val context = LocalContext.current
-  val scrollState = rememberScrollState()
-
-  Dialog(
-    onDismissRequest = onDismiss,
-    properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true)
-  ) {
-    Card(
-      shape = RoundedCornerShape(26.dp),
-      colors = CardDefaults.cardColors(containerColor = Color(0xFF071F1B)),
-      border = BorderStroke(1.5.dp, BronzeGold),
-      elevation = CardDefaults.cardElevation(defaultElevation = 16.dp),
-      modifier = modifier
-        .fillMaxWidth()
-        .padding(horizontal = 4.dp)
-        .testTag("dhikr_reminder_popup_dialog")
-    ) {
-      Column(
-        modifier = Modifier
-          .fillMaxWidth()
-          .verticalScroll(scrollState)
-          .padding(18.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-      ) {
-        // Top Row: Dismiss icon & Share Icon
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.SpaceBetween,
-          verticalAlignment = Alignment.CenterVertically
-        ) {
-          Surface(
-            shape = RoundedCornerShape(10.dp),
-            color = Color(0x33B8863B),
-            border = BorderStroke(0.8.dp, BronzeGold.copy(alpha = 0.4f))
-          ) {
-            Text(
-              text = "وقت ہو گیا ہے • یاد دہانی",
-              fontFamily = UrduFontFamily,
-              fontWeight = FontWeight.Bold,
-              fontSize = 11.5.sp,
-              color = BronzeGoldLight,
-              modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-            )
-          }
-
-          Row(verticalAlignment = Alignment.CenterVertically) {
-            // Share Button
-            Surface(
-              shape = CircleShape,
-              color = Color(0x33B8863B),
-              modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape)
-                .clickable { ShareHelper.shareDhikr(context, dhikr) }
-            ) {
-              Box(contentAlignment = Alignment.Center) {
-                Icon(
-                  imageVector = Icons.Filled.Share,
-                  contentDescription = "Share",
-                  tint = BronzeGoldLight,
-                  modifier = Modifier.size(16.dp)
-                )
-              }
-            }
-
-            Spacer(modifier = Modifier.width(6.dp))
-
-            IconButton(
-              onClick = onDismiss,
-              modifier = Modifier.size(30.dp)
-            ) {
-              Icon(
-                imageVector = Icons.Filled.Close,
-                contentDescription = "Close",
-                tint = Color(0xFF94A3B8),
-                modifier = Modifier.size(20.dp)
-              )
-            }
-          }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Official Brand Logo in the Notification Popup
-        Box(
-          contentAlignment = Alignment.Center,
-          modifier = Modifier
-            .size(72.dp)
-            .clip(CircleShape)
-            .border(2.dp, BronzeGold, CircleShape)
-            .background(Color.White)
-            .testTag("popup_brand_logo")
-        ) {
-          Image(
-            painter = painterResource(id = R.drawable.app_brand_logo),
-            contentDescription = "15 Seconds 4 Allah Logo",
-            modifier = Modifier.size(68.dp),
-            contentScale = ContentScale.Fit
-          )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-          text = "15 Seconds 4 Allah • یادِ الٰہی",
-          fontFamily = UrduFontFamily,
-          fontSize = 16.5.sp,
-          fontWeight = FontWeight.Bold,
-          color = Color(0xFFFFF4D6)
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // Sacred Content Box (Emerald Glass Frame)
-        Surface(
-          shape = RoundedCornerShape(18.dp),
-          color = Color(0x4003110E),
-          border = BorderStroke(1.dp, BronzeGold.copy(alpha = 0.4f)),
-          modifier = Modifier.fillMaxWidth()
-        ) {
-          Column(
-            modifier = Modifier
-              .fillMaxWidth()
-              .padding(14.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-          ) {
-            // Distinct Bismillah Header if Quranic Ayah
-            if (dhikr.isQuranic) {
-              BismillahCalligraphyHeader(isDarkTheme = true)
-              Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            // Arabic text in Amiri Font
-            Text(
-              text = dhikr.arabic,
-              fontFamily = ArabicFontFamily,
-              fontWeight = FontWeight.Bold,
-              fontSize = if (dhikr.arabic.length > 70) 22.sp else 25.sp,
-              lineHeight = if (dhikr.arabic.length > 70) 34.sp else 38.sp,
-              color = Color(0xFFFFFFFF),
-              textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Urdu Translation with Authentic Noto Nastaliq Font
-            Text(
-              text = dhikr.translationUrdu,
-              fontFamily = UrduNastaliqFontFamily,
-              fontWeight = FontWeight.Normal,
-              fontSize = 14.sp,
-              color = Color(0xFFFFE8B2),
-              textAlign = TextAlign.Center,
-              lineHeight = 24.sp
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // English Translation
-            if (dhikr.translation.isNotBlank()) {
-              Text(
-                text = dhikr.translation,
-                fontFamily = FontFamily.Serif,
-                fontSize = 11.5.sp,
-                color = Color(0xFFD4DCE8),
-                textAlign = TextAlign.Center
-              )
-              Spacer(modifier = Modifier.height(4.dp))
-            }
-
-            // Source reference
-            Text(
-              text = "📍 ${dhikr.source}",
-              fontFamily = UrduFontFamily,
-              fontSize = 11.sp,
-              color = BronzeGoldLight,
-              textAlign = TextAlign.Center
-            )
-          }
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // Big Action Button: Begin 15s Moment
-        Button(
-          onClick = onStartMoment,
-          colors = ButtonDefaults.buttonColors(
-            containerColor = BronzeGold,
-            contentColor = Color(0xFF09221D)
-          ),
-          shape = RoundedCornerShape(14.dp),
-          modifier = Modifier
-            .fillMaxWidth()
-            .height(48.dp)
-            .testTag("popup_start_moment_btn")
-        ) {
-          Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
-          Spacer(modifier = Modifier.width(8.dp))
-          Text(
-            text = "15 سیکنڈ کا ذکر شروع کریں (Begin Moment)",
-            fontFamily = UrduFontFamily,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold
-          )
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // Quick Share Bar
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-          Surface(
-            shape = RoundedCornerShape(10.dp),
-            color = Color(0xFF25D366).copy(alpha = 0.16f),
-            border = BorderStroke(1.dp, Color(0xFF25D366).copy(alpha = 0.5f)),
-            modifier = Modifier
-              .weight(1f)
-              .clip(RoundedCornerShape(10.dp))
-              .clickable { ShareHelper.shareToWhatsApp(context, dhikr) }
-          ) {
-            Text(
-              text = "واٹس ایپ اسٹیٹس",
-              fontFamily = UrduFontFamily,
-              fontWeight = FontWeight.Bold,
-              fontSize = 11.5.sp,
-              color = Color(0xFF25D366),
-              textAlign = TextAlign.Center,
-              modifier = Modifier.padding(vertical = 7.dp)
-            )
-          }
-
-          Surface(
-            shape = RoundedCornerShape(10.dp),
-            color = BronzeGold.copy(alpha = 0.14f),
-            border = BorderStroke(1.dp, BronzeGold.copy(alpha = 0.4f)),
-            modifier = Modifier
-              .weight(1f)
-              .clip(RoundedCornerShape(10.dp))
-              .clickable { ShareHelper.shareDhikrPoster(context, dhikr) }
-          ) {
-            Text(
-              text = "پوسٹر شیئر کریں",
-              fontFamily = UrduFontFamily,
-              fontWeight = FontWeight.Bold,
-              fontSize = 11.5.sp,
-              color = BronzeGoldLight,
-              textAlign = TextAlign.Center,
-              modifier = Modifier.padding(vertical = 7.dp)
-            )
-          }
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // Remind Later Button
-        Text(
-          text = "1 گھنٹے بعد دوبارہ یاد دلائیں",
-          fontFamily = UrduFontFamily,
-          fontSize = 12.sp,
-          color = Color(0xFF94A3B8),
-          modifier = Modifier
-            .clip(RoundedCornerShape(6.dp))
-            .clickable(onClick = onDismiss)
-            .padding(horizontal = 12.dp, vertical = 4.dp)
-        )
-      }
-    }
-  }
+  HeroPopupNotificationCard(
+    dhikr = dhikr,
+    onStartMoment = onStartMoment,
+    onDismiss = onDismiss,
+    countdownSeconds = 5,
+    modifier = modifier
+  )
 }
