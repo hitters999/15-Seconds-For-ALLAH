@@ -463,8 +463,9 @@ object PosterGenerator {
     cardRect: RectF
   ) {
     val cx = cardRect.centerX()
-    val contentWidth = (cardRect.width() - 56f).toInt()
-    val layoutLeft = cardRect.left + (cardRect.width() - contentWidth) / 2f
+    // Generous 50px horizontal padding on both left and right inside card so text never touches or cuts borders
+    val contentWidth = (cardRect.width() - 100f).toInt()
+    val layoutLeft = cx - (contentWidth / 2f)
 
     // -------------------------------------------------------------
     // A. Top Badges Row
@@ -500,25 +501,36 @@ object PosterGenerator {
     // C. MAGNIFIED, CRYSTAL-CLEAR ARABIC CALLIGRAPHY (Visible from afar!)
     // -------------------------------------------------------------
     val arabicLength = dhikr.arabic.length
-    val arabicTextSize = when {
-      arabicLength < 35 -> 80f // Grand, bold and readable across the room
-      arabicLength < 70 -> 66f
-      arabicLength < 120 -> 54f
-      arabicLength < 180 -> 44f
-      else -> 38f
+    var arabicTextSize = when {
+      arabicLength < 35 -> 72f // Grand, bold and readable across the room
+      arabicLength < 70 -> 56f
+      arabicLength < 120 -> 46f
+      arabicLength < 180 -> 38f
+      arabicLength < 250 -> 32f
+      else -> 27f
     }
 
     val arabicPaint = TextPaint().apply {
       color = Color.parseColor("#022B21") // Intense Deep Islamic Emerald Black (Maximum Contrast)
-      textSize = arabicTextSize
       typeface = getArabicTypeface(context)
-      textAlign = Paint.Align.CENTER
+      textAlign = Paint.Align.LEFT // Crucial for StaticLayout!
       isFakeBoldText = true // Extra bold weight so glyphs, nuktas & harkat are unmistakably clear
       isAntiAlias = true
-      setShadowLayer(4f, 1f, 1.5f, Color.parseColor("#38C5A059")) // Warm 24K gold soft drop shadow
+      setShadowLayer(3f, 1f, 1f, Color.parseColor("#38C5A059")) // Warm 24K gold soft drop shadow
     }
 
-    val arabicLayout = createCenteredLayout(dhikr.arabic, arabicPaint, contentWidth, 1.34f)
+    // Auto-scale Arabic text height if it exceeds 44% of card space (e.g. lengthy Hadiths)
+    val maxArabicHeight = cardRect.height() * 0.44f
+    var arabicLayout: StaticLayout
+    while (true) {
+      arabicPaint.textSize = arabicTextSize
+      arabicLayout = createCenteredLayout(dhikr.arabic, arabicPaint, contentWidth, 1.32f)
+      if (arabicLayout.height <= maxArabicHeight || arabicTextSize <= 22f) {
+        break
+      }
+      arabicTextSize -= 2f
+    }
+
     canvas.save()
     canvas.translate(layoutLeft, currentY)
     arabicLayout.draw(canvas)
@@ -529,23 +541,23 @@ object PosterGenerator {
     // -------------------------------------------------------------
     // D. Urdu Translation (Auto-Scaled so it NEVER cuts off or goes out of line!)
     // -------------------------------------------------------------
-    // Available remaining vertical budget inside card before bottom bounds
     val cardBottomLimit = cardRect.bottom - 18f
-    val citationReservedHeight = 54f // For source citation pill
+    val citationReservedHeight = 52f // For source citation pill
     val availableSpaceForUrdu = (cardBottomLimit - currentY - citationReservedHeight).coerceAtLeast(80f)
 
     val urduLength = dhikr.translationUrdu.length
     var initialUrduSize = when {
-      urduLength < 45 -> 34f
-      urduLength < 90 -> 29f
-      urduLength < 150 -> 25f
-      else -> 22f
+      urduLength < 45 -> 32f
+      urduLength < 90 -> 27f
+      urduLength < 150 -> 23f
+      urduLength < 250 -> 20f
+      else -> 18f
     }
 
     val urduPaint = TextPaint().apply {
       color = Color.parseColor("#631D08") // Deep Persian walnut ink
       typeface = getUrduTypeface(context)
-      textAlign = Paint.Align.CENTER
+      textAlign = Paint.Align.LEFT // Crucial for StaticLayout!
       isAntiAlias = true
     }
 
@@ -553,15 +565,15 @@ object PosterGenerator {
     var urduLayout: StaticLayout
     while (true) {
       urduPaint.textSize = initialUrduSize
-      urduLayout = createCenteredLayout(dhikr.translationUrdu, urduPaint, contentWidth - 24, 1.35f)
-      if (urduLayout.height <= availableSpaceForUrdu || initialUrduSize <= 19f) {
+      urduLayout = createCenteredLayout(dhikr.translationUrdu, urduPaint, contentWidth, 1.32f)
+      if (urduLayout.height <= availableSpaceForUrdu || initialUrduSize <= 16f) {
         break
       }
-      initialUrduSize -= 1.5f
+      initialUrduSize -= 1f
     }
 
     canvas.save()
-    canvas.translate(layoutLeft + 12f, currentY)
+    canvas.translate(layoutLeft, currentY)
     urduLayout.draw(canvas)
     canvas.restore()
 
@@ -578,7 +590,7 @@ object PosterGenerator {
       isAntiAlias = true
     }
     val sourceTextWidth = sourcePaint.measureText(sourceLabel)
-    val sourcePillWidth = (sourceTextWidth + 44f).coerceAtLeast(210f)
+    val sourcePillWidth = (sourceTextWidth + 44f).coerceIn(210f, cardRect.width() - 60f)
     val pillTop = currentY.coerceAtMost(cardBottomLimit - 42f)
     val sourcePillRect = RectF(cx - sourcePillWidth / 2f, pillTop, cx + sourcePillWidth / 2f, pillTop + 38f)
     drawCardPill(canvas, sourcePillRect, sourceLabel, Typeface.create(Typeface.SERIF, Typeface.BOLD), 20f, Color.parseColor("#8A5A1A"), Color.parseColor("#FAF3E2"), Color.parseColor("#D4AF37"))
@@ -589,22 +601,25 @@ object PosterGenerator {
     // F. "سبق و تدبر" Contemplative Wisdom Card (Only if ample space remains!)
     // -------------------------------------------------------------
     val remainingForTadabbur = cardBottomLimit - currentY
-    if (remainingForTadabbur >= 85f && dhikr.contemplativeNote.isNotBlank()) {
+    if (remainingForTadabbur >= 65f && dhikr.contemplativeNote.isNotBlank()) {
+      val tadabburBoxWidth = cardRect.width() - 60f
+      val tadabburInnerWidth = (tadabburBoxWidth - 36f).toInt()
+      val tadabburLayoutX = cx - (tadabburInnerWidth / 2f)
+
       val notePaint = TextPaint().apply {
         color = Color.parseColor("#4A3B2C")
-        textSize = 21f
+        textSize = 20f
         typeface = getUrduTypeface(context)
-        textAlign = Paint.Align.CENTER
+        textAlign = Paint.Align.LEFT // Crucial for StaticLayout!
         isAntiAlias = true
       }
 
       val fullNote = "سبق و تدبر: ${dhikr.contemplativeNote}"
-      val tadabburWidth = cardRect.width() - 50f
-      val noteLayout = createCenteredLayout(fullNote, notePaint, (tadabburWidth - 44f).toInt(), 1.32f)
+      val noteLayout = createCenteredLayout(fullNote, notePaint, tadabburInnerWidth, 1.30f)
 
-      val boxHeight = (noteLayout.height + 26f).coerceAtMost(remainingForTadabbur)
-      if (boxHeight >= 55f) {
-        val tadabburRect = RectF(cardRect.left + 25f, currentY, cardRect.right - 25f, currentY + boxHeight)
+      val boxHeight = (noteLayout.height + 22f).coerceAtMost(remainingForTadabbur)
+      if (boxHeight >= 48f) {
+        val tadabburRect = RectF(cx - tadabburBoxWidth / 2f, currentY, cx + tadabburBoxWidth / 2f, currentY + boxHeight)
 
         val tadabburBg = Paint().apply {
           color = Color.parseColor("#FFFDF5")
@@ -621,7 +636,7 @@ object PosterGenerator {
 
         val noteY = tadabburRect.centerY() - (noteLayout.height / 2f)
         canvas.save()
-        canvas.translate(layoutLeft + 12f, noteY)
+        canvas.translate(tadabburLayoutX, noteY)
         noteLayout.draw(canvas)
         canvas.restore()
       }
@@ -736,6 +751,11 @@ object PosterGenerator {
     maxWidth: Int,
     spacingMult: Float
   ): StaticLayout {
+    // CRITICAL FIX: paint.textAlign MUST be LEFT when creating StaticLayout.
+    // Setting textAlign = CENTER on paint causes StaticLayout to double-shift Arabic/Urdu text to the left,
+    // which pushes the text off-center and clips it against the left border!
+    paint.textAlign = Paint.Align.LEFT
+
     return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
       StaticLayout.Builder.obtain(text, 0, text.length, paint, maxWidth)
         .setAlignment(Layout.Alignment.ALIGN_CENTER)

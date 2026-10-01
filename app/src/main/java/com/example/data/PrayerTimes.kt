@@ -9,7 +9,10 @@ data class PrayerTimeItem(
   val time12: String, // "5:12 AM"
   val isNext: Boolean = false,
   val isPassed: Boolean = false
-)
+) {
+  val nameUrdu: String get() = nameUr
+  val nameEnglish: String get() = nameEn
+}
 
 data class PrayerTimesState(
   val items: List<PrayerTimeItem> = defaultPrayerItems(),

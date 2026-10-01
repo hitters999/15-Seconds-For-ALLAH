@@ -127,6 +127,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
   // Backward compatibility aliases
   val showFloatingBanner: StateFlow<Boolean> get() = _showReminderPopup.asStateFlow()
   val floatingBannerDhikr: StateFlow<DhikrItem> get() = _reminderPopupDhikr.asStateFlow()
+  val currentStreak: StateFlow<Int> get() = streakCount
+  val momentTimerState: StateFlow<MomentTimerUiState> get() = timerState
+  val featuredDhikrItem: StateFlow<DhikrItem> get() = rotatingFeaturedDhikr
+  val reminderInterval: StateFlow<String> = userSettings.map { it.reminderInterval }
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "Every 1 hour (1 گھنٹہ بعد)")
+
+  fun startCurrentMoment() {
+    val currentItem = rotatingFeaturedDhikr.value
+    selectDhikrForMoment(currentItem, startImmediately = true)
+  }
 
   // Streak & Statistics calculation
   val streakCount: StateFlow<Int> = allLogs.combine(todayLogs) { logs, _ ->
