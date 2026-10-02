@@ -34,6 +34,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
@@ -632,6 +633,44 @@ ${hadith.urduText}
                   ) {
                     Icon(Icons.Filled.ContentCopy, contentDescription = "Copy", tint = titleColor, modifier = Modifier.size(16.dp))
                   }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Instant Points Claim for Hadith Recitation
+                Button(
+                  onClick = {
+                    val dhikrItem = DhikrItem(
+                      id = "hadith_${hadith.bookId}_${hadith.hadithNumber}",
+                      arabic = hadith.arabicText.take(180),
+                      transliteration = "${hadith.bookNameEnglish} #${hadith.hadithNumber}",
+                      translationUrdu = hadith.urduText.take(220),
+                      translation = hadith.englishText.take(180),
+                      contemplativeNote = "حدیث مبارکہ کا مطالعہ اور سنت پر عمل۔",
+                      category = hadith.bookNameUrdu,
+                      source = "${hadith.bookNameUrdu} ${hadith.hadithNumber}",
+                      virtue = "سنت نبویﷺ کا علم اور حسنات کا حصول۔",
+                      defaultDurationSeconds = 15,
+                      isQuranic = false
+                    )
+                    viewModel.claimMomentPoints(dhikrItem)
+                  },
+                  colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Color(0xFF1B1305)),
+                  shape = RoundedCornerShape(12.dp),
+                  modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp)
+                    .testTag("hadith_claim_points_button")
+                ) {
+                  Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Color(0xFF1B1305), modifier = Modifier.size(17.dp))
+                  Spacer(modifier = Modifier.width(6.dp))
+                  Text(
+                    text = "✓ حدیث کا مطالعہ مکمل کیا (+10 حسنات حاصل کریں)",
+                    fontFamily = UrduFontFamily,
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1B1305)
+                  )
                 }
               }
             }

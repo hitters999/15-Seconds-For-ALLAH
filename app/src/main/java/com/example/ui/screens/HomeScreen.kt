@@ -38,6 +38,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Mosque
@@ -59,6 +60,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -133,6 +135,8 @@ fun HomeScreen(
   val totalMoments = viewModel.totalMomentsCount.collectAsState().value
   val reminderInterval = viewModel.reminderInterval.collectAsState().value
   val dynamicGreeting by viewModel.dynamicGreeting.collectAsState()
+  val userSettings by viewModel.userSettings.collectAsState()
+  val totalScore = userSettings.totalScore
 
   var previewPosterItem by remember { mutableStateOf<DhikrItem?>(null) }
 
@@ -155,6 +159,7 @@ fun HomeScreen(
           currentTime = currentTime,
           dynamicGreeting = dynamicGreeting,
           streakCount = streakCount,
+          totalScore = totalScore,
           onProfileClick = { viewModel.navigateTo(Screen.Profile) }
         )
       }
@@ -186,6 +191,9 @@ fun HomeScreen(
           timerState = timerState,
           onStart = {
             viewModel.startCurrentMoment()
+          },
+          onQuickClaim = {
+            viewModel.claimMomentPoints()
           }
         )
       }
@@ -214,6 +222,9 @@ fun HomeScreen(
               },
               onOpenHadithExplorer = {
                 viewModel.navigateTo(Screen.HadithExplorer)
+              },
+              onQuickClaim = {
+                viewModel.claimMomentPoints(featuredItem)
               }
             )
           }
@@ -227,6 +238,7 @@ fun HomeScreen(
         PremiumJourneyCard(
           streakCount = streakCount,
           totalMoments = totalMoments,
+          totalScore = totalScore,
           onViewInsights = { viewModel.navigateTo(Screen.Insights) }
         )
       }
@@ -267,6 +279,7 @@ private fun PremiumTopHeader(
   currentTime: String,
   dynamicGreeting: Pair<String, String>,
   streakCount: Int,
+  totalScore: Int,
   onProfileClick: () -> Unit
 ) {
   val (urduGreeting, salamText) = dynamicGreeting
@@ -317,59 +330,87 @@ private fun PremiumTopHeader(
           )
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(10.dp))
 
         Column {
           Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
               text = "15 Seconds 4 Allah",
               fontFamily = FontFamily.Serif,
-              fontSize = 15.sp,
+              fontSize = 14.5.sp,
               fontWeight = FontWeight.Bold,
               color = if (isDark) DarkTextPrimary else DeepEmerald
             )
-            Spacer(modifier = Modifier.width(4.dp))
+            Spacer(modifier = Modifier.width(3.dp))
             Icon(
               imageVector = Icons.Filled.AutoAwesome,
               contentDescription = null,
               tint = Gold,
-              modifier = Modifier.size(13.dp)
+              modifier = Modifier.size(12.dp)
             )
           }
 
           Text(
             text = "$salamText • $currentTime",
             fontFamily = UrduFontFamily,
-            fontSize = 11.5.sp,
+            fontSize = 11.sp,
             color = if (isDark) DarkTextSoft else Brown
           )
         }
       }
 
-      // Right: Streak Badge
-      Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = if (isDark) Gold.copy(alpha = 0.15f) else SoftGold.copy(alpha = 0.35f),
-        border = BorderStroke(1.dp, Gold.copy(alpha = 0.5f))
+      // Right: Streak Badge & Points Badge
+      Row(
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        verticalAlignment = Alignment.CenterVertically
       ) {
-        Row(
-          modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-          verticalAlignment = Alignment.CenterVertically
+        // Streak Badge
+        Surface(
+          shape = RoundedCornerShape(14.dp),
+          color = if (isDark) Gold.copy(alpha = 0.15f) else SoftGold.copy(alpha = 0.35f),
+          border = BorderStroke(1.dp, Gold.copy(alpha = 0.5f))
         ) {
-          Icon(
-            imageVector = Icons.Filled.LocalFireDepartment,
-            contentDescription = "Streak",
-            tint = Color(0xFFE65100),
-            modifier = Modifier.size(17.dp)
-          )
-          Spacer(modifier = Modifier.width(4.dp))
-          Text(
-            text = "$streakCount Days",
-            fontFamily = FontFamily.SansSerif,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            color = if (isDark) Gold else DeepEmerald
-          )
+          Row(
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Icon(
+              imageVector = Icons.Filled.LocalFireDepartment,
+              contentDescription = "Streak",
+              tint = Color(0xFFE65100),
+              modifier = Modifier.size(15.dp)
+            )
+            Spacer(modifier = Modifier.width(3.dp))
+            Text(
+              text = "$streakCount D",
+              fontFamily = FontFamily.SansSerif,
+              fontSize = 11.5.sp,
+              fontWeight = FontWeight.Bold,
+              color = if (isDark) Gold else DeepEmerald
+            )
+          }
+        }
+
+        // Live Points Badge
+        Surface(
+          shape = RoundedCornerShape(14.dp),
+          color = if (isDark) Emerald.copy(alpha = 0.4f) else Emerald.copy(alpha = 0.12f),
+          border = BorderStroke(1.dp, if (isDark) Gold else Emerald.copy(alpha = 0.4f))
+        ) {
+          Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Text("⭐", fontSize = 11.sp)
+            Spacer(modifier = Modifier.width(3.dp))
+            Text(
+              text = "$totalScore pts",
+              fontFamily = FontFamily.Serif,
+              fontSize = 11.5.sp,
+              fontWeight = FontWeight.Bold,
+              color = if (isDark) Gold else DeepEmerald
+            )
+          }
         }
       }
     }
@@ -556,7 +597,8 @@ private fun LivePrayerTimesCard(
 @Composable
 private fun PremiumMomentHero(
   timerState: MomentTimerUiState,
-  onStart: () -> Unit
+  onStart: () -> Unit,
+  onQuickClaim: () -> Unit
 ) {
   val infiniteTransition = rememberInfiniteTransition(label = "hero_glow")
   val pulseScale by infiniteTransition.animateFloat(
@@ -716,6 +758,34 @@ private fun PremiumMomentHero(
             color = Color(0xFF1B1305)
           )
         }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Quick Claim Points Button
+        OutlinedButton(
+          onClick = onQuickClaim,
+          shape = RoundedCornerShape(14.dp),
+          border = BorderStroke(1.2.dp, SoftGold.copy(alpha = 0.8f)),
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(44.dp)
+            .testTag("quick_claim_points_hero_button")
+        ) {
+          Icon(
+            imageVector = Icons.Filled.CheckCircle,
+            contentDescription = null,
+            tint = SoftGold,
+            modifier = Modifier.size(17.dp)
+          )
+          Spacer(modifier = Modifier.width(6.dp))
+          Text(
+            text = "✓ پڑھ لیا • فوری +10 حسنات حاصل کریں",
+            fontFamily = UrduFontFamily,
+            fontSize = 12.5.sp,
+            fontWeight = FontWeight.Bold,
+            color = SoftGold
+          )
+        }
       }
     }
   }
@@ -738,7 +808,8 @@ private fun FeaturedDhikrCard(
   isDark: Boolean,
   onStart15s: () -> Unit,
   onSharePoster: () -> Unit,
-  onOpenHadithExplorer: () -> Unit
+  onOpenHadithExplorer: () -> Unit,
+  onQuickClaim: () -> Unit
 ) {
   Card(
     shape = RoundedCornerShape(22.dp),
@@ -887,6 +958,29 @@ private fun FeaturedDhikrCard(
           Text("واٹس ایپ پوسٹر", fontFamily = UrduFontFamily, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
       }
+
+      Spacer(modifier = Modifier.height(10.dp))
+
+      // Quick Claim Reflection Button
+      OutlinedButton(
+        onClick = onQuickClaim,
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.2.dp, Gold),
+        modifier = Modifier
+          .fillMaxWidth()
+          .height(42.dp)
+          .testTag("featured_dhikr_quick_claim_button")
+      ) {
+        Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Gold, modifier = Modifier.size(16.dp))
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+          text = "✓ پڑھ لیا • +10 حسنات شامل کریں",
+          fontFamily = UrduFontFamily,
+          fontSize = 12.5.sp,
+          fontWeight = FontWeight.Bold,
+          color = if (isDark) Gold else DeepEmerald
+        )
+      }
     }
   }
 }
@@ -899,6 +993,7 @@ private fun FeaturedDhikrCard(
 private fun PremiumJourneyCard(
   streakCount: Int,
   totalMoments: Int,
+  totalScore: Int,
   onViewInsights: () -> Unit
 ) {
   val isDark = isSystemInDarkTheme()
@@ -949,7 +1044,7 @@ private fun PremiumJourneyCard(
             color = if (isDark) DarkTextPrimary else DeepEmerald
           )
           Text(
-            text = "$streakCount مسلسل دن • $totalMoments لمحات مکمل",
+            text = "$streakCount مسلسل دن • $totalMoments لمحات • $totalScore حسنات",
             fontFamily = UrduFontFamily,
             fontSize = 11.5.sp,
             color = if (isDark) DarkTextSoft else Brown

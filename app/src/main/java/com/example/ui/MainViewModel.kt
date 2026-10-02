@@ -64,6 +64,14 @@ data class MomentTimerUiState(
   val currentCycle: Int = 1
 )
 
+data class PointsEarnedEvent(
+  val pointsAwarded: Int = 10,
+  val totalScore: Int,
+  val spiritualRank: String,
+  val dhikrTitle: String,
+  val timestamp: Long = System.currentTimeMillis()
+)
+
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
   private val database = AppDatabase.getDatabase(application)
@@ -74,23 +82,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
   val currentScreen: StateFlow<Screen> = _currentScreen.asStateFlow()
 
   val userSettings: StateFlow<UserSettingsEntity> = repository.userSettings
-    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UserSettingsEntity())
+    .stateIn(viewModelScope, SharingStarted.Eagerly, UserSettingsEntity())
 
   val registeredAccounts: StateFlow<List<UserAccountEntity>> = repository.registeredAccounts
-    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
   val allItems: StateFlow<List<DhikrItem>> = repository.allItems
-    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DhikrCatalog.items)
+    .stateIn(viewModelScope, SharingStarted.Eagerly, DhikrCatalog.items)
 
   val bookmarkedItems: StateFlow<List<DhikrItem>> = allItems.map { list ->
     list.filter { it.isBookmarked }
-  }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+  }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
   val todayLogs: StateFlow<List<MomentLogEntity>> = repository.getTodayLogs()
-    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
   val allLogs: StateFlow<List<MomentLogEntity>> = repository.allLogs
-    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
   val recentLogs: StateFlow<List<MomentLogEntity>> = repository.getRecentLogs(10)
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -133,18 +141,53 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
   val reminderInterval: StateFlow<String> = userSettings.map { it.reminderInterval }
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "Every 1 hour (1 گھنٹہ بعد)")
 
+  // Points & Spiritual Score State
+  val userTotalScore: StateFlow<Int> = userSettings.map { it.totalScore }
+    .stateIn(viewModelScope, SharingStarted.Eagerly, 340)
+
+  val userSpiritualRank: StateFlow<String> = userSettings.map { it.spiritualRank }
+    .stateIn(viewModelScope, SharingStarted.Eagerly, "مبتدی (Seeker of Peace)")
+
+  private val _pointsCelebration = MutableStateFlow<PointsEarnedEvent?>(null)
+  val pointsCelebration: StateFlow<PointsEarnedEvent?> = _pointsCelebration.asStateFlow()
+
+  fun dismissPointsCelebration() {
+    _pointsCelebration.value = null
+  }
+
   fun startCurrentMoment() {
     val currentItem = rotatingFeaturedDhikr.value
     selectDhikrForMoment(currentItem, startImmediately = true)
   }
 
+  fun claimMomentPoints(dhikr: DhikrItem? = null) {
+    viewModelScope.launch {
+      val item = dhikr ?: _selectedDhikr.value
+      timerJob?.cancel()
+      _timerState.value = _timerState.value.copy(
+        isRunning = false,
+        isCompleted = true,
+        remainingSeconds = 0f
+      )
+      val updated = repository.logCompletedMoment(item, 15)
+      soundAndHaptics.triggerCelebrationHaptic()
+      soundAndHaptics.playChime()
+      _pointsCelebration.value = PointsEarnedEvent(
+        pointsAwarded = 10,
+        totalScore = updated.totalScore,
+        spiritualRank = updated.spiritualRank,
+        dhikrTitle = item.transliteration
+      )
+    }
+  }
+
   // Streak & Statistics calculation
   val streakCount: StateFlow<Int> = allLogs.combine(todayLogs) { logs, _ ->
     calculateStreak(logs)
-  }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 21)
+  }.stateIn(viewModelScope, SharingStarted.Eagerly, 21)
 
   val totalMomentsCount: StateFlow<Int> = repository.totalMomentsCount
-    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 340)
+    .stateIn(viewModelScope, SharingStarted.Eagerly, 340)
 
   // 35-day activity grid
   val activityGrid: StateFlow<List<DayActivity>> = allLogs.combine(todayLogs) { logs, _ ->
@@ -255,6 +298,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
       if (existingLogs.isEmpty()) {
         repository.seedInitialDataIfEmpty()
       }
+      repository.ensureUserSettingsInitialized()
     }
 
     // Preload Hadith 1 of Sahih al-Bukhari
@@ -467,7 +511,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     viewModelScope.launch {
-      repository.logCompletedMoment(_selectedDhikr.value, _timerState.value.totalSeconds)
+      val updated = repository.logCompletedMoment(_selectedDhikr.value, _timerState.value.totalSeconds)
+      _pointsCelebration.value = PointsEarnedEvent(
+        pointsAwarded = 10,
+        totalScore = updated.totalScore,
+        spiritualRank = updated.spiritualRank,
+        dhikrTitle = _selectedDhikr.value.transliteration
+      )
     }
   }
 

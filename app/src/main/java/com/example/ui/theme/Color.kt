@@ -35,3 +35,13 @@ val DarkAccentGold = Color(0xFFFBBF24)
 val InkTealDeep = InkTealDark
 val ParchmentBg = ParchmentSurface
 val DarkBorder = DarkCardBorder
+
+// Royal Islamic Wellness Aesthetic Colors
+val Ivory = Color(0xFFF8F3E8)
+val CardIvory = Color(0xFFFFFCF5)
+val Emerald = Color(0xFF075B4B)
+val DeepEmerald = Color(0xFF034438)
+val Gold = Color(0xFFC7953E)
+val SoftGold = Color(0xFFE8D4A8)
+val Brown = Color(0xFF755B42)
+val Muted = Color(0xFF8C8174)

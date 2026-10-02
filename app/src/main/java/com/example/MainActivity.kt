@@ -50,6 +50,7 @@ import com.example.ui.MainViewModel
 import com.example.ui.Screen
 import com.example.ui.components.DhikrReminderPopupDialog
 import com.example.ui.components.OnboardingPermissionDialog
+import com.example.ui.components.PointsCelebrationDialog
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.InsightsScreen
 import com.example.ui.screens.LibraryScreen
@@ -123,6 +124,7 @@ fun MainApp(viewModel: MainViewModel) {
   val currentScreen by viewModel.currentScreen.collectAsState()
   val showReminderPopup by viewModel.showReminderPopup.collectAsState()
   val reminderPopupDhikr by viewModel.reminderPopupDhikr.collectAsState()
+  val pointsCelebration by viewModel.pointsCelebration.collectAsState()
 
   var showOnboardingPermission by remember {
     mutableStateOf(!NotificationHelper.hasNotificationPermission(context))
@@ -207,6 +209,14 @@ fun MainApp(viewModel: MainViewModel) {
           viewModel.selectDhikrForMoment(reminderPopupDhikr, startImmediately = true)
         },
         onDismiss = { viewModel.dismissReminderPopup() }
+      )
+    }
+
+    // Points & Hasanat Earned Celebration Dialog (+10 Points Confirmation)
+    if (pointsCelebration != null) {
+      PointsCelebrationDialog(
+        event = pointsCelebration!!,
+        onDismiss = { viewModel.dismissPointsCelebration() }
       )
     }
   }

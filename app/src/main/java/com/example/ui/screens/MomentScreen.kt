@@ -23,11 +23,14 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -84,6 +87,7 @@ fun MomentScreen(
 ) {
   val selectedDhikr by viewModel.selectedDhikr.collectAsState()
   val timerState by viewModel.timerState.collectAsState()
+  val userSettings by viewModel.userSettings.collectAsState()
   val scrollState = rememberScrollState()
   val context = LocalContext.current
   val isDark = isSystemInDarkTheme()
@@ -110,7 +114,7 @@ fun MomentScreen(
     ) {
       Spacer(modifier = Modifier.height(10.dp))
 
-      // Top Bar: Back to Home, Source Citation, Bookmark, Share
+      // Top Bar: Back to Home, Live Points Pill, Bookmark, Share
       Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -127,19 +131,26 @@ fun MomentScreen(
           )
         }
 
+        // Live Points Counter Pill
         Surface(
-          shape = RoundedCornerShape(8.dp),
-          color = goldColor.copy(alpha = 0.12f),
-          border = BorderStroke(0.8.dp, goldColor.copy(alpha = 0.25f))
+          shape = RoundedCornerShape(12.dp),
+          color = goldColor.copy(alpha = 0.15f),
+          border = BorderStroke(1.dp, goldColor.copy(alpha = 0.45f))
         ) {
-          Text(
-            text = selectedDhikr.source,
-            fontFamily = FontFamily.Serif,
-            fontSize = 11.5.sp,
-            color = goldColor,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-          )
+          Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Text("⭐", fontSize = 11.sp)
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+              text = "${userSettings.totalScore} pts",
+              fontFamily = FontFamily.Serif,
+              fontSize = 12.sp,
+              fontWeight = FontWeight.Bold,
+              color = goldColor
+            )
+          }
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -230,7 +241,39 @@ fun MomentScreen(
         }
       }
 
-      Spacer(modifier = Modifier.height(18.dp))
+      Spacer(modifier = Modifier.height(14.dp))
+
+      // Instant Points Claim / Moment Completed Button
+      Button(
+        onClick = { viewModel.claimMomentPoints(selectedDhikr) },
+        colors = ButtonDefaults.buttonColors(
+          containerColor = goldColor,
+          contentColor = Color(0xFF1B1305)
+        ),
+        shape = RoundedCornerShape(16.dp),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+        modifier = Modifier
+          .fillMaxWidth()
+          .height(48.dp)
+          .testTag("claim_points_button")
+      ) {
+        Icon(
+          imageVector = Icons.Filled.CheckCircle,
+          contentDescription = null,
+          tint = Color(0xFF1B1305),
+          modifier = Modifier.size(19.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+          text = if (timerState.isCompleted) "✓ مبارک! دوبارہ ۱۰ حسنات حاصل کریں" else "✓ ذکر پڑھ لیا • +10 حسنات حاصل کریں",
+          fontFamily = UrduFontFamily,
+          fontSize = 13.5.sp,
+          fontWeight = FontWeight.Bold,
+          color = Color(0xFF1B1305)
+        )
+      }
+
+      Spacer(modifier = Modifier.height(16.dp))
 
       // Sacred Ayah / Hadith Reading Card
       Card(

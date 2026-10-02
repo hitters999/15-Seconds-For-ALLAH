@@ -54,7 +54,7 @@ class DhikrRepository(
 
   val registeredAccounts: Flow<List<UserAccountEntity>> = dao.getAllRegisteredAccounts()
 
-  suspend fun logCompletedMoment(item: DhikrItem, durationSeconds: Int = 15) {
+  suspend fun logCompletedMoment(item: DhikrItem, durationSeconds: Int = 15): UserSettingsEntity {
     val dateKey = getTodayDateKey()
     val log = MomentLogEntity(
       dhikrId = item.id,
@@ -70,9 +70,9 @@ class DhikrRepository(
     val current = dao.getUserSettingsDirect() ?: UserSettingsEntity()
     val newScore = current.totalScore + 10
     val rank = when {
-      newScore >= 5000 -> "صاحبِ استقامت (Master of Devotion)"
-      newScore >= 2000 -> "ذاکرِ مداوم (Consistent Rememberer)"
-      newScore >= 800 -> "محبِ ذکر (Lover of Remembrance)"
+      newScore >= 5000 -> "صاحبِ استقامت (Master League)"
+      newScore >= 2000 -> "ذاکرِ مداوم (Diamond League)"
+      newScore >= 800 -> "محبِ ذکر (Gold League)"
       else -> "مبتدی (Seeker of Peace)"
     }
     val updated = current.copy(totalScore = newScore, spiritualRank = rank)
@@ -87,6 +87,21 @@ class DhikrRepository(
           displayName = updated.userName,
           accountType = updated.authProvider,
           totalScore = newScore
+        )
+      )
+    }
+    return updated
+  }
+
+  suspend fun ensureUserSettingsInitialized() {
+    val current = dao.getUserSettingsDirect()
+    if (current == null) {
+      dao.insertOrUpdateUserSettings(
+        UserSettingsEntity(
+          id = 1,
+          userName = "خادمِ ذکر (Servant of Allah)",
+          totalScore = 340,
+          spiritualRank = "مبتدی (Seeker of Peace)"
         )
       )
     }
