@@ -8,18 +8,11 @@ import android.view.Gravity
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.MainActivity
 import com.example.data.DhikrCatalog
@@ -28,11 +21,9 @@ import com.example.ui.components.HeroPopupNotificationCard
 import com.example.ui.theme.MyApplicationTheme
 
 /**
- * Transparent standalone Activity that displays the wide top-floating Hero Popup Notification.
- * Tailored to user's specification:
- * - NOT a full-screen blocking modal!
- * - Floats gracefully at the top of the screen ("WhatsApp notification se thora zyda choora, bara")
- * - Completely transparent background, tap outside to dismiss immediately.
+ * Non-blocking Top Strip Activity fallback (with taskAffinity="" and singleInstance).
+ * Never opens MainActivity, never occupies the full screen, and passes all outside
+ * touches directly to the underlying application (FLAG_NOT_TOUCH_MODAL | FLAG_NOT_FOCUSABLE).
  */
 class PopupNotificationActivity : ComponentActivity() {
 
@@ -42,8 +33,8 @@ class PopupNotificationActivity : ComponentActivity() {
     fun start(context: Context, dhikr: DhikrItem) {
       val intent = Intent(context, PopupNotificationActivity::class.java).apply {
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-          Intent.FLAG_ACTIVITY_CLEAR_TOP or
-          Intent.FLAG_ACTIVITY_SINGLE_TOP
+          Intent.FLAG_ACTIVITY_NO_ANIMATION or
+          Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
         putExtra(EXTRA_DHIKR_ID, dhikr.id)
       }
       context.startActivity(intent)
@@ -52,8 +43,8 @@ class PopupNotificationActivity : ComponentActivity() {
     fun getPendingIntent(context: Context, dhikr: DhikrItem): PendingIntent {
       val intent = Intent(context, PopupNotificationActivity::class.java).apply {
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-          Intent.FLAG_ACTIVITY_CLEAR_TOP or
-          Intent.FLAG_ACTIVITY_SINGLE_TOP
+          Intent.FLAG_ACTIVITY_NO_ANIMATION or
+          Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
         putExtra(EXTRA_DHIKR_ID, dhikr.id)
       }
       return PendingIntent.getActivity(
@@ -67,14 +58,21 @@ class PopupNotificationActivity : ComponentActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    enableEdgeToEdge()
+    @Suppress("DEPRECATION")
+    overridePendingTransition(0, 0)
 
-    // Position window at top without dim scrim
+    // Configure strictly as a top-only non-modal strip so ongoing user work never stops
+    window.setLayout(
+      WindowManager.LayoutParams.MATCH_PARENT,
+      WindowManager.LayoutParams.WRAP_CONTENT
+    )
     window.setGravity(Gravity.TOP)
     window.setDimAmount(0f)
     window.addFlags(
-      WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+      WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+        WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or
+        WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
         WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
     )
 
@@ -84,45 +82,34 @@ class PopupNotificationActivity : ComponentActivity() {
 
     setContent {
       MyApplicationTheme {
-        // Full screen transparent clickable backdrop: taps outside dismiss the popup
         Box(
           modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Transparent)
-            .statusBarsPadding()
-            .clickable(
-              interactionSource = remember { MutableInteractionSource() },
-              indication = null
-            ) {
-              finish()
-            },
+            .fillMaxWidth()
+            .padding(top = 6.dp),
           contentAlignment = Alignment.TopCenter
         ) {
-          // Inner card container that does NOT bubble clicks to the dismissal backdrop
-          Box(
-            modifier = Modifier
-              .padding(top = 8.dp)
-              .clickable(enabled = false) {}
-          ) {
-            HeroPopupNotificationCard(
-              dhikr = dhikr,
-              countdownSeconds = NotificationHelper.getPopupDurationSeconds(this@PopupNotificationActivity),
-              onStartMoment = {
-                val mainIntent = Intent(this@PopupNotificationActivity, MainActivity::class.java).apply {
-                  flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                  putExtra("TARGET_SCREEN", "MOMENT")
-                  putExtra("DHIKR_ID", dhikr.id)
-                }
-                startActivity(mainIntent)
-                finish()
-              },
-              onDismiss = {
-                finish()
-              }
-            )
-          }
+          HeroPopupNotificationCard(
+            dhikr = dhikr,
+            countdownSeconds = NotificationHelper.getPopupDurationSeconds(this@PopupNotificationActivity),
+            onStartMoment = {
+              finish()
+              @Suppress("DEPRECATION")
+              overridePendingTransition(0, 0)
+            },
+            onDismiss = {
+              finish()
+              @Suppress("DEPRECATION")
+              overridePendingTransition(0, 0)
+            }
+          )
         }
       }
     }
+  }
+
+  override fun finish() {
+    super.finish()
+    @Suppress("DEPRECATION")
+    overridePendingTransition(0, 0)
   }
 }

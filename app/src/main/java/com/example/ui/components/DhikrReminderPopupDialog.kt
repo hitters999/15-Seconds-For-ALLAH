@@ -38,6 +38,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
@@ -51,6 +52,7 @@ import com.example.R
 import com.example.data.DhikrItem
 import com.example.ui.theme.ArabicFontFamily
 import com.example.ui.theme.UrduNastaliqFontFamily
+import com.example.util.ShareHelper
 import kotlinx.coroutines.delay
 
 /**
@@ -71,6 +73,7 @@ fun HeroPopupNotificationCard(
   countdownSeconds: Int = 5,
   modifier: Modifier = Modifier
 ) {
+  val context = LocalContext.current
   var progressTarget by remember { mutableFloatStateOf(1f) }
 
   LaunchedEffect(dhikr.id) {
@@ -166,20 +169,27 @@ fun HeroPopupNotificationCard(
               color = Color.White
             )
             Text(
-              text = "A moment. A brighter day.",
-              fontFamily = FontFamily.SansSerif,
-              fontSize = 11.5.sp,
-              color = Color(0xFF8BA5AA)
+              text = "✨ ثواب بھی ، Rewards بھی • 1 Pt = 1 Paisa",
+              fontFamily = UrduNastaliqFontFamily,
+              fontSize = 11.sp,
+              color = Color(0xFFFDE68A)
             )
           }
         }
 
-        Text(
-          text = "now",
-          fontFamily = FontFamily.SansSerif,
-          fontSize = 11.5.sp,
-          color = Color(0xFF6B8B90)
-        )
+        Surface(
+          shape = RoundedCornerShape(12.dp),
+          color = Color(0xFFE5C07B)
+        ) {
+          Text(
+            text = "+10 Pts (10 پیسے) 🪙",
+            fontFamily = UrduNastaliqFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 10.5.sp,
+            color = Color(0xFF041F1A),
+            modifier = Modifier.padding(horizontal = 9.dp, vertical = 2.dp)
+          )
+        }
       }
 
       Spacer(modifier = Modifier.height(12.dp))
@@ -309,7 +319,31 @@ fun HeroPopupNotificationCard(
           )
         }
 
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Prominent Golden "GET REWARDS" Button connected directly to Toolyfi 15s Timer Page
+        Surface(
+          shape = RoundedCornerShape(16.dp),
+          color = Color(0xFFE5C07B),
+          modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .clickable {
+              onDismiss()
+              ShareHelper.openWebTimerPage(context, dhikr)
+            }
+            .testTag("popup_get_rewards_button")
+        ) {
+          Text(
+            text = "🎁 GET REWARDS",
+            fontFamily = FontFamily.SansSerif,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 11.5.sp,
+            color = Color(0xFF041F1A),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+          )
+        }
+
+        Spacer(modifier = Modifier.width(6.dp))
 
         // "Later" Pill Button
         Surface(
@@ -325,9 +359,9 @@ fun HeroPopupNotificationCard(
             text = "Later",
             fontFamily = FontFamily.SansSerif,
             fontWeight = FontWeight.SemiBold,
-            fontSize = 12.sp,
+            fontSize = 11.5.sp,
             color = Color(0xFFE2E8F0),
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
           )
         }
       }

@@ -189,7 +189,34 @@ fun PosterPreviewDialog(
           }
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Direct "GET REWARDS" Button connected to Toolyfi 15s Timer Page
+        Button(
+          onClick = {
+            ShareHelper.openWebTimerPage(context, dhikr)
+            onDismiss()
+          },
+          colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFFE5C07B),
+            contentColor = Color(0xFF041F1A)
+          ),
+          shape = RoundedCornerShape(12.dp),
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(46.dp)
+            .testTag("poster_preview_get_rewards_btn")
+        ) {
+          Text(
+            text = "🎁 GET REWARDS • ثواب بھی ، Rewards بھی (15s Web Timer)",
+            fontFamily = UrduFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 13.sp,
+            color = Color(0xFF041F1A)
+          )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         // Action Buttons Row
         Row(

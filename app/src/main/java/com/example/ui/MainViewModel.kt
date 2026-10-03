@@ -10,6 +10,7 @@ import com.example.data.DhikrItem
 import com.example.data.DhikrRepository
 import com.example.data.HadithBookInfo
 import com.example.data.HadithCollections
+import com.example.data.HadithEntity
 import com.example.data.HadithItemDetail
 import com.example.data.HadithRepository
 import com.example.data.MomentLogEntity
@@ -17,6 +18,7 @@ import com.example.data.PrayerTimesService
 import com.example.data.PrayerTimesState
 import com.example.data.UserAccountEntity
 import com.example.data.UserSettingsEntity
+import com.example.notification.FloatingPopupManager
 import com.example.notification.NotificationHelper
 import com.example.util.AppTimeHelper
 import com.example.util.LocationHelper
@@ -45,6 +47,7 @@ sealed class Screen(val route: String) {
   object HadithExplorer : Screen("hadith_explorer")
   object Insights : Screen("insights")
   object Profile : Screen("profile")
+  object AdminPortal : Screen("admin_portal")
 }
 
 data class DayActivity(
@@ -85,6 +88,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     .stateIn(viewModelScope, SharingStarted.Eagerly, UserSettingsEntity())
 
   val registeredAccounts: StateFlow<List<UserAccountEntity>> = repository.registeredAccounts
+    .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+  val allCachedHadiths: StateFlow<List<HadithEntity>> = repository.allCachedHadiths
     .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
   val allItems: StateFlow<List<DhikrItem>> = repository.allItems
@@ -422,6 +428,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val targetDhikr = dhikr ?: rotatingFeaturedDhikr.value
     _reminderPopupDhikr.value = targetDhikr
     _showReminderPopup.value = true
+    NotificationHelper.recordPopupPointsInDatabase(getApplication(), targetDhikr)
     soundAndHaptics.playBeep()
   }
 
@@ -439,8 +446,41 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
   fun sendTestNotificationNow(dhikr: DhikrItem? = null) {
     val target = dhikr ?: rotatingFeaturedDhikr.value
-    triggerReminderPopup(target)
-    NotificationHelper.showDhikrNotification(getApplication(), target)
+    if (FloatingPopupManager.canDrawOverlays(getApplication())) {
+      NotificationHelper.showDhikrNotification(getApplication(), target)
+    } else {
+      triggerReminderPopup(target)
+    }
+  }
+
+  fun deleteViewerAccount(identifier: String) {
+    viewModelScope.launch {
+      repository.deleteUserAccount(identifier)
+    }
+  }
+
+  fun addCustomHadithToBackend(
+    bookKey: String,
+    hadithNumber: Int,
+    bookNameUrdu: String,
+    chapterName: String,
+    arabicText: String,
+    urduText: String,
+    englishText: String
+  ) {
+    viewModelScope.launch {
+      repository.addOrUpdateHadith(
+        HadithEntity(
+          bookKey = bookKey,
+          hadithNumber = hadithNumber,
+          bookNameUrdu = bookNameUrdu,
+          chapterName = chapterName,
+          arabicText = arabicText,
+          urduText = urduText,
+          englishText = englishText
+        )
+      )
+    }
   }
 
   fun toggleTimer() {

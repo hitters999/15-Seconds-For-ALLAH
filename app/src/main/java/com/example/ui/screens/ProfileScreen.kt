@@ -490,6 +490,119 @@ fun ProfileScreen(
 
       Spacer(modifier = Modifier.height(16.dp))
 
+      // 2B. Hadya & Points Wallet Card (1 Point = 1 Paisa PKR + Toolyfi.com 15s Web Timer)
+      val pkrBalance = String.format(Locale.US, "%.2f", userSettings.totalScore * 0.01)
+      Card(
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF0E2621)),
+        border = BorderStroke(1.5.dp, Color(0xFFE5C07B)),
+        modifier = Modifier
+          .fillMaxWidth()
+          .testTag("hadya_wallet_card")
+      ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Column(modifier = Modifier.weight(1f)) {
+              Text(
+                text = "🪙 حوصلہ افزائی ہدیہ والٹ (Hadya Wallet)",
+                fontFamily = UrduFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp,
+                color = Color(0xFFE5C07B)
+              )
+              Text(
+                text = "1 پوائنٹ = 1 پیسہ • ہر ذکر، پاپ اپ اور شیئر پر ہدیہ پوائنٹس",
+                fontFamily = UrduFontFamily,
+                fontSize = 11.sp,
+                color = Color(0xFFCBD5E1)
+              )
+            }
+
+            Surface(
+              shape = RoundedCornerShape(12.dp),
+              color = Color(0xFFE5C07B)
+            ) {
+              Text(
+                text = "Rs. $pkrBalance PKR",
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp,
+                color = Color(0xFF071714),
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+              )
+            }
+          }
+
+          Spacer(modifier = Modifier.height(12.dp))
+
+          // Action Row: Open 15s Web Timer on Toolyfi.com + Withdraw/Claim Hadya
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+          ) {
+            Surface(
+              shape = RoundedCornerShape(12.dp),
+              color = Color(0xFF174340),
+              border = BorderStroke(1.dp, Color(0xFF4FD1C5)),
+              modifier = Modifier
+                .weight(1.2f)
+                .clip(RoundedCornerShape(12.dp))
+                .clickable {
+                  val currentDhikr = viewModel.rotatingFeaturedDhikr.value
+                  val identifier = if (userSettings.userPhone.isNotBlank()) userSettings.userPhone else userSettings.userEmail.ifBlank { userSettings.userName }
+                  NotificationHelper.recordPopupPointsInDatabase(context, currentDhikr)
+                  ShareHelper.openWebTimerPage(context, currentDhikr, identifier)
+                }
+            ) {
+              Text(
+                text = "🌐 Toolyfi.com پر 15s ذکر (+10 Pts)",
+                fontFamily = UrduFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.5.sp,
+                color = Color.White,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp)
+              )
+            }
+
+            Surface(
+              shape = RoundedCornerShape(12.dp),
+              color = Color(0xFFE5C07B),
+              modifier = Modifier
+                .weight(1f)
+                .clip(RoundedCornerShape(12.dp))
+                .clickable {
+                  if (userSettings.totalScore >= 10000) {
+                    Toast.makeText(context, "آپ کی ہدیہ ودڈرا درخواست (Rs. $pkrBalance) ایڈمن کو بھیج دی گئی ہے ✓", Toast.LENGTH_LONG).show()
+                  } else {
+                    Toast.makeText(
+                      context,
+                      "کم از کم ودڈرا حد 10,000 پوائنٹس (Rs. 100 PKR) ہے۔ موجودہ: ${userSettings.totalScore} پوائنٹس (Rs. $pkrBalance)",
+                      Toast.LENGTH_LONG
+                    ).show()
+                  }
+                }
+            ) {
+              Text(
+                text = "💳 ہدیہ نکلوائیں (Withdraw)",
+                fontFamily = UrduFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.5.sp,
+                color = Color(0xFF071714),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(vertical = 10.dp, horizontal = 8.dp)
+              )
+            }
+          }
+        }
+      }
+
+      Spacer(modifier = Modifier.height(16.dp))
+
       // 3. Saved Ayaat Section
       Card(
         shape = RoundedCornerShape(18.dp),
@@ -615,86 +728,7 @@ fun ProfileScreen(
 
       Spacer(modifier = Modifier.height(16.dp))
 
-      // 4. Viewers & Community Directory Card (ڈیٹا بیس اور ناظرین کا ریکارڈ)
-      Card(
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = ParchmentCard),
-        border = BorderStroke(1.dp, ParchmentBorder),
-        modifier = Modifier.fillMaxWidth()
-      ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-          ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-              Icon(Icons.Filled.Groups, contentDescription = null, tint = InkTeal, modifier = Modifier.size(20.dp))
-              Spacer(modifier = Modifier.width(8.dp))
-              Column {
-                Text(
-                  text = "رجسٹرڈ صارفین کا ریکارڈ (Viewers Database)",
-                  fontFamily = FontFamily.Serif,
-                  fontWeight = FontWeight.Bold,
-                  fontSize = 14.sp,
-                  color = InkTeal
-                )
-                Text(
-                  text = "ایپ میں محفوظ شدہ ناظرین و اراکین",
-                  fontFamily = FontFamily.SansSerif,
-                  fontSize = 10.5.sp,
-                  color = TextSoft
-                )
-              }
-            }
-
-            Surface(
-              shape = RoundedCornerShape(6.dp),
-              color = InkTeal
-            ) {
-              Text(
-                text = "${registeredAccounts.size} رجسٹرڈ",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 10.sp,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
-              )
-            }
-          }
-
-          Spacer(modifier = Modifier.height(10.dp))
-
-          registeredAccounts.take(3).forEach { account ->
-            Row(
-              modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp),
-              horizontalArrangement = Arrangement.SpaceBetween,
-              verticalAlignment = Alignment.CenterVertically
-            ) {
-              Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                  modifier = Modifier
-                    .size(8.dp)
-                    .clip(CircleShape)
-                    .background(BronzeGold)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Column {
-                  Text(account.displayName, fontFamily = FontFamily.SansSerif, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                  Text("${account.accountType} • ${account.identifier}", fontFamily = FontFamily.SansSerif, fontSize = 10.sp, color = TextSoft)
-                }
-              }
-              Text("${account.totalScore} pts", fontFamily = FontFamily.SansSerif, fontSize = 11.sp, color = BronzeGold, fontWeight = FontWeight.Bold)
-            }
-          }
-        }
-      }
-
-      Spacer(modifier = Modifier.height(16.dp))
-
-      // 5. App Settings Card
+      // 4. App Settings Card (Viewers Database moved exclusively to Login-Protected Admin Backend)
       Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = ParchmentCard),
@@ -945,11 +979,41 @@ fun ProfileScreen(
               )
               Spacer(modifier = Modifier.width(8.dp))
               Text(
-                text = "🔔 5s فلوٹنگ پاپ اپ کا ٹیسٹ کریں (Preview 5s Popup)",
+                text = "🔔 5s فلوٹنگ پاپ اپ کا ٹیسٹ کریں (+10 حسنات)",
                 fontFamily = UrduFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 13.sp,
                 color = InkTeal
+              )
+            }
+          }
+
+          Spacer(modifier = Modifier.height(10.dp))
+
+          // Restricted Admin & Developer Backend Console Entry (Requires Admin Login)
+          Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = Color(0xFF0E2621),
+            border = BorderStroke(1.dp, BronzeGold.copy(alpha = 0.6f)),
+            modifier = Modifier
+              .fillMaxWidth()
+              .clip(RoundedCornerShape(12.dp))
+              .clickable { viewModel.navigateTo(Screen.AdminPortal) }
+              .testTag("open_admin_console_btn")
+          ) {
+            Row(
+              modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.Center
+            ) {
+              Text("🔒", fontSize = 14.sp)
+              Spacer(modifier = Modifier.width(8.dp))
+              Text(
+                text = "ایڈمن اور ڈیویلپر بیک اینڈ کنسول (Admin Login Only)",
+                fontFamily = UrduFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.sp,
+                color = Color(0xFFE5C07B)
               )
             }
           }

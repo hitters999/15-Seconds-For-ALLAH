@@ -97,6 +97,8 @@ import com.example.ui.components.PosterPreviewDialog
 import com.example.ui.theme.ArabicFontFamily
 import com.example.ui.theme.BronzeGold
 import com.example.ui.theme.BronzeGoldLight
+import com.example.ui.theme.Brown
+import com.example.ui.theme.CardIvory
 import com.example.ui.theme.DarkAccentGold
 import com.example.ui.theme.DarkArabicText
 import com.example.ui.theme.DarkCardBorder
@@ -104,20 +106,16 @@ import com.example.ui.theme.DarkCardSurface
 import com.example.ui.theme.DarkTextPrimary
 import com.example.ui.theme.DarkTextSoft
 import com.example.ui.theme.DarkUrduText
+import com.example.ui.theme.DeepEmerald
+import com.example.ui.theme.Emerald
+import com.example.ui.theme.Gold
 import com.example.ui.theme.InkTeal
+import com.example.ui.theme.Ivory
+import com.example.ui.theme.Muted
+import com.example.ui.theme.SoftGold
 import com.example.ui.theme.UrduFontFamily
 import com.example.ui.theme.UrduNastaliqFontFamily
 import com.example.util.ShareHelper
-
-// Luxury Islamic Wellness Palette
-private val Ivory = Color(0xFFF8F3E8)
-private val CardIvory = Color(0xFFFFFCF5)
-private val Emerald = Color(0xFF075B4B)
-private val DeepEmerald = Color(0xFF034438)
-val Gold = Color(0xFFC7953E)
-private val SoftGold = Color(0xFFE8D4A8)
-private val Brown = Color(0xFF755B42)
-private val Muted = Color(0xFF8C8174)
 
 @Composable
 fun HomeScreen(
@@ -165,6 +163,23 @@ fun HomeScreen(
       }
 
       /*
+       * MAIN PAGE HADYA WALLET (Points & Rupees Earning + GET REWARDS 15s Web Timer)
+       */
+      item {
+        val identifier = if (userSettings.userPhone.isNotBlank()) userSettings.userPhone else userSettings.userEmail.ifBlank { userSettings.userName }
+        MainPageHadyaWalletCard(
+          totalScore = totalScore,
+          onGetRewardsWebTimer = {
+            viewModel.claimMomentPoints(featuredItem)
+            ShareHelper.openWebTimerPage(context, featuredItem, identifier)
+          },
+          onOpenWalletDetails = {
+            viewModel.navigateTo(Screen.Profile)
+          }
+        )
+      }
+
+      /*
        * PRAYER SECTION
        */
       item {
@@ -187,13 +202,15 @@ fun HomeScreen(
        * MAIN 15 SECOND HERO
        */
       item {
+        val identifier = if (userSettings.userPhone.isNotBlank()) userSettings.userPhone else userSettings.userEmail.ifBlank { userSettings.userName }
         PremiumMomentHero(
           timerState = timerState,
           onStart = {
             viewModel.startCurrentMoment()
           },
           onQuickClaim = {
-            viewModel.claimMomentPoints()
+            viewModel.claimMomentPoints(featuredItem)
+            ShareHelper.openWebTimerPage(context, featuredItem, identifier)
           }
         )
       }
@@ -202,6 +219,7 @@ fun HomeScreen(
        * FEATURED DHIKR
        */
       item {
+        val identifier = if (userSettings.userPhone.isNotBlank()) userSettings.userPhone else userSettings.userEmail.ifBlank { userSettings.userName }
         PremiumSectionTitle(
           eyebrow = "DAILY REFLECTION • آج کا لمحہ",
           title = "A Moment Worth Remembering"
@@ -225,6 +243,7 @@ fun HomeScreen(
               },
               onQuickClaim = {
                 viewModel.claimMomentPoints(featuredItem)
+                ShareHelper.openWebTimerPage(context, featuredItem, identifier)
               }
             )
           }
@@ -761,25 +780,18 @@ private fun PremiumMomentHero(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // Quick Claim Points Button
+        // GET REWARDS (15s Website Timer) Button
         OutlinedButton(
           onClick = onQuickClaim,
           shape = RoundedCornerShape(14.dp),
-          border = BorderStroke(1.2.dp, SoftGold.copy(alpha = 0.8f)),
+          border = BorderStroke(1.4.dp, SoftGold),
           modifier = Modifier
             .fillMaxWidth()
-            .height(44.dp)
+            .height(46.dp)
             .testTag("quick_claim_points_hero_button")
         ) {
-          Icon(
-            imageVector = Icons.Filled.CheckCircle,
-            contentDescription = null,
-            tint = SoftGold,
-            modifier = Modifier.size(17.dp)
-          )
-          Spacer(modifier = Modifier.width(6.dp))
           Text(
-            text = "✓ پڑھ لیا • فوری +10 حسنات حاصل کریں",
+            text = "🎁 GET REWARDS • ثواب بھی ، Rewards بھی (15s Web Timer)",
             fontFamily = UrduFontFamily,
             fontSize = 12.5.sp,
             fontWeight = FontWeight.Bold,
@@ -961,24 +973,176 @@ private fun FeaturedDhikrCard(
 
       Spacer(modifier = Modifier.height(10.dp))
 
-      // Quick Claim Reflection Button
-      OutlinedButton(
+      // GET REWARDS (15s Website Timer) Button
+      Button(
         onClick = onQuickClaim,
+        colors = ButtonDefaults.buttonColors(
+          containerColor = Gold,
+          contentColor = Color(0xFF071714)
+        ),
         shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.2.dp, Gold),
         modifier = Modifier
           .fillMaxWidth()
-          .height(42.dp)
+          .height(46.dp)
           .testTag("featured_dhikr_quick_claim_button")
       ) {
-        Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Gold, modifier = Modifier.size(16.dp))
-        Spacer(modifier = Modifier.width(6.dp))
         Text(
-          text = "✓ پڑھ لیا • +10 حسنات شامل کریں",
+          text = "🎁 GET REWARDS • ثواب بھی ، Rewards بھی (15s Web)",
           fontFamily = UrduFontFamily,
-          fontSize = 12.5.sp,
+          fontSize = 13.sp,
           fontWeight = FontWeight.Bold,
-          color = if (isDark) Gold else DeepEmerald
+          color = Color(0xFF071714)
+        )
+      }
+    }
+  }
+}
+
+@Composable
+private fun MainPageHadyaWalletCard(
+  totalScore: Int,
+  onGetRewardsWebTimer: () -> Unit,
+  onOpenWalletDetails: () -> Unit
+) {
+  val pkrAmount = String.format(java.util.Locale.US, "%.2f", totalScore * 0.01)
+
+  Card(
+    shape = RoundedCornerShape(24.dp),
+    colors = CardDefaults.cardColors(containerColor = DeepEmerald),
+    border = BorderStroke(1.8.dp, Gold),
+    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+    modifier = Modifier
+      .fillMaxWidth()
+      .testTag("main_page_hadya_wallet_card")
+  ) {
+    Column(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(16.dp)
+    ) {
+      // Top Row: Wallet Title + Slogan Badge
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Column(modifier = Modifier.weight(1f)) {
+          Text(
+            text = "🪙 ہدیہ والٹ (Hadya & Rewards Wallet)",
+            fontFamily = UrduFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 15.sp,
+            color = SoftGold
+          )
+          Text(
+            text = "1 پوائنٹ = 1 پیسہ • 15 سیکنڈ ویب ٹائمر مکمل کریں",
+            fontFamily = UrduFontFamily,
+            fontSize = 11.sp,
+            color = Color(0xFFCBD5E1)
+          )
+        }
+
+        Surface(
+          shape = RoundedCornerShape(12.dp),
+          color = Gold.copy(alpha = 0.2f),
+          border = BorderStroke(1.dp, Gold)
+        ) {
+          Text(
+            text = "✨ ثواب بھی ، Rewards بھی ✨",
+            fontFamily = UrduFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 11.sp,
+            color = SoftGold,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+          )
+        }
+      }
+
+      Spacer(modifier = Modifier.height(12.dp))
+
+      // Two Side-by-Side Metric Boxes: Points & Rupees (PKR)
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+      ) {
+        Surface(
+          shape = RoundedCornerShape(14.dp),
+          color = Color(0xFF071714),
+          border = BorderStroke(1.dp, Gold.copy(alpha = 0.55f)),
+          modifier = Modifier
+            .weight(1f)
+            .clickable { onOpenWalletDetails() }
+        ) {
+          Column(
+            modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+          ) {
+            Text(
+              text = "$totalScore Pts",
+              fontFamily = FontFamily.Serif,
+              fontWeight = FontWeight.ExtraBold,
+              fontSize = 20.sp,
+              color = SoftGold
+            )
+            Text(
+              text = "مجموعی پوائنٹس (Points)",
+              fontFamily = UrduFontFamily,
+              fontSize = 11.sp,
+              color = Color(0xFFCBD5E1)
+            )
+          }
+        }
+
+        Surface(
+          shape = RoundedCornerShape(14.dp),
+          color = Color(0xFF071714),
+          border = BorderStroke(1.2.dp, Color(0xFF10B981)),
+          modifier = Modifier
+            .weight(1f)
+            .clickable { onOpenWalletDetails() }
+        ) {
+          Column(
+            modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+          ) {
+            Text(
+              text = "Rs. $pkrAmount",
+              fontFamily = FontFamily.Serif,
+              fontWeight = FontWeight.ExtraBold,
+              fontSize = 20.sp,
+              color = Color(0xFF6EE7B7)
+            )
+            Text(
+              text = "پاکستانی روپے (PKR Earning)",
+              fontFamily = UrduFontFamily,
+              fontSize = 11.sp,
+              color = Color(0xFFCBD5E1)
+            )
+          }
+        }
+      }
+
+      Spacer(modifier = Modifier.height(12.dp))
+
+      // Direct "GET REWARDS" Button connected to Toolyfi 15-Second Timer Page
+      Button(
+        onClick = onGetRewardsWebTimer,
+        colors = ButtonDefaults.buttonColors(
+          containerColor = Gold,
+          contentColor = Color(0xFF071714)
+        ),
+        shape = RoundedCornerShape(14.dp),
+        modifier = Modifier
+          .fillMaxWidth()
+          .height(46.dp)
+          .testTag("home_get_rewards_btn")
+      ) {
+        Text(
+          text = "🎁 GET REWARDS • 15s Timer (Toolyfi.com) +10 Pts",
+          fontFamily = UrduFontFamily,
+          fontWeight = FontWeight.Bold,
+          fontSize = 13.sp,
+          color = Color(0xFF071714)
         )
       }
     }

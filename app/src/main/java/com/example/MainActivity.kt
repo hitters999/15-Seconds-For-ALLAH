@@ -51,6 +51,7 @@ import com.example.ui.Screen
 import com.example.ui.components.DhikrReminderPopupDialog
 import com.example.ui.components.OnboardingPermissionDialog
 import com.example.ui.components.PointsCelebrationDialog
+import com.example.ui.screens.AdminBackendScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.InsightsScreen
 import com.example.ui.screens.LibraryScreen
@@ -188,6 +189,7 @@ fun MainApp(viewModel: MainViewModel) {
           is Screen.HadithExplorer -> HadithExplorerScreen(viewModel = viewModel)
           is Screen.Insights -> InsightsScreen(viewModel = viewModel)
           is Screen.Profile -> ProfileScreen(viewModel = viewModel)
+          is Screen.AdminPortal -> AdminBackendScreen(viewModel = viewModel)
         }
       }
     }

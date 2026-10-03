@@ -54,6 +54,16 @@ class DhikrRepository(
 
   val registeredAccounts: Flow<List<UserAccountEntity>> = dao.getAllRegisteredAccounts()
 
+  val allCachedHadiths: Flow<List<HadithEntity>> = dao.getAllCachedHadiths()
+
+  suspend fun deleteUserAccount(identifier: String) {
+    dao.deleteUserAccount(identifier)
+  }
+
+  suspend fun addOrUpdateHadith(hadith: HadithEntity) {
+    dao.insertHadithToCache(hadith)
+  }
+
   suspend fun logCompletedMoment(item: DhikrItem, durationSeconds: Int = 15): UserSettingsEntity {
     val dateKey = getTodayDateKey()
     val log = MomentLogEntity(

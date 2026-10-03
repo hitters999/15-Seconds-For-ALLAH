@@ -5,9 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.LinearGradient
 import android.graphics.Paint
-import android.graphics.Path
 import android.graphics.RadialGradient
 import android.graphics.RectF
 import android.graphics.Shader
@@ -23,776 +21,469 @@ import com.example.data.DhikrItem
 import java.io.File
 import java.io.FileOutputStream
 
+typealias ViralPosterGenerator = PosterGenerator
+
 object PosterGenerator {
 
-  // Universal 1:1 Social Media Standard (1080 x 1080)
-  // Perfectly optimized for WhatsApp Channels, Facebook Feed, Instagram, and Group Chats
-  // 100% CROP-FREE: Zero cutting at top or bottom in Facebook and WhatsApp channel feeds!
-  private const val POSTER_WIDTH = 1080
-  private const val POSTER_HEIGHT = 1080
+    private const val POSTER_WIDTH = 1080
+    private const val POSTER_HEIGHT = 1080
 
-  private fun getArabicTypeface(context: Context): Typeface {
-    return try {
-      ResourcesCompat.getFont(context, R.font.amiri_quran)
-        ?: ResourcesCompat.getFont(context, R.font.scheherazade_new)
-        ?: ResourcesCompat.getFont(context, R.font.amiri)
-        ?: Typeface.create(Typeface.SERIF, Typeface.BOLD)
-    } catch (_: Exception) {
-      Typeface.create(Typeface.SERIF, Typeface.BOLD)
-    }
-  }
+    // Viral Color Palette
+    private val COLOR_BG_CENTER = Color.parseColor("#113026") // Deep Emerald
+    private val COLOR_BG_EDGE = Color.parseColor("#05100D")   // Near Black
+    private val COLOR_GOLD_ACCENT = Color.parseColor("#E5C07B") // Premium Gold
+    private val COLOR_GOLD_BRIGHT = Color.parseColor("#FDE68A")
+    private val COLOR_TEXT_WHITE = Color.parseColor("#F8F9FA")
+    private val COLOR_TEXT_MUTED = Color.parseColor("#CBD5E1")
+    private val COLOR_GLASS_CARD = Color.parseColor("#22FFFFFF")
+    private val COLOR_HOOK_BG = Color.parseColor("#142E26")
 
-  private fun getUrduTypeface(context: Context): Typeface {
-    return try {
-      ResourcesCompat.getFont(context, R.font.noto_nastaliq_urdu)
-        ?: ResourcesCompat.getFont(context, R.font.noto_nastaliq)
-        ?: Typeface.create(Typeface.SERIF, Typeface.NORMAL)
-    } catch (_: Exception) {
-      Typeface.create(Typeface.SERIF, Typeface.NORMAL)
-    }
-  }
-
-  /**
-   * Generates a world-class, luxury Islamic poster (1080 x 1080 - 1:1 Square)
-   * specifically crafted to solve social media cutting issues:
-   * - 100% full view on WhatsApp Channels & Facebook feed with ZERO top/bottom cropping!
-   * - Giant, magnified, zoomed-in Arabic calligraphy readable from far away
-   * - Royal Islamic branding seal with real app logo and gold foil embellishments
-   * - Flowing Noto Nastaliq Urdu in rich Persian walnut ink
-   * - Gold-embossed citation ribbon and "سبق و تدبر" spiritual wisdom card
-   * - High-converting viral CTA footer for viewers and followers
-   */
-  fun generateDhikrPosterBitmap(context: Context, dhikr: DhikrItem): Bitmap {
-    val bitmap = Bitmap.createBitmap(POSTER_WIDTH, POSTER_HEIGHT, Bitmap.Config.ARGB_8888)
-    val canvas = Canvas(bitmap)
-
-    // 1. Royal Parchment Canvas with subtle golden vignette
-    drawParchmentCanvas(canvas, POSTER_WIDTH, POSTER_HEIGHT)
-
-    // 2. Ornate 24K Golden Borders & 8-Point Islamic Corner Stars
-    drawOrnateGoldenBorders(canvas, POSTER_WIDTH, POSTER_HEIGHT)
-
-    // 3. Top Royal Branding Header with App Logo & Gold Medal
-    drawTopBrandingHeader(context, canvas, POSTER_WIDTH)
-
-    // 4. Sacred Main Card: Framed comfortably within safe boundaries (110f to 965f)
-    val cardRect = RectF(48f, 115f, POSTER_WIDTH - 48f, 968f)
-    drawSacredParchmentCard(canvas, cardRect)
-
-    // 5. Card Content: Zoomed Arabic, Badges, Nastaliq Urdu, Citation, Reflection
-    drawSacredCardContent(context, canvas, dhikr, cardRect)
-
-    // 6. Royal Footer Social Branding (safe within 980f to 1055f)
-    drawRoyalFooterBranding(canvas, POSTER_WIDTH, POSTER_HEIGHT)
-
-    return bitmap
-  }
-
-  fun generateDhikrPoster(context: Context, dhikr: DhikrItem): Uri? {
-    return try {
-      val bitmap = generateDhikrPosterBitmap(context, dhikr)
-      saveBitmapToCache(context, bitmap, "poster_${dhikr.id}")
-    } catch (e: Exception) {
-      e.printStackTrace()
-      null
-    }
-  }
-
-  /**
-   * Generates a spiritual streak poster in the exact same 1080x1080 crop-free format.
-   */
-  fun generateStreakPoster(
-    context: Context,
-    streakDays: Int,
-    totalMoments: Int,
-    score: Int,
-    rank: String
-  ): Uri? {
-    return try {
-      val bitmap = Bitmap.createBitmap(POSTER_WIDTH, POSTER_HEIGHT, Bitmap.Config.ARGB_8888)
-      val canvas = Canvas(bitmap)
-
-      drawParchmentCanvas(canvas, POSTER_WIDTH, POSTER_HEIGHT)
-      drawOrnateGoldenBorders(canvas, POSTER_WIDTH, POSTER_HEIGHT)
-      drawTopBrandingHeader(context, canvas, POSTER_WIDTH)
-
-      val cardRect = RectF(48f, 115f, POSTER_WIDTH - 48f, 968f)
-      drawSacredParchmentCard(canvas, cardRect)
-
-      // Top Streak Badge
-      drawPillBadge(
-        canvas = canvas,
-        cx = cardRect.centerX(),
-        cy = cardRect.top + 46f,
-        text = "✦ روحانی استقامت • SPIRITUAL STREAK ✦",
-        textColor = Color.parseColor("#8A5A1A"),
-        bgColor = Color.parseColor("#FAF3E2"),
-        borderColor = Color.parseColor("#D4AF37"),
-        fontSize = 22f,
-        typeface = Typeface.create(Typeface.SERIF, Typeface.BOLD)
-      )
-
-      // Glowing Golden Circle with Streak Days
-      val circleCenterY = cardRect.top + 225f
-      val glowShader = RadialGradient(
-        cardRect.centerX(), circleCenterY, 150f,
-        intArrayOf(Color.parseColor("#33D4AF37"), Color.parseColor("#10D4AF37"), Color.TRANSPARENT),
-        floatArrayOf(0f, 0.7f, 1f),
-        Shader.TileMode.CLAMP
-      )
-      val glowPaint = Paint().apply {
-        shader = glowShader
-        isAntiAlias = true
-      }
-      canvas.drawCircle(cardRect.centerX(), circleCenterY, 150f, glowPaint)
-
-      val ringPaint = Paint().apply {
-        color = Color.parseColor("#D4AF37")
-        style = Paint.Style.STROKE
-        strokeWidth = 3.5f
-        isAntiAlias = true
-      }
-      canvas.drawCircle(cardRect.centerX(), circleCenterY, 105f, ringPaint)
-
-      val innerRingPaint = Paint().apply {
-        color = Color.parseColor("#55D4AF37")
-        style = Paint.Style.STROKE
-        strokeWidth = 1.2f
-        isAntiAlias = true
-      }
-      canvas.drawCircle(cardRect.centerX(), circleCenterY, 97f, innerRingPaint)
-
-      val streakNumPaint = TextPaint().apply {
-        color = Color.parseColor("#063A2F")
-        textSize = 80f
-        typeface = Typeface.create(Typeface.SERIF, Typeface.BOLD)
-        textAlign = Paint.Align.CENTER
-        isAntiAlias = true
-      }
-      canvas.drawText("$streakDays", cardRect.centerX(), circleCenterY + 22f, streakNumPaint)
-
-      val daysLabel = TextPaint().apply {
-        color = Color.parseColor("#8A5A1A")
-        textSize = 21f
-        typeface = getUrduTypeface(context)
-        textAlign = Paint.Align.CENTER
-        isAntiAlias = true
-      }
-      canvas.drawText("مسلسل دن (Days)", cardRect.centerX(), circleCenterY + 62f, daysLabel)
-
-      // Rank Title
-      val rankText = TextPaint().apply {
-        color = Color.parseColor("#996515")
-        textSize = 26f
-        typeface = Typeface.create(Typeface.SERIF, Typeface.BOLD)
-        textAlign = Paint.Align.CENTER
-        isAntiAlias = true
-      }
-      canvas.drawText("👑 $rank", cardRect.centerX(), circleCenterY + 160f, rankText)
-
-      // Stats Cards Row: Moments & Score
-      val statY = circleCenterY + 205f
-      val stat1 = RectF(cardRect.left + 45f, statY, cardRect.centerX() - 15f, statY + 115f)
-      val stat2 = RectF(cardRect.centerX() + 15f, statY, cardRect.right - 45f, statY + 115f)
-
-      val statBg = Paint().apply {
-        color = Color.parseColor("#FAF6EE")
-        isAntiAlias = true
-      }
-      val statBorderPaint = Paint().apply {
-        color = Color.parseColor("#D4AF37")
-        style = Paint.Style.STROKE
-        strokeWidth = 1.5f
-        isAntiAlias = true
-      }
-      canvas.drawRoundRect(stat1, 16f, 16f, statBg)
-      canvas.drawRoundRect(stat1, 16f, 16f, statBorderPaint)
-      canvas.drawRoundRect(stat2, 16f, 16f, statBg)
-      canvas.drawRoundRect(stat2, 16f, 16f, statBorderPaint)
-
-      val statValPaint = TextPaint().apply {
-        color = Color.parseColor("#0A4D3C")
-        textSize = 38f
-        typeface = Typeface.create(Typeface.SERIF, Typeface.BOLD)
-        textAlign = Paint.Align.CENTER
-        isAntiAlias = true
-      }
-      val statSubPaint = TextPaint().apply {
-        color = Color.parseColor("#6E260E")
-        textSize = 21f
-        typeface = getUrduTypeface(context)
-        textAlign = Paint.Align.CENTER
-        isAntiAlias = true
-      }
-
-      canvas.drawText("$totalMoments", stat1.centerX(), stat1.top + 50f, statValPaint)
-      canvas.drawText("مکمل اذکار (Moments)", stat1.centerX(), stat1.top + 92f, statSubPaint)
-
-      canvas.drawText("$score", stat2.centerX(), stat2.top + 50f, statValPaint)
-      canvas.drawText("روحانی حسنات (Score)", stat2.centerX(), stat2.top + 92f, statSubPaint)
-
-      // Hadith Box
-      val quoteBoxY = statY + 135f
-      val quoteRect = RectF(cardRect.left + 35f, quoteBoxY, cardRect.right - 35f, quoteBoxY + 140f)
-      val quoteBg = Paint().apply {
-        color = Color.parseColor("#FFFDF5")
-        isAntiAlias = true
-      }
-      val quoteBorder = Paint().apply {
-        color = Color.parseColor("#EADBB6")
-        style = Paint.Style.STROKE
-        strokeWidth = 1.3f
-        isAntiAlias = true
-      }
-      canvas.drawRoundRect(quoteRect, 18f, 18f, quoteBg)
-      canvas.drawRoundRect(quoteRect, 18f, 18f, quoteBorder)
-
-      val quoteHadithPaint = TextPaint().apply {
-        color = Color.parseColor("#0A4D3C")
-        textSize = 27f
-        typeface = getArabicTypeface(context)
-        textAlign = Paint.Align.CENTER
-        isAntiAlias = true
-      }
-      canvas.drawText("أَحَبُّ الْأَعْمَالِ إِلَى اللَّهِ أَدْوَمُهَا وَإِنْ قَلَّ", quoteRect.centerX(), quoteRect.top + 45f, quoteHadithPaint)
-
-      val quoteUrduPaint = TextPaint().apply {
-        color = Color.parseColor("#6E260E")
-        textSize = 22f
-        typeface = getUrduTypeface(context)
-        textAlign = Paint.Align.CENTER
-        isAntiAlias = true
-      }
-      canvas.drawText("اللہ کے نزدیک سب سے پسندیدہ عمل وہ ہے جو مستقل ہو ، اگرچہ تھوڑا ہی ہو ۔", quoteRect.centerX(), quoteRect.top + 92f, quoteUrduPaint)
-
-      val quoteRefPaint = TextPaint().apply {
-        color = Color.parseColor("#8A5A1A")
-        textSize = 19f
-        typeface = Typeface.create(Typeface.SERIF, Typeface.NORMAL)
-        textAlign = Paint.Align.CENTER
-        isAntiAlias = true
-      }
-      canvas.drawText("📖 صحیح البخاری 6464", quoteRect.centerX(), quoteRect.top + 126f, quoteRefPaint)
-
-      drawRoyalFooterBranding(canvas, POSTER_WIDTH, POSTER_HEIGHT)
-
-      saveBitmapToCache(context, bitmap, "streak_${streakDays}")
-    } catch (e: Exception) {
-      e.printStackTrace()
-      null
-    }
-  }
-
-  // =========================================================================
-  // Canvas Rendering & Layout Engine
-  // =========================================================================
-
-  private fun drawParchmentCanvas(canvas: Canvas, width: Int, height: Int) {
-    val bgPaint = Paint().apply {
-      shader = LinearGradient(
-        0f, 0f, 0f, height.toFloat(),
-        intArrayOf(
-          Color.parseColor("#FEFCF8"),
-          Color.parseColor("#F9F4EB"),
-          Color.parseColor("#F4EADC")
-        ),
-        floatArrayOf(0f, 0.5f, 1f),
-        Shader.TileMode.CLAMP
-      )
-      isAntiAlias = true
-    }
-    canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bgPaint)
-
-    // Soft warm golden radial vignette
-    val vignettePaint = Paint().apply {
-      shader = RadialGradient(
-        width / 2f, height / 2f, width * 0.72f,
-        intArrayOf(Color.TRANSPARENT, Color.parseColor("#128A5A1A")),
-        floatArrayOf(0.68f, 1f),
-        Shader.TileMode.CLAMP
-      )
-      isAntiAlias = true
-    }
-    canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), vignettePaint)
-  }
-
-  private fun drawOrnateGoldenBorders(canvas: Canvas, width: Int, height: Int) {
-    val margin = 20f
-
-    val outerBorder = Paint().apply {
-      color = Color.parseColor("#D4AF37")
-      style = Paint.Style.STROKE
-      strokeWidth = 2.2f
-      isAntiAlias = true
-    }
-    canvas.drawRoundRect(RectF(margin, margin, width - margin, height - margin), 26f, 26f, outerBorder)
-
-    val innerMargin = margin + 6f
-    val innerBorder = Paint().apply {
-      color = Color.parseColor("#44D4AF37")
-      style = Paint.Style.STROKE
-      strokeWidth = 1f
-      isAntiAlias = true
-    }
-    canvas.drawRoundRect(RectF(innerMargin, innerMargin, width - innerMargin, height - innerMargin), 22f, 22f, innerBorder)
-
-    // Corner decorative Islamic 8-point stars
-    drawCornerStar(canvas, innerMargin + 10f, innerMargin + 10f)
-    drawCornerStar(canvas, width - innerMargin - 10f, innerMargin + 10f)
-    drawCornerStar(canvas, innerMargin + 10f, height - innerMargin - 10f)
-    drawCornerStar(canvas, width - innerMargin - 10f, height - innerMargin - 10f)
-  }
-
-  private fun drawCornerStar(canvas: Canvas, cx: Float, cy: Float) {
-    val starPaint = Paint().apply {
-      color = Color.parseColor("#C5A059")
-      style = Paint.Style.FILL
-      isAntiAlias = true
-    }
-    val path = Path().apply {
-      moveTo(cx, cy - 7f)
-      lineTo(cx + 2.2f, cy - 2.2f)
-      lineTo(cx + 7f, cy)
-      lineTo(cx + 2.2f, cy + 2.2f)
-      lineTo(cx, cy + 7f)
-      lineTo(cx - 2.2f, cy + 2.2f)
-      lineTo(cx - 7f, cy)
-      lineTo(cx - 2.2f, cy - 2.2f)
-      close()
-    }
-    canvas.drawPath(path, starPaint)
-  }
-
-  private fun drawTopBrandingHeader(context: Context, canvas: Canvas, width: Int) {
-    val cx = width / 2f
-
-    // 1. Draw App Brand Logo Medallion
-    try {
-      val logoBitmap = BitmapFactory.decodeResource(context.resources, R.drawable.app_brand_logo)
-      if (logoBitmap != null) {
-        val logoSize = 46f
-        val logoX = cx - 210f
-        val logoY = 32f
-
-        val ringPaint = Paint().apply {
-          color = Color.parseColor("#D4AF37")
-          style = Paint.Style.STROKE
-          strokeWidth = 1.8f
-          isAntiAlias = true
+    private fun getArabicTypeface(context: Context): Typeface {
+        return try {
+            ResourcesCompat.getFont(context, R.font.amiri_quran)
+                ?: ResourcesCompat.getFont(context, R.font.scheherazade_new)
+                ?: ResourcesCompat.getFont(context, R.font.amiri)
+                ?: Typeface.create(Typeface.SERIF, Typeface.BOLD)
+        } catch (_: Exception) {
+            Typeface.create(Typeface.SERIF, Typeface.BOLD)
         }
+    }
+
+    private fun getUrduTypeface(context: Context): Typeface {
+        return try {
+            ResourcesCompat.getFont(context, R.font.noto_nastaliq_urdu)
+                ?: ResourcesCompat.getFont(context, R.font.noto_nastaliq)
+                ?: Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+        } catch (_: Exception) {
+            Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+        }
+    }
+
+    fun generateDhikrPosterBitmap(context: Context, dhikr: DhikrItem): Bitmap {
+        val bitmap = Bitmap.createBitmap(POSTER_WIDTH, POSTER_HEIGHT, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+
+        // 1. Premium Dark Radial Background + Golden Frame Lines
+        drawDarkPremiumBackground(canvas, POSTER_WIDTH, POSTER_HEIGHT)
+
+        // 2. Top App Branding + Emotional Hook Header
+        drawBrandedHookHeader(context, canvas, POSTER_WIDTH)
+
+        // 3. Central Hero Content (Arabic, Urdu & Source Reference Pill)
+        drawMainContent(context, canvas, dhikr)
+
+        // 4. Bottom Viral Hook Box (Points, 1 Point = 1 Paisa Hadya, APKPure & Toolyfi Download CTA)
+        drawViralDownloadHookFooter(context, canvas, POSTER_WIDTH, POSTER_HEIGHT)
+
+        return bitmap
+    }
+
+    fun generateDhikrPoster(context: Context, dhikr: DhikrItem): Uri? {
+        return try {
+            val bitmap = generateDhikrPosterBitmap(context, dhikr)
+            saveBitmapToCache(context, bitmap, "viral_poster_${dhikr.id}")
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    fun generateStreakPoster(
+        context: Context,
+        streakDays: Int,
+        totalMoments: Int,
+        score: Int,
+        rank: String
+    ): Uri? {
+        return try {
+            val bitmap = Bitmap.createBitmap(POSTER_WIDTH, POSTER_HEIGHT, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+
+            drawDarkPremiumBackground(canvas, POSTER_WIDTH, POSTER_HEIGHT)
+            drawBrandedHookHeader(context, canvas, POSTER_WIDTH)
+
+            val cx = POSTER_WIDTH / 2f
+            val pkrAmount = String.format(java.util.Locale.US, "%.2f", score * 0.01)
+
+            // Glowing Gold Ring for Streak
+            val circleCenterY = 340f
+            val ringPaint = Paint().apply {
+                color = COLOR_GOLD_ACCENT
+                style = Paint.Style.STROKE
+                strokeWidth = 4.5f
+                isAntiAlias = true
+            }
+            canvas.drawCircle(cx, circleCenterY, 110f, ringPaint)
+
+            val streakNumPaint = TextPaint().apply {
+                color = COLOR_GOLD_ACCENT
+                textSize = 84f
+                typeface = Typeface.create(Typeface.SERIF, Typeface.BOLD)
+                textAlign = Paint.Align.CENTER
+                isAntiAlias = true
+            }
+            canvas.drawText("$streakDays", cx, circleCenterY + 24f, streakNumPaint)
+
+            val daysLabel = TextPaint().apply {
+                color = COLOR_TEXT_WHITE
+                textSize = 24f
+                typeface = getUrduTypeface(context)
+                textAlign = Paint.Align.CENTER
+                isAntiAlias = true
+            }
+            canvas.drawText("مسلسل دن (Streak)", cx, circleCenterY + 70f, daysLabel)
+
+            // Rank
+            val rankPaint = TextPaint().apply {
+                color = COLOR_GOLD_BRIGHT
+                textSize = 30f
+                typeface = getUrduTypeface(context)
+                textAlign = Paint.Align.CENTER
+                isAntiAlias = true
+            }
+            canvas.drawText("👑 $rank", cx, 515f, rankPaint)
+
+            // Points & Hadya Balance Pill
+            val statsText = "مکمل اذکار: $totalMoments  •  پوائنٹس: $score  •  ہدیہ والٹ: Rs. $pkrAmount"
+            val statsPaint = TextPaint().apply {
+                color = COLOR_BG_CENTER
+                textSize = 24f
+                typeface = getUrduTypeface(context)
+                textAlign = Paint.Align.CENTER
+                isAntiAlias = true
+            }
+            val statsWidth = statsPaint.measureText(statsText)
+            val pillW = (statsWidth + 70f).coerceAtMost(POSTER_WIDTH - 100f)
+            val statsRect = RectF(cx - pillW / 2f, 565f, cx + pillW / 2f, 635f)
+            val statsBgPaint = Paint().apply {
+                color = COLOR_GOLD_ACCENT
+                isAntiAlias = true
+            }
+            canvas.drawRoundRect(statsRect, 35f, 35f, statsBgPaint)
+            val statsTextY = statsRect.centerY() - ((statsPaint.descent() + statsPaint.ascent()) / 2f)
+            canvas.drawText(statsText, cx, statsTextY, statsPaint)
+
+            drawViralDownloadHookFooter(context, canvas, POSTER_WIDTH, POSTER_HEIGHT)
+
+            saveBitmapToCache(context, bitmap, "viral_streak_${streakDays}")
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    // =========================================================================
+    // Canvas Rendering Methods
+    // =========================================================================
+
+    private fun drawDarkPremiumBackground(canvas: Canvas, width: Int, height: Int) {
         val bgPaint = Paint().apply {
-          color = Color.WHITE
-          style = Paint.Style.FILL
-          isAntiAlias = true
+            shader = RadialGradient(
+                width / 2f, height / 2.4f, width * 0.82f,
+                intArrayOf(COLOR_BG_CENTER, COLOR_BG_EDGE),
+                null,
+                Shader.TileMode.CLAMP
+            )
+            isAntiAlias = true
         }
-        canvas.drawCircle(logoX, logoY + logoSize / 2f, logoSize / 2f + 2f, bgPaint)
-        canvas.drawCircle(logoX, logoY + logoSize / 2f, logoSize / 2f + 2f, ringPaint)
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), bgPaint)
 
-        val srcRect = android.graphics.Rect(0, 0, logoBitmap.width, logoBitmap.height)
-        val dstRect = RectF(logoX - logoSize / 2f, logoY, logoX + logoSize / 2f, logoY + logoSize)
-        canvas.drawBitmap(logoBitmap, srcRect, dstRect, Paint(Paint.FILTER_BITMAP_FLAG))
-      }
-    } catch (_: Exception) {}
-
-    // 2. Royal Pill Header Badge: "✦ 15 SECONDS 4 ALLAH ✦"
-    drawPillBadge(
-      canvas = canvas,
-      cx = cx + 18f,
-      cy = 52f,
-      text = "✦ 15 SECONDS 4 ALLAH ✦",
-      textColor = Color.parseColor("#8A5A1A"),
-      bgColor = Color.parseColor("#FAF3E4"),
-      borderColor = Color.parseColor("#D4AF37"),
-      fontSize = 20f,
-      typeface = Typeface.create(Typeface.SERIF, Typeface.BOLD)
-    )
-
-    // 3. Urdu Subtitle
-    val urduSub = TextPaint().apply {
-      color = Color.parseColor("#6E260E")
-      textSize = 25f
-      typeface = getUrduTypeface(context)
-      textAlign = Paint.Align.CENTER
-      isAntiAlias = true
-    }
-    canvas.drawText("۱۵ سیکنڈز اللہ کے لیے • روزانہ کا مسنون ذکر و دعا", cx, 96f, urduSub)
-  }
-
-  private fun drawSacredParchmentCard(canvas: Canvas, rect: RectF) {
-    // Soft ambient shadow
-    val shadowPaint = Paint().apply {
-      color = Color.parseColor("#123A2C18")
-      isAntiAlias = true
-    }
-    canvas.drawRoundRect(RectF(rect.left + 2f, rect.top + 4f, rect.right + 2f, rect.bottom + 4f), 34f, 34f, shadowPaint)
-
-    // Pristine Ivory Parchment Card
-    val cardFill = Paint().apply {
-      color = Color.parseColor("#FDFBF7")
-      isAntiAlias = true
-    }
-    canvas.drawRoundRect(rect, 34f, 34f, cardFill)
-
-    // Warm Gold Card Border
-    val cardBorder = Paint().apply {
-      color = Color.parseColor("#D4AF37")
-      style = Paint.Style.STROKE
-      strokeWidth = 2.4f
-      isAntiAlias = true
-    }
-    canvas.drawRoundRect(rect, 34f, 34f, cardBorder)
-  }
-
-  /**
-   * Main Content Layout in 1:1 format:
-   * - Giant, Zoomed-In Arabic Calligraphy (Visible and readable from far away!)
-   * - Beautiful Urdu Nastaliq in warm Persian ink
-   * - Crisp citation and contemplative wisdom
-   * - Fully balanced to never cut off at top or bottom
-   */
-  /**
-   * Main Content Layout in 1:1 format:
-   * - Giant, Zoomed-In, Bold Arabic Calligraphy (Deep contrast, crystal clear from far away!)
-   * - Perfectly Centered and Auto-Fitted Urdu Nastaliq that NEVER overflows or goes out of line
-   * - Responsive Space Budgeting: Handles short and lengthy Ayats/Hadiths gracefully
-   */
-  private fun drawSacredCardContent(
-    context: Context,
-    canvas: Canvas,
-    dhikr: DhikrItem,
-    cardRect: RectF
-  ) {
-    val cx = cardRect.centerX()
-    // Generous 50px horizontal padding on both left and right inside card so text never touches or cuts borders
-    val contentWidth = (cardRect.width() - 100f).toInt()
-    val layoutLeft = cx - (contentWidth / 2f)
-
-    // -------------------------------------------------------------
-    // A. Top Badges Row
-    // -------------------------------------------------------------
-    val topBadgesY = cardRect.top + 38f
-
-    val leftBadgeText = if (dhikr.isQuranic) "✨ درسِ قرآن • مسنون ذکر ✨" else "✨ مسنون ذکر و دعا ✨"
-    val leftBadgeRect = RectF(cardRect.left + 22f, topBadgesY - 18f, cardRect.left + 420f, topBadgesY + 18f)
-    drawCardPill(canvas, leftBadgeRect, leftBadgeText, getUrduTypeface(context), 21f, Color.parseColor("#1A332C"), Color.parseColor("#FBF6EB"), Color.parseColor("#D4AF37"))
-
-    val rightBadgeRect = RectF(cardRect.right - 200f, topBadgesY - 18f, cardRect.right - 22f, topBadgesY + 18f)
-    drawCardPill(canvas, rightBadgeRect, "15s ذکر ✦", Typeface.create(Typeface.SERIF, Typeface.BOLD), 19f, Color.parseColor("#8A5A1A"), Color.parseColor("#FBF6EB"), Color.parseColor("#D4AF37"))
-
-    var currentY = topBadgesY + 36f
-
-    // B. Bismillah Calligraphy (Cartouche)
-    if (dhikr.isQuranic) {
-      val bismillahPaint = TextPaint().apply {
-        color = Color.parseColor("#063A2E")
-        textSize = 28f
-        typeface = getArabicTypeface(context)
-        textAlign = Paint.Align.CENTER
-        isFakeBoldText = true
-        isAntiAlias = true
-      }
-      canvas.drawText("۞ بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ ۞", cx, currentY + 6f, bismillahPaint)
-      currentY += 38f
-    } else {
-      currentY += 6f
-    }
-
-    // -------------------------------------------------------------
-    // C. MAGNIFIED, CRYSTAL-CLEAR ARABIC CALLIGRAPHY (Visible from afar!)
-    // -------------------------------------------------------------
-    val arabicLength = dhikr.arabic.length
-    var arabicTextSize = when {
-      arabicLength < 35 -> 72f // Grand, bold and readable across the room
-      arabicLength < 70 -> 56f
-      arabicLength < 120 -> 46f
-      arabicLength < 180 -> 38f
-      arabicLength < 250 -> 32f
-      else -> 27f
-    }
-
-    val arabicPaint = TextPaint().apply {
-      color = Color.parseColor("#022B21") // Intense Deep Islamic Emerald Black (Maximum Contrast)
-      typeface = getArabicTypeface(context)
-      textAlign = Paint.Align.LEFT // Crucial for StaticLayout!
-      isFakeBoldText = true // Extra bold weight so glyphs, nuktas & harkat are unmistakably clear
-      isAntiAlias = true
-      setShadowLayer(3f, 1f, 1f, Color.parseColor("#38C5A059")) // Warm 24K gold soft drop shadow
-    }
-
-    // Auto-scale Arabic text height if it exceeds 44% of card space (e.g. lengthy Hadiths)
-    val maxArabicHeight = cardRect.height() * 0.44f
-    var arabicLayout: StaticLayout
-    while (true) {
-      arabicPaint.textSize = arabicTextSize
-      arabicLayout = createCenteredLayout(dhikr.arabic, arabicPaint, contentWidth, 1.32f)
-      if (arabicLayout.height <= maxArabicHeight || arabicTextSize <= 22f) {
-        break
-      }
-      arabicTextSize -= 2f
-    }
-
-    canvas.save()
-    canvas.translate(layoutLeft, currentY)
-    arabicLayout.draw(canvas)
-    canvas.restore()
-
-    currentY += arabicLayout.height + 16f
-
-    // -------------------------------------------------------------
-    // D. Urdu Translation (Auto-Scaled so it NEVER cuts off or goes out of line!)
-    // -------------------------------------------------------------
-    val cardBottomLimit = cardRect.bottom - 18f
-    val citationReservedHeight = 52f // For source citation pill
-    val availableSpaceForUrdu = (cardBottomLimit - currentY - citationReservedHeight).coerceAtLeast(80f)
-
-    val urduLength = dhikr.translationUrdu.length
-    var initialUrduSize = when {
-      urduLength < 45 -> 32f
-      urduLength < 90 -> 27f
-      urduLength < 150 -> 23f
-      urduLength < 250 -> 20f
-      else -> 18f
-    }
-
-    val urduPaint = TextPaint().apply {
-      color = Color.parseColor("#631D08") // Deep Persian walnut ink
-      typeface = getUrduTypeface(context)
-      textAlign = Paint.Align.LEFT // Crucial for StaticLayout!
-      isAntiAlias = true
-    }
-
-    // Dynamically scale down Urdu text size if necessary so it 100% fits within availableSpaceForUrdu
-    var urduLayout: StaticLayout
-    while (true) {
-      urduPaint.textSize = initialUrduSize
-      urduLayout = createCenteredLayout(dhikr.translationUrdu, urduPaint, contentWidth, 1.32f)
-      if (urduLayout.height <= availableSpaceForUrdu || initialUrduSize <= 16f) {
-        break
-      }
-      initialUrduSize -= 1f
-    }
-
-    canvas.save()
-    canvas.translate(layoutLeft, currentY)
-    urduLayout.draw(canvas)
-    canvas.restore()
-
-    currentY += urduLayout.height + 18f
-
-    // -------------------------------------------------------------
-    // E. Source Citation Pill Ribbon (Always safely placed above card bottom!)
-    // -------------------------------------------------------------
-    val sourceLabel = "📖 ${dhikr.source}"
-    val sourcePaint = TextPaint().apply {
-      color = Color.parseColor("#8A5A1A")
-      textSize = 21f
-      typeface = Typeface.create(Typeface.SERIF, Typeface.BOLD)
-      isAntiAlias = true
-    }
-    val sourceTextWidth = sourcePaint.measureText(sourceLabel)
-    val sourcePillWidth = (sourceTextWidth + 44f).coerceIn(210f, cardRect.width() - 60f)
-    val pillTop = currentY.coerceAtMost(cardBottomLimit - 42f)
-    val sourcePillRect = RectF(cx - sourcePillWidth / 2f, pillTop, cx + sourcePillWidth / 2f, pillTop + 38f)
-    drawCardPill(canvas, sourcePillRect, sourceLabel, Typeface.create(Typeface.SERIF, Typeface.BOLD), 20f, Color.parseColor("#8A5A1A"), Color.parseColor("#FAF3E2"), Color.parseColor("#D4AF37"))
-
-    currentY = pillTop + 48f
-
-    // -------------------------------------------------------------
-    // F. "سبق و تدبر" Contemplative Wisdom Card (Only if ample space remains!)
-    // -------------------------------------------------------------
-    val remainingForTadabbur = cardBottomLimit - currentY
-    if (remainingForTadabbur >= 65f && dhikr.contemplativeNote.isNotBlank()) {
-      val tadabburBoxWidth = cardRect.width() - 60f
-      val tadabburInnerWidth = (tadabburBoxWidth - 36f).toInt()
-      val tadabburLayoutX = cx - (tadabburInnerWidth / 2f)
-
-      val notePaint = TextPaint().apply {
-        color = Color.parseColor("#4A3B2C")
-        textSize = 20f
-        typeface = getUrduTypeface(context)
-        textAlign = Paint.Align.LEFT // Crucial for StaticLayout!
-        isAntiAlias = true
-      }
-
-      val fullNote = "سبق و تدبر: ${dhikr.contemplativeNote}"
-      val noteLayout = createCenteredLayout(fullNote, notePaint, tadabburInnerWidth, 1.30f)
-
-      val boxHeight = (noteLayout.height + 22f).coerceAtMost(remainingForTadabbur)
-      if (boxHeight >= 48f) {
-        val tadabburRect = RectF(cx - tadabburBoxWidth / 2f, currentY, cx + tadabburBoxWidth / 2f, currentY + boxHeight)
-
-        val tadabburBg = Paint().apply {
-          color = Color.parseColor("#FFFDF5")
-          isAntiAlias = true
+        // Subtle outer border frame
+        val framePaint = Paint().apply {
+            color = COLOR_GOLD_ACCENT
+            style = Paint.Style.STROKE
+            strokeWidth = 2f
+            alpha = 90
+            isAntiAlias = true
         }
-        val tadabburBorder = Paint().apply {
-          color = Color.parseColor("#EADBB6")
-          style = Paint.Style.STROKE
-          strokeWidth = 1.2f
-          isAntiAlias = true
-        }
-        canvas.drawRoundRect(tadabburRect, 14f, 14f, tadabburBg)
-        canvas.drawRoundRect(tadabburRect, 14f, 14f, tadabburBorder)
+        canvas.drawRoundRect(RectF(28f, 28f, width - 28f, height - 28f), 28f, 28f, framePaint)
 
-        val noteY = tadabburRect.centerY() - (noteLayout.height / 2f)
+        // Top and bottom accent lines
+        val linePaint = Paint().apply {
+            color = COLOR_GOLD_ACCENT
+            strokeWidth = 3f
+            alpha = 180
+            isAntiAlias = true
+        }
+        canvas.drawLine(70f, 44f, width - 70f, 44f, linePaint)
+        canvas.drawLine(70f, height - 44f, width - 70f, height - 44f, linePaint)
+    }
+
+    private fun drawBrandedHookHeader(context: Context, canvas: Canvas, width: Int) {
+        val cx = width / 2f
+
+        // Glass pill for App Logo + Brand Name
+        val pillRect = RectF(cx - 255f, 64f, cx + 255f, 126f)
+        val pillPaint = Paint().apply {
+            color = COLOR_GLASS_CARD
+            isAntiAlias = true
+        }
+        val pillBorder = Paint().apply {
+            color = COLOR_GOLD_ACCENT
+            style = Paint.Style.STROKE
+            strokeWidth = 1.5f
+            alpha = 180
+            isAntiAlias = true
+        }
+        canvas.drawRoundRect(pillRect, 31f, 31f, pillPaint)
+        canvas.drawRoundRect(pillRect, 31f, 31f, pillBorder)
+
+        // Draw App Brand Logo inside the left side of the pill
+        try {
+            val logoBitmap = BitmapFactory.decodeResource(context.resources, R.drawable.app_brand_logo)
+            if (logoBitmap != null) {
+                val logoSize = 44f
+                val logoX = pillRect.left + 36f
+                val logoY = pillRect.centerY() - logoSize / 2f
+                val srcRect = android.graphics.Rect(0, 0, logoBitmap.width, logoBitmap.height)
+                val dstRect = RectF(logoX - logoSize / 2f, logoY, logoX + logoSize / 2f, logoY + logoSize)
+                canvas.drawBitmap(logoBitmap, srcRect, dstRect, Paint(Paint.FILTER_BITMAP_FLAG))
+            }
+        } catch (_: Exception) {}
+
+        val headerText = TextPaint().apply {
+            color = COLOR_GOLD_ACCENT
+            textSize = 23f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            letterSpacing = 0.08f
+            textAlign = Paint.Align.CENTER
+            isAntiAlias = true
+        }
+        canvas.drawText("15 SECONDS 4 ALLAH", cx + 16f, 103f, headerText)
+
+        // Top Slogan & Hook Line
+        val hookSubPaint = TextPaint().apply {
+            color = COLOR_GOLD_BRIGHT
+            textSize = 22f
+            typeface = getUrduTypeface(context)
+            textAlign = Paint.Align.CENTER
+            isAntiAlias = true
+        }
+        canvas.drawText(
+            "✨ ثواب بھی ، Rewards بھی  •  ہر 15 منٹ بعد خودکار ذکر پاپ اپ ✨",
+            cx,
+            165f,
+            hookSubPaint
+        )
+    }
+
+    private fun drawMainContent(context: Context, canvas: Canvas, dhikr: DhikrItem) {
+        val cx = POSTER_WIDTH / 2f
+        val contentWidth = POSTER_WIDTH - 130f
+        val layoutLeft = cx - (contentWidth / 2f)
+        var currentY = 205f
+
+        // Bismillah (If Quranic)
+        if (dhikr.isQuranic) {
+            val bismillahPaint = TextPaint().apply {
+                color = COLOR_TEXT_MUTED
+                textSize = 30f
+                typeface = getArabicTypeface(context)
+                textAlign = Paint.Align.CENTER
+                isAntiAlias = true
+            }
+            canvas.drawText("۞ بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ ۞", cx, currentY, bismillahPaint)
+            currentY += 56f
+        }
+
+        // Arabic Calligraphy (Hero Section - Gold Color for high impact)
+        val arabicPaint = TextPaint().apply {
+            color = COLOR_GOLD_ACCENT
+            typeface = getArabicTypeface(context)
+            textAlign = Paint.Align.LEFT
+            isFakeBoldText = true
+            isAntiAlias = true
+            setShadowLayer(8f, 0f, 4f, Color.parseColor("#55000000"))
+        }
+
+        var arabicSize = 70f
+        var arabicLayout: StaticLayout
+        while (true) {
+            arabicPaint.textSize = arabicSize
+            arabicLayout = createCenteredLayout(dhikr.arabic, arabicPaint, contentWidth.toInt(), 1.35f)
+            if (arabicLayout.height <= 275f || arabicSize <= 28f) break
+            arabicSize -= 2f
+        }
+
         canvas.save()
-        canvas.translate(tadabburLayoutX, noteY)
-        noteLayout.draw(canvas)
+        canvas.translate(layoutLeft, currentY)
+        arabicLayout.draw(canvas)
         canvas.restore()
-      }
+
+        currentY += arabicLayout.height + 34f
+
+        // Urdu Translation (Clean White)
+        val urduPaint = TextPaint().apply {
+            color = COLOR_TEXT_WHITE
+            typeface = getUrduTypeface(context)
+            textAlign = Paint.Align.LEFT
+            isAntiAlias = true
+            setShadowLayer(4f, 0f, 2f, Color.parseColor("#60000000"))
+        }
+
+        var urduSize = 33f
+        var urduLayout: StaticLayout
+        while (true) {
+            urduPaint.textSize = urduSize
+            urduLayout = createCenteredLayout(dhikr.translationUrdu, urduPaint, contentWidth.toInt(), 1.42f)
+            if (urduLayout.height <= 195f || urduSize <= 19f) break
+            urduSize -= 1f
+        }
+
+        canvas.save()
+        canvas.translate(layoutLeft, currentY)
+        urduLayout.draw(canvas)
+        canvas.restore()
+
+        currentY += urduLayout.height + 32f
+
+        // Source Reference Pill (Centered & Elegant)
+        val sourcePaint = TextPaint().apply {
+            color = COLOR_BG_CENTER
+            textSize = 22f
+            typeface = getUrduTypeface(context)
+            textAlign = Paint.Align.CENTER
+            isAntiAlias = true
+        }
+        val sourceText = "📖 حوالہ: ${dhikr.source}"
+        val textWidth = sourcePaint.measureText(sourceText)
+        val pillWidth = (textWidth + 68f).coerceAtMost(POSTER_WIDTH - 120f)
+
+        val sourceBgPaint = Paint().apply {
+            color = COLOR_GOLD_ACCENT
+            isAntiAlias = true
+        }
+        val pillTop = currentY.coerceAtMost(735f)
+        val sourceRect = RectF(cx - pillWidth / 2f, pillTop, cx + pillWidth / 2f, pillTop + 52f)
+        canvas.drawRoundRect(sourceRect, 26f, 26f, sourceBgPaint)
+
+        val textY = sourceRect.centerY() - ((sourcePaint.descent() + sourcePaint.ascent()) / 2f)
+        canvas.drawText(sourceText, cx, textY, sourcePaint)
     }
-  }
 
-  private fun drawCardPill(
-    canvas: Canvas,
-    rect: RectF,
-    text: String,
-    typeface: Typeface,
-    textSize: Float,
-    textColor: Int,
-    bgColor: Int,
-    borderColor: Int
-  ) {
-    val bgPaint = Paint().apply {
-      color = bgColor
-      isAntiAlias = true
+    /**
+     * Viral Download & Hadya Hook Box at the bottom of the poster:
+     * Explains the Points System, 1 Point = 1 Paisa Hadya System, and GET REWARDS button
+     */
+    private fun drawViralDownloadHookFooter(context: Context, canvas: Canvas, width: Int, height: Int) {
+        val cx = width / 2f
+        val boxTop = height - 252f
+        val boxBottom = height - 58f
+        val hookRect = RectF(56f, boxTop, width - 56f, boxBottom)
+
+        val boxBg = Paint().apply {
+            color = COLOR_HOOK_BG
+            isAntiAlias = true
+        }
+        val boxBorder = Paint().apply {
+            color = COLOR_GOLD_ACCENT
+            style = Paint.Style.STROKE
+            strokeWidth = 2f
+            isAntiAlias = true
+        }
+        canvas.drawRoundRect(hookRect, 24f, 24f, boxBg)
+        canvas.drawRoundRect(hookRect, 24f, 24f, boxBorder)
+
+        // Line 1: Slogan + Points & Hadya Hook
+        val rewardHookPaint = TextPaint().apply {
+            color = COLOR_GOLD_BRIGHT
+            textSize = 22f
+            typeface = getUrduTypeface(context)
+            textAlign = Paint.Align.CENTER
+            isAntiAlias = true
+        }
+        canvas.drawText(
+            "✨ ثواب بھی ، Rewards بھی  •  ہدیہ والٹ (1 Point = 1 Paisa PKR)",
+            cx,
+            boxTop + 44f,
+            rewardHookPaint
+        )
+
+        // Line 2: Prominent "GET REWARDS" Button Pill inside Footer
+        val ctaRect = RectF(cx - 415f, boxTop + 68f, cx + 415f, boxTop + 124f)
+        val ctaBg = Paint().apply {
+            color = COLOR_GOLD_ACCENT
+            isAntiAlias = true
+        }
+        canvas.drawRoundRect(ctaRect, 28f, 28f, ctaBg)
+
+        val ctaTextPaint = TextPaint().apply {
+            color = Color.parseColor("#041E18")
+            textSize = 21f
+            typeface = getUrduTypeface(context)
+            textAlign = Paint.Align.CENTER
+            isFakeBoldText = true
+            isAntiAlias = true
+        }
+        val ctaTextY = ctaRect.centerY() - ((ctaTextPaint.descent() + ctaTextPaint.ascent()) / 2f)
+        canvas.drawText(
+            "🎁 GET REWARDS  •  15s Timer (Toolyfi.com)  •  APKPure: 15 Seconds 4 Allah",
+            cx,
+            ctaTextY,
+            ctaTextPaint
+        )
+
+        // Line 3: Website & Brand Signature
+        val urlText = TextPaint().apply {
+            color = COLOR_TEXT_MUTED
+            textSize = 18.5f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            letterSpacing = 0.04f
+            textAlign = Paint.Align.CENTER
+            isAntiAlias = true
+        }
+        canvas.drawText(
+            "🌐 toolyfi.com/15-Seconds-For-ALLAH  •  VORTEX SHORTS  •  #15Seconds4Allah",
+            cx,
+            boxTop + 166f,
+            urlText
+        )
     }
-    val borderPaint = Paint().apply {
-      color = borderColor
-      style = Paint.Style.STROKE
-      strokeWidth = 1.2f
-      isAntiAlias = true
+
+    private fun createCenteredLayout(
+        text: String,
+        paint: TextPaint,
+        maxWidth: Int,
+        spacingMult: Float
+    ): StaticLayout {
+        paint.textAlign = Paint.Align.LEFT
+        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            StaticLayout.Builder.obtain(text, 0, text.length, paint, maxWidth)
+                .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                .setLineSpacing(0f, spacingMult)
+                .setIncludePad(false)
+                .build()
+        } else {
+            @Suppress("DEPRECATION")
+            StaticLayout(
+                text,
+                paint,
+                maxWidth,
+                Layout.Alignment.ALIGN_CENTER,
+                spacingMult,
+                0f,
+                false
+            )
+        }
     }
-    val radius = rect.height() / 2f
-    canvas.drawRoundRect(rect, radius, radius, bgPaint)
-    canvas.drawRoundRect(rect, radius, radius, borderPaint)
 
-    val textPaint = TextPaint().apply {
-      color = textColor
-      this.textSize = textSize
-      this.typeface = typeface
-      textAlign = Paint.Align.CENTER
-      isAntiAlias = true
+    private fun saveBitmapToCache(context: Context, bitmap: Bitmap, prefix: String): Uri? {
+        return try {
+            val cacheDir = File(context.cacheDir, "viral_posters")
+            if (!cacheDir.exists()) cacheDir.mkdirs()
+
+            val file = File(cacheDir, "${prefix}_${System.currentTimeMillis()}.png")
+            FileOutputStream(file).use { out ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+            }
+
+            FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+        } catch (_: Exception) {
+            null
+        }
     }
-    val textY = rect.centerY() - ((textPaint.descent() + textPaint.ascent()) / 2f)
-    canvas.drawText(text, rect.centerX(), textY, textPaint)
-  }
-
-  private fun drawPillBadge(
-    canvas: Canvas,
-    cx: Float,
-    cy: Float,
-    text: String,
-    textColor: Int,
-    bgColor: Int,
-    borderColor: Int,
-    fontSize: Float,
-    typeface: Typeface
-  ) {
-    val textPaint = TextPaint().apply {
-      color = textColor
-      textSize = fontSize
-      this.typeface = typeface
-      textAlign = Paint.Align.CENTER
-      isAntiAlias = true
-    }
-    val textWidth = textPaint.measureText(text)
-    val pillWidth = textWidth + 38f
-    val pillHeight = fontSize + 18f
-    val rect = RectF(cx - pillWidth / 2f, cy - pillHeight / 2f, cx + pillWidth / 2f, cy + pillHeight / 2f)
-
-    drawCardPill(canvas, rect, text, typeface, fontSize, textColor, bgColor, borderColor)
-  }
-
-  private fun drawRoyalFooterBranding(canvas: Canvas, width: Int, height: Int) {
-    val cx = width / 2f
-    val footerTop = height - 98f
-
-    // Divider line with gold fade
-    val divPaint = Paint().apply {
-      color = Color.parseColor("#55D4AF37")
-      strokeWidth = 1.2f
-      isAntiAlias = true
-    }
-    canvas.drawLine(100f, footerTop, width - 100f, footerTop, divPaint)
-
-    val starPaint = TextPaint().apply {
-      color = Color.parseColor("#C5A059")
-      textSize = 15f
-      textAlign = Paint.Align.CENTER
-      isAntiAlias = true
-    }
-    canvas.drawText("✦", cx, footerTop + 4f, starPaint)
-
-    // Tagline with "15 SECONDS 4 ALLAH"
-    val footerTagline = TextPaint().apply {
-      color = Color.parseColor("#8A5A1A")
-      textSize = 21f
-      typeface = Typeface.create(Typeface.SERIF, Typeface.BOLD)
-      letterSpacing = 0.04f
-      textAlign = Paint.Align.CENTER
-      isAntiAlias = true
-    }
-    canvas.drawText("✦ 15 SECONDS 4 ALLAH • پندرہ سیکنڈ اللہ کے لیے ✦", cx, footerTop + 30f, footerTagline)
-
-    val hashPaint = TextPaint().apply {
-      color = Color.parseColor("#996515")
-      textSize = 18f
-      typeface = Typeface.create(Typeface.SERIF, Typeface.NORMAL)
-      textAlign = Paint.Align.CENTER
-      isAntiAlias = true
-    }
-    canvas.drawText("Facebook & WhatsApp Channel Verified • #15Seconds4Allah", cx, footerTop + 56f, hashPaint)
-  }
-
-  private fun createCenteredLayout(
-    text: String,
-    paint: TextPaint,
-    maxWidth: Int,
-    spacingMult: Float
-  ): StaticLayout {
-    // CRITICAL FIX: paint.textAlign MUST be LEFT when creating StaticLayout.
-    // Setting textAlign = CENTER on paint causes StaticLayout to double-shift Arabic/Urdu text to the left,
-    // which pushes the text off-center and clips it against the left border!
-    paint.textAlign = Paint.Align.LEFT
-
-    return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-      StaticLayout.Builder.obtain(text, 0, text.length, paint, maxWidth)
-        .setAlignment(Layout.Alignment.ALIGN_CENTER)
-        .setLineSpacing(0f, spacingMult)
-        .setIncludePad(false)
-        .build()
-    } else {
-      @Suppress("DEPRECATION")
-      StaticLayout(
-        text,
-        paint,
-        maxWidth,
-        Layout.Alignment.ALIGN_CENTER,
-        spacingMult,
-        0f,
-        false
-      )
-    }
-  }
-
-  private fun saveBitmapToCache(context: Context, bitmap: Bitmap, prefix: String): Uri? {
-    return try {
-      val cacheDir = File(context.cacheDir, "shared_posters")
-      if (!cacheDir.exists()) cacheDir.mkdirs()
-
-      val file = File(cacheDir, "${prefix}_${System.currentTimeMillis()}.png")
-      FileOutputStream(file).use { out ->
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
-      }
-
-      FileProvider.getUriForFile(
-        context,
-        "${context.packageName}.fileprovider",
-        file
-      )
-    } catch (_: Exception) {
-      null
-    }
-  }
 }

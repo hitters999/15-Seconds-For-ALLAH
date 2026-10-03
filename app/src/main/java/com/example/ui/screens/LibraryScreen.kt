@@ -22,15 +22,20 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -341,7 +346,8 @@ fun LibraryScreen(
             goldColor = goldColor,
             onSelect = { viewModel.selectDhikrForMoment(item, startImmediately = true) },
             onBookmark = { viewModel.toggleBookmark(item.id) },
-            onSharePoster = { ShareHelper.shareDhikrPoster(context, item) }
+            onSharePoster = { ShareHelper.shareDhikrPoster(context, item) },
+            onClaim = { viewModel.claimMomentPoints(item) }
           )
           Spacer(modifier = Modifier.height(10.dp))
         }
@@ -364,6 +370,7 @@ private fun DhikrItemCard(
   onSelect: () -> Unit,
   onBookmark: () -> Unit,
   onSharePoster: () -> Unit,
+  onClaim: () -> Unit,
   modifier: Modifier = Modifier
 ) {
   Card(
@@ -499,6 +506,35 @@ private fun DhikrItemCard(
             fontWeight = FontWeight.Medium,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
           )
+        }
+      }
+
+      Spacer(modifier = Modifier.height(10.dp))
+
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+        Button(
+          onClick = onSelect,
+          colors = ButtonDefaults.buttonColors(containerColor = InkTeal),
+          shape = RoundedCornerShape(10.dp),
+          modifier = Modifier.weight(1.2f).height(38.dp)
+        ) {
+          Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(15.dp))
+          Spacer(modifier = Modifier.width(4.dp))
+          Text("۱۵ سیکنڈ ذکر", fontFamily = UrduFontFamily, fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+        }
+
+        OutlinedButton(
+          onClick = onClaim,
+          shape = RoundedCornerShape(10.dp),
+          border = BorderStroke(1.dp, goldColor),
+          modifier = Modifier.weight(1.2f).height(38.dp)
+        ) {
+          Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = goldColor, modifier = Modifier.size(15.dp))
+          Spacer(modifier = Modifier.width(4.dp))
+          Text("✓ پڑھ لیا (+10)", fontFamily = UrduFontFamily, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = if (isDark) goldColor else InkTeal)
         }
       }
     }

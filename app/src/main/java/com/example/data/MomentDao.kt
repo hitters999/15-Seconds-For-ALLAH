@@ -53,7 +53,13 @@ interface MomentDao {
   @Insert(onConflict = OnConflictStrategy.REPLACE)
   suspend fun insertUserAccount(account: UserAccountEntity)
 
+  @Query("DELETE FROM registered_accounts WHERE identifier = :identifier")
+  suspend fun deleteUserAccount(identifier: String)
+
   // Hadith 36,000+ Cache & Bookmarks
+  @Query("SELECT * FROM hadith_cache ORDER BY cachedAt DESC")
+  fun getAllCachedHadiths(): Flow<List<HadithEntity>>
+
   @Query("SELECT * FROM hadith_cache WHERE bookKey = :bookKey AND hadithNumber = :hadithNumber LIMIT 1")
   suspend fun getHadithFromCache(bookKey: String, hadithNumber: Int): HadithEntity?
 

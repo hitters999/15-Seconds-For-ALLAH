@@ -21,10 +21,20 @@ import androidx.work.Worker
 import androidx.work.WorkerParameters
 import com.example.MainActivity
 import com.example.R
+import com.example.data.AppDatabase
 import com.example.data.DhikrCatalog
 import com.example.data.DhikrItem
+import com.example.data.MomentLogEntity
+import com.example.data.UserAccountEntity
+import com.example.data.UserSettingsEntity
 import com.example.util.ShareHelper
 import com.example.util.SoundAndHaptics
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 object NotificationHelper {
@@ -86,25 +96,77 @@ object NotificationHelper {
 
   /**
    * Displays the Sacred Dhikr Reminder:
-   * 1. Plays the requested sacred beep sound.
-   * 2. Shows EXCLUSIVELY the floating 5-second popup banner matching user's design.
-   * 3. Absolutely NO WhatsApp-like heads-up or drawer notification!
+   * 1. Automatically awards +10 points (Hasanat) in Room DB for every popup displayed.
+   * 2. Plays the requested sacred beep sound.
+   * 3. Shows EXCLUSIVELY the non-blocking floating 5-second popup banner without opening MainActivity.
    */
   fun showDhikrNotification(context: Context, dhikr: DhikrItem) {
-    // Play requested "Beep" sound
+    // 1. Automatically award +10 points for this popup appearance
+    recordPopupPointsInDatabase(context, dhikr)
+
+    // 2. Play requested "Beep" sound
     try {
       SoundAndHaptics(context).playBeep()
     } catch (_: Exception) {}
 
-    // Cancel any accidental status bar notification
+    // 3. Cancel any accidental status bar notification
     try {
       NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
     } catch (_: Exception) {}
 
-    // Strictly launch ONLY the floating top popup window
+    // 4. Strictly launch the non-blocking floating top popup window
     try {
-      PopupNotificationActivity.start(context, dhikr)
+      FloatingPopupManager.showFloatingPopup(context, dhikr)
     } catch (_: Exception) {}
+  }
+
+  /**
+   * Increments the user's spiritual score by +10 points and records a moment log
+   * every time a reminder popup is successfully shown on screen.
+   */
+  fun recordPopupPointsInDatabase(context: Context, dhikr: DhikrItem) {
+    val appContext = context.applicationContext
+    CoroutineScope(Dispatchers.IO).launch {
+      try {
+        val dao = AppDatabase.getDatabase(appContext).momentDao()
+        val dateKey = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+        dao.insertMomentLog(
+          MomentLogEntity(
+            dhikrId = dhikr.id,
+            title = dhikr.transliteration.ifBlank { "Popup Dhikr" },
+            category = "Popup Reminder",
+            durationSeconds = getPopupDurationSeconds(appContext),
+            timestamp = System.currentTimeMillis(),
+            dateKey = dateKey
+          )
+        )
+
+        val current = dao.getUserSettingsDirect() ?: UserSettingsEntity()
+        val newScore = current.totalScore + 10
+        val rank = when {
+          newScore >= 5000 -> "صاحبِ استقامت (Master League)"
+          newScore >= 2000 -> "ذاکرِ مداوم (Diamond League)"
+          newScore >= 800 -> "محبِ ذکر (Gold League)"
+          else -> "مبتدی (Seeker of Peace)"
+        }
+        val updated = current.copy(totalScore = newScore, spiritualRank = rank)
+        dao.insertOrUpdateUserSettings(updated)
+
+        if (updated.isSignedIn) {
+          val identifier = if (updated.userPhone.isNotBlank()) updated.userPhone else updated.userEmail
+          if (identifier.isNotBlank()) {
+            dao.insertUserAccount(
+              UserAccountEntity(
+                identifier = identifier,
+                displayName = updated.userName,
+                accountType = updated.authProvider,
+                totalScore = newScore
+              )
+            )
+          }
+        }
+      } catch (_: Exception) {}
+    }
   }
 
   /**

@@ -89,10 +89,14 @@ import com.example.ui.theme.DarkCardSurface
 import com.example.ui.theme.DarkTextPrimary
 import com.example.ui.theme.DarkTextSoft
 import com.example.ui.theme.DarkUrduText
+import com.example.ui.theme.DeepEmerald
+import com.example.ui.theme.Emerald
+import com.example.ui.theme.Gold
 import com.example.ui.theme.InkTeal
 import com.example.ui.theme.ParchmentBorder
 import com.example.ui.theme.ParchmentCard
 import com.example.ui.theme.ParchmentSubtle
+import com.example.ui.theme.SoftGold
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSoft
 import com.example.ui.theme.UrduFontFamily
