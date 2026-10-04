@@ -6,6 +6,7 @@
   <title>36,000+ Authentic Hadiths in Urdu & Arabic (صحیح البخاری، مسلم، ترمذی) — 15 Seconds for Allah | Toolyfi</title>
   <meta name="description" content="Read and search 36,000+ authentic Hadiths from Sahih al-Bukhari, Sahih Muslim, Sunan Abu Dawud, Jami at-Tirmidhi, Sunan an-Nasai, Ibn Majah & Muwatta Malik with Arabic & Urdu translation." />
   <link rel="canonical" href="https://toolyfi.com/15-Seconds-For-ALLAH/hadith.html" />
+  <link rel="icon" type="image/png" href="logo.png" />
   <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Noto+Nastaliq+Urdu:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
     :root { --bg-center: #113026; --bg-edge: #05100D; --gold: #E5C07B; --gold-bright: #FDE68A; --cyan: #4FD1C5; }
@@ -154,17 +155,99 @@
     </div>
 
     <div class="card" style="text-align:center;">
-      <div id="hadithRef" style="color:var(--cyan);font-size:14px;">صحیح البخاری • حدیث نمبر 1</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+        <span style="display:inline-flex;align-items:center;gap:8px;">
+          <img src="logo.png" alt="Logo" style="width:36px;height:36px;border-radius:50%;border:1.5px solid var(--gold);" />
+          <span style="color:var(--gold);font-weight:bold;font-size:13px;">15 Seconds for Allah • ثواب بھی ، Rewards بھی</span>
+        </span>
+        <div id="hadithRef" style="color:var(--cyan);font-size:14px;">صحیح البخاری • حدیث نمبر 1</div>
+      </div>
       <div class="arabic" id="hadithArabic">إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى...</div>
       <div class="urdu" id="hadithUrdu">اعمال کا دارومدار نیتوں پر ہے اور ہر شخص کے لیے وہی ہے جس کی اس نے نیت کی...</div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px;">
-        <a href="index.html" class="btn" style="text-decoration:none;">🎁 GET REWARDS • 15s Timer (+10 Pts)</a>
-        <button class="btn" style="background:#25D366;color:#fff;" onclick="shareHadithWhatsApp()">📤 واٹس ایپ پر حدیث شیئر کریں</button>
+        <button class="btn" onclick="openHadithIn15sTimer()">🎁 15s Earn (+10 Pts)</button>
+        <button class="btn" style="background:#25D366;color:#fff;" onclick="shareHadithWhatsApp()">📤 واٹس ایپ شیئر</button>
+        <button class="btn" style="background:#174340;color:#fff;border:1px solid var(--cyan);" onclick="downloadHadithPoster()">🖼️ پوسٹر ڈاؤن لوڈ و شیئر</button>
       </div>
+      <canvas id="hadithPosterCanvas" width="1080" height="1080" style="display:none;"></canvas>
     </div>
   </main>
 
   <script>
+    function openHadithIn15sTimer() {
+      const ref = document.getElementById('hadithRef').textContent;
+      const ara = document.getElementById('hadithArabic').textContent;
+      const urd = document.getElementById('hadithUrdu').textContent;
+      const url = `index.html?arabic=${encodeURIComponent(ara)}&urdu=${encodeURIComponent(urd)}&source=${encodeURIComponent(ref)}`;
+      window.location.href = url;
+    }
+
+    function downloadHadithPoster() {
+      const canvas = document.getElementById('hadithPosterCanvas');
+      const ctx = canvas.getContext('2d');
+      const ref = document.getElementById('hadithRef').textContent;
+      const ara = document.getElementById('hadithArabic').textContent;
+      const urd = document.getElementById('hadithUrdu').textContent;
+
+      const drawAndSave = (logoImg) => {
+        const grad = ctx.createRadialGradient(540, 420, 80, 540, 540, 680);
+        grad.addColorStop(0, '#113026');
+        grad.addColorStop(1, '#05100D');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 1080, 1080);
+
+        ctx.strokeStyle = '#E5C07B';
+        ctx.lineWidth = 5;
+        ctx.strokeRect(36, 36, 1008, 1008);
+
+        if (logoImg) {
+          ctx.drawImage(logoImg, 245, 67, 68, 68);
+        }
+
+        ctx.fillStyle = '#E5C07B';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('15 SECONDS 4 ALLAH • ثواب بھی ، Rewards بھی', 565, 112);
+
+        ctx.fillStyle = '#FDE68A';
+        ctx.font = 'bold 42px Amiri, serif';
+        ctx.fillText(ara.slice(0, 75), 540, 380);
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '30px "Noto Nastaliq Urdu", serif';
+        ctx.fillText(urd.slice(0, 85), 540, 540);
+
+        ctx.fillStyle = '#E5C07B';
+        ctx.font = 'bold 26px "Noto Nastaliq Urdu", sans-serif';
+        ctx.fillText('📖 ' + ref, 540, 660);
+
+        ctx.fillStyle = '#09221B';
+        ctx.fillRect(70, 820, 940, 180);
+        ctx.strokeStyle = '#E5C07B';
+        ctx.strokeRect(70, 820, 940, 180);
+
+        if (logoImg) {
+          ctx.drawImage(logoImg, 90, 850, 110, 110);
+        }
+
+        ctx.fillStyle = '#FDE68A';
+        ctx.font = 'bold 26px sans-serif';
+        ctx.fillText('🎁 GET REWARDS • 15s Timer • 1 Point = 1 Paisa PKR', 560, 880);
+        ctx.fillStyle = '#4FD1C5';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillText('🌐 https://toolyfi.com/15-Seconds-For-ALLAH/', 560, 945);
+
+        const link = document.createElement('a');
+        link.download = 'Hadith_Poster_15Seconds4Allah.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      };
+
+      const img = new Image();
+      img.onload = () => drawAndSave(img);
+      img.onerror = () => drawAndSave(null);
+      img.src = 'logo.png';
+    }
     function shareHadithWhatsApp() {
       const ref = document.getElementById('hadithRef').textContent;
       const ara = document.getElementById('hadithArabic').textContent;

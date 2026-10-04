@@ -218,6 +218,40 @@ fun ProfileScreen(
     ) {
       Spacer(modifier = Modifier.height(14.dp))
 
+      // Top Brand Header with Official Logo
+      Row(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(bottom = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Image(
+          painter = painterResource(id = R.drawable.ic_launcher_fg_img),
+          contentDescription = "15 Seconds for Allah Logo",
+          modifier = Modifier
+            .size(46.dp)
+            .clip(CircleShape)
+            .border(1.4.dp, BronzeGold, CircleShape),
+          contentScale = ContentScale.Crop
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+          Text(
+            text = "My Account & Wallet • میرا اکاؤنٹ و ہدیہ",
+            fontFamily = FontFamily.Serif,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = InkTeal
+          )
+          Text(
+            text = "15 Seconds for Allah • ثواب بھی ، Rewards بھی",
+            fontFamily = UrduFontFamily,
+            fontSize = 12.sp,
+            color = BronzeGold
+          )
+        }
+      }
+
       // 1. Google / Email / Mobile Account Header
       Card(
         shape = RoundedCornerShape(22.dp),
@@ -308,10 +342,12 @@ fun ProfileScreen(
               .background(Color.White)
           ) {
             Image(
-              painter = painterResource(id = R.drawable.app_brand_logo),
+              painter = painterResource(id = R.drawable.ic_launcher_fg_img),
               contentDescription = "Avatar",
-              modifier = Modifier.size(72.dp),
-              contentScale = ContentScale.Fit
+              modifier = Modifier
+                .size(72.dp)
+                .clip(CircleShape),
+              contentScale = ContentScale.Crop
             )
           }
 

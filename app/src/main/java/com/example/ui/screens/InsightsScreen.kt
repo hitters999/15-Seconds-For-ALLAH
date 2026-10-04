@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -40,13 +41,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.ui.DayActivity
 import com.example.ui.MainViewModel
 import com.example.ui.components.ParchmentBackground
@@ -89,24 +93,36 @@ fun InsightsScreen(
     ) {
       Spacer(modifier = Modifier.height(14.dp))
 
-      // Top Title
-      Column(
+      // Top Title with Official Logo
+      Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.Start
+        verticalAlignment = Alignment.CenterVertically
       ) {
-        Text(
-          text = "Spiritual Streak • روحانی استقامت",
-          fontFamily = FontFamily.Serif,
-          fontSize = 22.sp,
-          fontWeight = FontWeight.Bold,
-          color = InkTeal
+        Image(
+          painter = painterResource(id = R.drawable.ic_launcher_fg_img),
+          contentDescription = "15 Seconds for Allah Logo",
+          modifier = Modifier
+            .size(46.dp)
+            .clip(CircleShape)
+            .border(1.4.dp, BronzeGold, CircleShape),
+          contentScale = ContentScale.Crop
         )
-        Text(
-          text = "مسلسل اذکار کا ریکارڈ اور روحانی درجات کا مقابلہ",
-          fontFamily = UrduFontFamily,
-          fontSize = 13.sp,
-          color = BronzeGold
-        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+          Text(
+            text = "Spiritual Streak • روحانی استقامت",
+            fontFamily = FontFamily.Serif,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = InkTeal
+          )
+          Text(
+            text = "مسلسل اذکار کا ریکارڈ اور روحانی درجات کا مقابلہ",
+            fontFamily = UrduFontFamily,
+            fontSize = 12.5.sp,
+            color = BronzeGold
+          )
+        }
       }
 
       Spacer(modifier = Modifier.height(16.dp))

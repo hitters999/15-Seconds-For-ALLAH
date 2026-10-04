@@ -180,10 +180,10 @@ fun HadithExplorerScreen(
         }
 
         Image(
-          painter = painterResource(id = R.drawable.app_brand_logo),
+          painter = painterResource(id = R.drawable.ic_launcher_fg_img),
           contentDescription = "15 Seconds for Allah Logo",
           modifier = Modifier
-            .size(38.dp)
+            .size(40.dp)
             .clip(CircleShape)
             .border(1.2.dp, goldColor, CircleShape),
           contentScale = ContentScale.Crop

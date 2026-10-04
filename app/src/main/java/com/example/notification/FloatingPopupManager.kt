@@ -117,7 +117,7 @@ object FloatingPopupManager {
     }
 
     val logoView = ImageView(context).apply {
-      setImageResource(R.drawable.app_brand_logo)
+      setImageResource(R.drawable.ic_launcher_fg_img)
       scaleType = ImageView.ScaleType.FIT_CENTER
       val bg = GradientDrawable().apply {
         setColor(Color.parseColor("#0D3337"))
@@ -173,7 +173,7 @@ object FloatingPopupManager {
     }
 
     val crescentView = ImageView(context).apply {
-      setImageResource(R.drawable.golden_crescent_ornate)
+      setImageResource(R.drawable.ic_launcher_fg_img)
       scaleType = ImageView.ScaleType.FIT_CENTER
     }
     middleRow.addView(crescentView, LinearLayout.LayoutParams(dp(context, 62), dp(context, 62)))
@@ -257,13 +257,37 @@ object FloatingPopupManager {
     }
     bottomRow.addView(secTv)
 
+    // Poster Share Button on Popup Notification
+    val sharePosterBtn = TextView(context).apply {
+      text = "📤 پوسٹر شیئر"
+      setTextColor(Color.WHITE)
+      setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+      typeface = getUrduTypeface(context)
+      setPadding(dp(context, 10), dp(context, 5), dp(context, 10), dp(context, 5))
+      background = GradientDrawable().apply {
+        setColor(Color.parseColor("#1E8E5A"))
+        cornerRadius = dp(context, 14).toFloat()
+      }
+      setOnClickListener {
+        dismissExistingOverlay(context)
+        ShareHelper.shareDhikrPoster(context, dhikr)
+      }
+    }
+    val sharePosterParams = LinearLayout.LayoutParams(
+      LinearLayout.LayoutParams.WRAP_CONTENT,
+      LinearLayout.LayoutParams.WRAP_CONTENT
+    ).apply {
+      marginEnd = dp(context, 6)
+    }
+    bottomRow.addView(sharePosterBtn, sharePosterParams)
+
     // Prominent "GET REWARDS" Button connected directly to Toolyfi 15s Timer Page
     val getRewardsBtn = TextView(context).apply {
       text = "🎁 GET REWARDS"
       setTextColor(Color.parseColor("#041F1A"))
-      setTextSize(TypedValue.COMPLEX_UNIT_SP, 11.5f)
+      setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
       typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-      setPadding(dp(context, 12), dp(context, 6), dp(context, 12), dp(context, 6))
+      setPadding(dp(context, 10), dp(context, 6), dp(context, 10), dp(context, 6))
       background = GradientDrawable().apply {
         setColor(Color.parseColor("#E5C07B"))
         cornerRadius = dp(context, 14).toFloat()

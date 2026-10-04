@@ -149,12 +149,13 @@ fun HeroPopupNotificationCard(
             modifier = Modifier.size(36.dp)
           ) {
             Image(
-              painter = painterResource(id = R.drawable.app_brand_logo),
+              painter = painterResource(id = R.drawable.ic_launcher_fg_img),
               contentDescription = "App Logo",
               modifier = Modifier
-                .padding(4.dp)
-                .size(28.dp),
-              contentScale = ContentScale.Fit
+                .padding(2.dp)
+                .size(32.dp)
+                .clip(RoundedCornerShape(8.dp)),
+              contentScale = ContentScale.Crop
             )
           }
 
@@ -199,18 +200,20 @@ fun HeroPopupNotificationCard(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
       ) {
-        // Glowing Ornate Islamic Crescent Moon
+        // Official 15 Seconds For ALLAH Medallion Logo on Left
         Box(
           modifier = Modifier
-            .size(76.dp)
+            .size(72.dp)
             .clip(RoundedCornerShape(16.dp)),
           contentAlignment = Alignment.Center
         ) {
           Image(
-            painter = painterResource(id = R.drawable.golden_crescent_ornate),
-            contentDescription = "Crescent Moon",
-            modifier = Modifier.size(74.dp),
-            contentScale = ContentScale.Fit
+            painter = painterResource(id = R.drawable.ic_launcher_fg_img),
+            contentDescription = "15 Seconds for Allah Logo",
+            modifier = Modifier
+              .size(70.dp)
+              .clip(RoundedCornerShape(16.dp)),
+            contentScale = ContentScale.Crop
           )
         }
 
@@ -319,7 +322,31 @@ fun HeroPopupNotificationCard(
           )
         }
 
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(6.dp))
+
+        // Poster Share Button on Popup Notification
+        Surface(
+          shape = RoundedCornerShape(16.dp),
+          color = Color(0xFF1E8E5A),
+          modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .clickable {
+              onDismiss()
+              ShareHelper.shareDhikrPoster(context, dhikr)
+            }
+            .testTag("popup_share_poster_button")
+        ) {
+          Text(
+            text = "📤 پوسٹر شیئر",
+            fontFamily = UrduNastaliqFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 11.sp,
+            color = Color.White,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+          )
+        }
+
+        Spacer(modifier = Modifier.width(6.dp))
 
         // Prominent Golden "GET REWARDS" Button connected directly to Toolyfi 15s Timer Page
         Surface(
@@ -337,9 +364,9 @@ fun HeroPopupNotificationCard(
             text = "🎁 GET REWARDS",
             fontFamily = FontFamily.SansSerif,
             fontWeight = FontWeight.ExtraBold,
-            fontSize = 11.5.sp,
+            fontSize = 11f.sp,
             color = Color(0xFF041F1A),
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
           )
         }
 

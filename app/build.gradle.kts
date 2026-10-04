@@ -67,3 +67,15 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 }
+
+// Keep official 15 Seconds For ALLAH logo (ic_launcher_fg_img.png) synced across app and docs/logo.png
+try {
+    val officialLogo = file("src/main/res/drawable/ic_launcher_fg_img.png")
+    if (officialLogo.exists()) {
+        officialLogo.copyTo(file("src/main/res/drawable/app_brand_logo.png"), overwrite = true)
+        officialLogo.copyTo(file("../docs/logo.png"), overwrite = true)
+    }
+    val tempGenerated = file("src/main/res/drawable/official_15s_logo_1791149157471.jpg")
+    if (tempGenerated.exists()) tempGenerated.delete()
+} catch (_: Exception) {}
+

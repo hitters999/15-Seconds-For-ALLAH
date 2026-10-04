@@ -230,7 +230,7 @@ object PosterGenerator {
 
         // Draw App Brand Logo inside the left side of the pill
         try {
-            val logoBitmap = BitmapFactory.decodeResource(context.resources, R.drawable.app_brand_logo)
+            val logoBitmap = BitmapFactory.decodeResource(context.resources, R.drawable.ic_launcher_fg_img)
             if (logoBitmap != null) {
                 val logoSize = 66f
                 val logoX = pillRect.left + 44f

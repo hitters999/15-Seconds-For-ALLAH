@@ -405,7 +405,7 @@
       color: #CBD5E1;
     }
 
-    /* Footer */
+      /* Footer */
     footer {
       border-top: 1px solid rgba(229, 192, 123, 0.25);
       padding: 26px 16px;
@@ -418,6 +418,71 @@
       color: var(--gold);
       text-decoration: none;
       margin: 0 8px;
+    }
+
+    /* Website Non-Blocking Floating Dhikr Popup Notification */
+    .web-floating-popup {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      max-width: 460px;
+      margin: 0 auto;
+      z-index: 9999;
+      background: linear-gradient(180deg, #09292F 0%, #051B20 60%, #021014 100%);
+      border: 2px solid #4FD1C5;
+      border-radius: 24px;
+      padding: 15px 16px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75);
+      transition: transform 0.35s ease, opacity 0.35s ease;
+    }
+    .web-floating-popup.hidden {
+      transform: translateY(140%);
+      opacity: 0;
+      pointer-events: none;
+    }
+    .popup-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .popup-brand-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .popup-pts-pill {
+      background: var(--gold);
+      color: #041F1A;
+      font-weight: 800;
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .popup-mid-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .popup-actions-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .popup-btn {
+      flex: 1;
+      padding: 7px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      font-family: 'Noto Nastaliq Urdu', 'Inter', sans-serif;
+      text-align: center;
     }
   </style>
 </head>
@@ -554,6 +619,9 @@
   </main>
 
   <footer>
+    <div style="margin-bottom:10px;">
+      <img src="logo.png" alt="15 Seconds for Allah Logo" style="width:48px;height:48px;border-radius:50%;border:1.5px solid var(--gold);vertical-align:middle;" />
+    </div>
     <div>
       <a href="index.html">ہوم پیج</a> •
       <a href="hadith.html">احادیث لائبریری</a> •
@@ -564,6 +632,36 @@
     </div>
     <p style="margin-top:10px;">© 2026 15 Seconds for Allah • Powered by <a href="https://toolyfi.com">Toolyfi.com</a> & Vortex Shorts</p>
   </footer>
+
+  <!-- Website Floating Dhikr Popup Notification (With Official Logo, Poster Share & 15s Earn Button) -->
+  <div class="web-floating-popup" id="webFloatingPopup">
+    <div class="popup-top-row">
+      <div class="popup-brand-left">
+        <img src="logo.png" alt="15 Seconds for Allah Logo" style="width:36px;height:36px;border-radius:10px;border:1.5px solid #4FD1C5;object-fit:cover;" />
+        <div>
+          <div style="font-family:'Inter',sans-serif;font-weight:800;font-size:13px;color:#FFFFFF;line-height:1.2;">15 Seconds for Allah</div>
+          <div style="font-size:11px;color:#FDE68A;line-height:1.2;">✨ ثواب بھی ، Rewards بھی • 1 Pt = 1 Paisa</div>
+        </div>
+      </div>
+      <span class="popup-pts-pill">+10 Pts (10 پیسے) 🪙</span>
+    </div>
+
+    <div class="popup-mid-row">
+      <img src="logo.png" alt="Brand Emblem" style="width:58px;height:58px;border-radius:14px;border:1.5px solid var(--gold);flex-shrink:0;object-fit:cover;" />
+      <div style="flex:1;text-align:center;">
+        <div id="popupArabicText" style="font-family:'Amiri',serif;font-size:20px;color:#FFFFFF;font-weight:bold;line-height:1.5;">سُبْحَانَ اللَّهِ وَبِحَمْدِهِ، سُبْحَانَ اللَّهِ الْعَظِيمِ</div>
+        <div id="popupUrduText" style="font-size:12.5px;color:#E2E8F0;line-height:1.6;">اللہ پاک ہے اپنی حمد کے ساتھ، اللہ پاک ہے جو بہت عظمت والا ہے۔</div>
+        <div id="popupSourceText" style="font-size:11px;color:#4FD1C5;">📖 صحیح البخاری 6406</div>
+      </div>
+    </div>
+
+    <div class="popup-actions-row">
+      <button class="popup-btn" style="background:var(--gold);color:#041F1A;" onclick="earnFromPopup15s()">🎁 15s Earn (+10 Pts)</button>
+      <button class="popup-btn" style="background:#25D366;color:#FFFFFF;" onclick="sharePopupOnWhatsApp()">📤 واٹس ایپ شیئر</button>
+      <button class="popup-btn" style="background:#174340;color:#FFFFFF;border:1px solid #4FD1C5;" onclick="generateAndDownloadWebPoster()">🖼️ پوسٹر شیئر</button>
+      <button class="popup-btn" style="background:#071D21;color:#94A3B8;max-width:70px;" onclick="closeWebPopup()">بعد میں ✕</button>
+    </div>
+  </div>
 
   <script>
     const builtInCatalog = [
@@ -678,6 +776,31 @@
       window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
     }
 
+    function closeWebPopup() {
+      const el = document.getElementById('webFloatingPopup');
+      if (el) el.classList.add('hidden');
+    }
+
+    function showWebPopupNotification() {
+      const el = document.getElementById('webFloatingPopup');
+      if (!el) return;
+      const item = builtInCatalog[currentIndex % builtInCatalog.length];
+      document.getElementById('popupArabicText').textContent = item.arabic;
+      document.getElementById('popupUrduText').textContent = item.urdu;
+      document.getElementById('popupSourceText').textContent = '📖 حوالہ: ' + item.source;
+      el.classList.remove('hidden');
+    }
+
+    function earnFromPopup15s() {
+      closeWebPopup();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      nextDhikrAndRestart();
+    }
+
+    function sharePopupOnWhatsApp() {
+      shareCurrentOnWhatsApp();
+    }
+
     function generateAndDownloadWebPoster() {
       const canvas = document.getElementById('webPosterCanvas');
       const ctx = canvas.getContext('2d');
@@ -685,56 +808,79 @@
       const urdu = document.getElementById('urduContent').textContent;
       const source = document.getElementById('sourceContent').textContent;
 
-      // Background
-      const grad = ctx.createRadialGradient(540, 420, 80, 540, 540, 680);
-      grad.addColorStop(0, '#113026');
-      grad.addColorStop(1, '#05100D');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 1080, 1080);
+      const drawPosterAndTrigger = (logoImg) => {
+        // Background
+        const grad = ctx.createRadialGradient(540, 420, 80, 540, 540, 680);
+        grad.addColorStop(0, '#113026');
+        grad.addColorStop(1, '#05100D');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 1080, 1080);
 
-      // Gold Border
-      ctx.strokeStyle = '#E5C07B';
-      ctx.lineWidth = 5;
-      ctx.strokeRect(36, 36, 1008, 1008);
+        // Gold Border
+        ctx.strokeStyle = '#E5C07B';
+        ctx.lineWidth = 5;
+        ctx.strokeRect(36, 36, 1008, 1008);
 
-      // Header Slogan
-      ctx.fillStyle = '#E5C07B';
-      ctx.font = 'bold 30px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('15 SECONDS 4 ALLAH • ثواب بھی ، Rewards بھی', 540, 115);
+        // Top Brand Pill + Official Logo
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        ctx.fillRect(230, 60, 620, 82);
+        ctx.strokeStyle = '#E5C07B';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(230, 60, 620, 82);
 
-      // Arabic
-      ctx.fillStyle = '#FDE68A';
-      ctx.font = 'bold 46px Amiri, serif';
-      ctx.fillText(arabic.slice(0, 75), 540, 380);
+        if (logoImg) {
+          ctx.drawImage(logoImg, 245, 67, 68, 68);
+        }
 
-      // Urdu
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = '32px "Noto Nastaliq Urdu", serif';
-      ctx.fillText(urdu.slice(0, 85), 540, 540);
+        // Header Slogan
+        ctx.fillStyle = '#E5C07B';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('15 SECONDS 4 ALLAH • ثواب بھی ، Rewards بھی', 565, 112);
 
-      // Source
-      ctx.fillStyle = '#E5C07B';
-      ctx.font = 'bold 26px "Noto Nastaliq Urdu", sans-serif';
-      ctx.fillText(source, 540, 660);
+        // Arabic
+        ctx.fillStyle = '#FDE68A';
+        ctx.font = 'bold 46px Amiri, serif';
+        ctx.fillText(arabic.slice(0, 75), 540, 380);
 
-      // Bottom CTA Box
-      ctx.fillStyle = '#09221B';
-      ctx.fillRect(70, 820, 940, 180);
-      ctx.strokeStyle = '#E5C07B';
-      ctx.strokeRect(70, 820, 940, 180);
+        // Urdu
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '32px "Noto Nastaliq Urdu", serif';
+        ctx.fillText(urdu.slice(0, 85), 540, 540);
 
-      ctx.fillStyle = '#FDE68A';
-      ctx.font = 'bold 26px sans-serif';
-      ctx.fillText('🎁 GET REWARDS • 15s Timer • 1 Point = 1 Paisa PKR', 540, 880);
-      ctx.fillStyle = '#4FD1C5';
-      ctx.font = 'bold 24px sans-serif';
-      ctx.fillText('🌐 https://toolyfi.com/15-Seconds-For-ALLAH/', 540, 945);
+        // Source
+        ctx.fillStyle = '#E5C07B';
+        ctx.font = 'bold 26px "Noto Nastaliq Urdu", sans-serif';
+        ctx.fillText(source, 540, 660);
 
-      const link = document.createElement('a');
-      link.download = '15Seconds4Allah_Poster.png';
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+        // Bottom CTA Box
+        ctx.fillStyle = '#09221B';
+        ctx.fillRect(70, 820, 940, 180);
+        ctx.strokeStyle = '#E5C07B';
+        ctx.strokeRect(70, 820, 940, 180);
+
+        if (logoImg) {
+          ctx.drawImage(logoImg, 90, 850, 110, 110);
+        }
+
+        ctx.fillStyle = '#FDE68A';
+        ctx.font = 'bold 26px sans-serif';
+        ctx.fillText('🎁 GET REWARDS • 15s Timer • 1 Point = 1 Paisa PKR', 560, 880);
+        ctx.fillStyle = '#4FD1C5';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillText('🌐 https://toolyfi.com/15-Seconds-For-ALLAH/', 560, 945);
+
+        const dataUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = '15Seconds4Allah_Poster.png';
+        link.href = dataUrl;
+        link.click();
+      };
+
+      const img = new Image();
+      img.onload = () => drawPosterAndTrigger(img);
+      img.onerror = () => drawPosterAndTrigger(null);
+      img.src = 'logo.png';
     }
 
     function requestWithdrawal() {

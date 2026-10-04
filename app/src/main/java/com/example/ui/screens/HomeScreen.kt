@@ -339,10 +339,10 @@ private fun PremiumTopHeader(
           contentAlignment = Alignment.Center
         ) {
           Image(
-            painter = painterResource(id = R.drawable.app_brand_logo),
+            painter = painterResource(id = R.drawable.ic_launcher_fg_img),
             contentDescription = "Brand Logo",
             modifier = Modifier
-              .size(38.dp)
+              .size(42.dp)
               .clip(CircleShape),
             contentScale = ContentScale.Crop
           )

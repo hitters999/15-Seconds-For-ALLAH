@@ -119,7 +119,7 @@ fun PosterPreviewDialog(
         ) {
           Row(verticalAlignment = Alignment.CenterVertically) {
             Image(
-              painter = painterResource(id = R.drawable.app_brand_logo),
+              painter = painterResource(id = R.drawable.ic_launcher_fg_img),
               contentDescription = "15 Seconds for Allah Logo",
               modifier = Modifier
                 .size(38.dp)
