@@ -71,7 +71,10 @@
 <body>
   <nav class="navbar">
     <div class="nav-inner">
-      <a href="index.html" style="color:var(--gold);text-decoration:none;font-weight:800;font-family:'Inter',sans-serif;">☪ 15 SECONDS 4 ALLAH</a>
+      <a href="index.html" style="color:var(--gold);text-decoration:none;font-weight:800;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:8px;">
+        <img src="logo.png" alt="Logo" style="width:36px;height:36px;border-radius:50%;border:1.5px solid var(--gold);" />
+        <span>15 SECONDS 4 ALLAH</span>
+      </a>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <a href="index.html" class="nav-link">🏠 ہوم اور 15s ٹائمر</a>
         <a href="hadith.html" class="nav-link">📚 36,000+ احادیث</a>
@@ -109,7 +112,7 @@
       count++;
       document.getElementById('tasbeehCount').textContent = count;
       if (count % 33 === 0) {
-        const pts = parseInt(localStorage.getItem('toolyfi_user_pts') || '50', 10) + 10;
+        const pts = parseInt(localStorage.getItem('toolyfi_user_pts') || '0', 10) + 10;
         localStorage.setItem('toolyfi_user_pts', String(pts));
         alert('ماشاء اللہ! 33 تسبیحات مکمل ہونے پر +10 پوائنٹس (10 پیسے ہدیہ) آپ کے والٹ میں شامل کر دیے گئے!');
       }

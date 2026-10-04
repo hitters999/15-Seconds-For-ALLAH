@@ -113,6 +113,11 @@ class MainActivity : ComponentActivity() {
     }
   }
 
+  override fun onResume() {
+    super.onResume()
+    ShareHelper.verifyAndCreditWebTimerSession(this)
+  }
+
   override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
     viewModel.handleIntent(intent)

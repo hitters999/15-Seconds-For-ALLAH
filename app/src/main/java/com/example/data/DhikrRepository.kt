@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -76,7 +75,7 @@ class DhikrRepository(
     )
     dao.insertMomentLog(log)
 
-    // Increment user's spiritual score (+10 points per 15s moment)
+    // Increment user's score (+10 points = 10 Paisa per verified 15s Toolyfi session)
     val current = dao.getUserSettingsDirect() ?: UserSettingsEntity()
     val newScore = current.totalScore + 10
     val rank = when {
@@ -88,15 +87,20 @@ class DhikrRepository(
     val updated = current.copy(totalScore = newScore, spiritualRank = rank)
     dao.insertOrUpdateUserSettings(updated)
 
-    // Update account profile in registered viewers database directory
-    if (updated.isSignedIn) {
-      val identifier = if (updated.userPhone.isNotBlank()) updated.userPhone else updated.userEmail
+    // Update Google Account profile & calculations in registered_accounts database
+    if (updated.isSignedIn && updated.userEmail.isNotBlank()) {
+      val existingAcc = dao.getUserAccountDirect(updated.userEmail)
+      val sessions = (existingAcc?.completedSessions ?: 0) + 1
+      val joinedAt = existingAcc?.joinedTimestamp ?: System.currentTimeMillis()
       dao.insertUserAccount(
         UserAccountEntity(
-          identifier = identifier,
+          identifier = updated.userEmail,
           displayName = updated.userName,
-          accountType = updated.authProvider,
-          totalScore = newScore
+          accountType = "Google",
+          totalScore = newScore,
+          completedSessions = sessions,
+          pkrBalance = newScore * 0.01,
+          joinedTimestamp = joinedAt
         )
       )
     }
@@ -109,9 +113,12 @@ class DhikrRepository(
       dao.insertOrUpdateUserSettings(
         UserSettingsEntity(
           id = 1,
-          userName = "خادمِ ذکر (Servant of Allah)",
-          totalScore = 340,
-          spiritualRank = "مبتدی (Seeker of Peace)"
+          userName = "Guest (سائن ان نہیں)",
+          userEmail = "",
+          totalScore = 0,
+          spiritualRank = "مبتدی (Seeker of Peace)",
+          isSignedIn = false,
+          authProvider = "Guest"
         )
       )
     }
@@ -129,26 +136,42 @@ class DhikrRepository(
     dao.insertOrUpdateUserSettings(settings)
   }
 
-  suspend fun registerOrSwitchUser(identifier: String, name: String, type: String) {
+  suspend fun registerOrSwitchUser(identifier: String, name: String, type: String = "Google") {
+    val normalizedEmail = identifier.trim().lowercase(Locale.US)
+    if (normalizedEmail.isBlank()) return
+
     val current = dao.getUserSettingsDirect() ?: UserSettingsEntity()
-    val isPhone = type == "Phone" || identifier.matches(Regex("^[+0-9\\s-]+$"))
+    val existingAccount = dao.getUserAccountDirect(normalizedEmail)
+
+    // Combine or restore account score so every user has their own accurate calculations
+    val mergedScore = maxOf(current.totalScore, existingAccount?.totalScore ?: 0)
+    val sessions = existingAccount?.completedSessions ?: (mergedScore / 10)
+    val joinedAt = existingAccount?.joinedTimestamp ?: System.currentTimeMillis()
+    val resolvedName = name.ifBlank {
+      existingAccount?.displayName?.ifBlank { normalizedEmail.substringBefore("@") }
+        ?: normalizedEmail.substringBefore("@")
+    }
 
     val updatedSettings = current.copy(
-      userName = name.ifBlank { if (isPhone) "موبائل یوزر ($identifier)" else identifier.substringBefore("@") },
-      userEmail = if (isPhone) "" else identifier,
-      userPhone = if (isPhone) identifier else "",
+      userName = resolvedName,
+      userEmail = normalizedEmail,
+      userPhone = "",
+      totalScore = mergedScore,
       isSignedIn = true,
-      authProvider = type
+      authProvider = "Google"
     )
     dao.insertOrUpdateUserSettings(updatedSettings)
 
-    // Record in registered viewers directory
+    // Store Google Email & all calculations in registered_accounts database
     dao.insertUserAccount(
       UserAccountEntity(
-        identifier = identifier,
-        displayName = updatedSettings.userName,
-        accountType = type,
-        totalScore = current.totalScore
+        identifier = normalizedEmail,
+        displayName = resolvedName,
+        accountType = "Google",
+        totalScore = mergedScore,
+        completedSessions = sessions,
+        pkrBalance = mergedScore * 0.01,
+        joinedTimestamp = joinedAt
       )
     )
   }
@@ -157,52 +180,18 @@ class DhikrRepository(
     dao.clearAllLogs()
     val current = dao.getUserSettingsDirect() ?: UserSettingsEntity()
     dao.insertOrUpdateUserSettings(current.copy(totalScore = 0))
-  }
-
-  suspend fun seedInitialDataIfEmpty() {
-    val dateKey = getTodayDateKey()
-    val cal = Calendar.getInstance()
-
-    for (i in 0 until 5) {
-      val item = DhikrCatalog.items[i % DhikrCatalog.items.size]
-      dao.insertMomentLog(
-        MomentLogEntity(
-          dhikrId = item.id,
-          title = item.transliteration,
-          category = item.category,
-          durationSeconds = 15,
-          timestamp = System.currentTimeMillis() - (i * 3600_000L),
-          dateKey = dateKey
-        )
-      )
-    }
-
-    for (dayOffset in 1..25) {
-      cal.time = Date()
-      cal.add(Calendar.DAY_OF_YEAR, -dayOffset)
-      val pastDateKey = dateFormat.format(cal.time)
-      val numEntries = if (dayOffset % 7 == 6) 2 else if (dayOffset % 5 == 0) 6 else 4
-      for (k in 0 until numEntries) {
-        val item = DhikrCatalog.items[(dayOffset + k) % DhikrCatalog.items.size]
-        dao.insertMomentLog(
-          MomentLogEntity(
-            dhikrId = item.id,
-            title = item.transliteration,
-            category = item.category,
-            durationSeconds = 15,
-            timestamp = cal.timeInMillis - (k * 2400_000L),
-            dateKey = pastDateKey
-          )
+    if (current.isSignedIn && current.userEmail.isNotBlank()) {
+      val existing = dao.getUserAccountDirect(current.userEmail)
+      if (existing != null) {
+        dao.insertUserAccount(
+          existing.copy(totalScore = 0, completedSessions = 0, pkrBalance = 0.0)
         )
       }
     }
+  }
 
-    dao.insertBookmark(BookmarkEntity(dhikrId = "juz30_jannat_nafs_mutmainna"))
-    dao.insertBookmark(BookmarkEntity(dhikrId = "juz30_hukam_inshirah_ease"))
-
-    // Initial community viewers in database
-    dao.insertUserAccount(UserAccountEntity("qari.abdullah@gmail.com", "قاری عبد اللہ", "Google", 1420))
-    dao.insertUserAccount(UserAccountEntity("+923001234567", "حافظ محمد عمر", "Phone", 2850))
-    dao.insertUserAccount(UserAccountEntity("tariq.masood@outlook.com", "طارق مسعود", "Email", 950))
+  suspend fun seedInitialDataIfEmpty() {
+    // New downloads start with 0 Points, 0 Rupees, and No Pre-Login!
+    ensureUserSettingsInitialized()
   }
 }

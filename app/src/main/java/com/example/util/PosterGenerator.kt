@@ -213,7 +213,7 @@ object PosterGenerator {
         val cx = width / 2f
 
         // Glass pill for App Logo + Brand Name
-        val pillRect = RectF(cx - 255f, 64f, cx + 255f, 126f)
+        val pillRect = RectF(cx - 285f, 58f, cx + 285f, 134f)
         val pillPaint = Paint().apply {
             color = COLOR_GLASS_CARD
             isAntiAlias = true
@@ -221,19 +221,19 @@ object PosterGenerator {
         val pillBorder = Paint().apply {
             color = COLOR_GOLD_ACCENT
             style = Paint.Style.STROKE
-            strokeWidth = 1.5f
-            alpha = 180
+            strokeWidth = 1.8f
+            alpha = 200
             isAntiAlias = true
         }
-        canvas.drawRoundRect(pillRect, 31f, 31f, pillPaint)
-        canvas.drawRoundRect(pillRect, 31f, 31f, pillBorder)
+        canvas.drawRoundRect(pillRect, 38f, 38f, pillPaint)
+        canvas.drawRoundRect(pillRect, 38f, 38f, pillBorder)
 
         // Draw App Brand Logo inside the left side of the pill
         try {
             val logoBitmap = BitmapFactory.decodeResource(context.resources, R.drawable.app_brand_logo)
             if (logoBitmap != null) {
-                val logoSize = 44f
-                val logoX = pillRect.left + 36f
+                val logoSize = 66f
+                val logoX = pillRect.left + 44f
                 val logoY = pillRect.centerY() - logoSize / 2f
                 val srcRect = android.graphics.Rect(0, 0, logoBitmap.width, logoBitmap.height)
                 val dstRect = RectF(logoX - logoSize / 2f, logoY, logoX + logoSize / 2f, logoY + logoSize)
@@ -243,13 +243,13 @@ object PosterGenerator {
 
         val headerText = TextPaint().apply {
             color = COLOR_GOLD_ACCENT
-            textSize = 23f
+            textSize = 24f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             letterSpacing = 0.08f
             textAlign = Paint.Align.CENTER
             isAntiAlias = true
         }
-        canvas.drawText("15 SECONDS 4 ALLAH", cx + 16f, 103f, headerText)
+        canvas.drawText("15 SECONDS 4 ALLAH", cx + 26f, 105f, headerText)
 
         // Top Slogan & Hook Line
         val hookSubPaint = TextPaint().apply {
@@ -366,10 +366,9 @@ object PosterGenerator {
      * Explains the Points System, 1 Point = 1 Paisa Hadya System, and GET REWARDS button
      */
     private fun drawViralDownloadHookFooter(context: Context, canvas: Canvas, width: Int, height: Int) {
-        val cx = width / 2f
-        val boxTop = height - 252f
-        val boxBottom = height - 58f
-        val hookRect = RectF(56f, boxTop, width - 56f, boxBottom)
+        val boxTop = height - 256f
+        val boxBottom = height - 56f
+        val hookRect = RectF(52f, boxTop, width - 52f, boxBottom)
 
         val boxBg = Paint().apply {
             color = COLOR_HOOK_BG
@@ -384,23 +383,44 @@ object PosterGenerator {
         canvas.drawRoundRect(hookRect, 24f, 24f, boxBg)
         canvas.drawRoundRect(hookRect, 24f, 24f, boxBorder)
 
+        // Draw Scannable QR Code on the Right Side of the Footer Box
+        val qrSize = 142f
+        val qrLeft = hookRect.right - qrSize - 26f
+        val qrTop = boxTop + 18f
+        val portalUrl = "https://toolyfi.com/15-Seconds-For-ALLAH/"
+        QrCodeGenerator.drawQrCodeOnCanvas(canvas, portalUrl, qrLeft, qrTop, qrSize)
+
+        val qrLabelPaint = TextPaint().apply {
+            color = COLOR_GOLD_BRIGHT
+            textSize = 15.5f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            textAlign = Paint.Align.CENTER
+            isAntiAlias = true
+        }
+        canvas.drawText("📱 SCAN FOR REWARDS", qrLeft + qrSize / 2f, qrTop + qrSize + 22f, qrLabelPaint)
+
+        // Left Content Area Center X
+        val leftAreaRight = qrLeft - 20f
+        val leftCx = (hookRect.left + 20f + leftAreaRight) / 2f
+
         // Line 1: Slogan + Points & Hadya Hook
         val rewardHookPaint = TextPaint().apply {
             color = COLOR_GOLD_BRIGHT
-            textSize = 22f
+            textSize = 21f
             typeface = getUrduTypeface(context)
             textAlign = Paint.Align.CENTER
             isAntiAlias = true
         }
         canvas.drawText(
-            "✨ ثواب بھی ، Rewards بھی  •  ہدیہ والٹ (1 Point = 1 Paisa PKR)",
-            cx,
-            boxTop + 44f,
+            "✨ ثواب بھی ، Rewards بھی • ہدیہ والٹ (1 Point = 1 Paisa)",
+            leftCx,
+            boxTop + 46f,
             rewardHookPaint
         )
 
-        // Line 2: Prominent "GET REWARDS" Button Pill inside Footer
-        val ctaRect = RectF(cx - 415f, boxTop + 68f, cx + 415f, boxTop + 124f)
+        // Line 2: Prominent "GET REWARDS" Button Pill inside Left Area
+        val ctaHalfW = ((leftAreaRight - hookRect.left - 44f) / 2f).coerceAtMost(365f)
+        val ctaRect = RectF(leftCx - ctaHalfW, boxTop + 70f, leftCx + ctaHalfW, boxTop + 126f)
         val ctaBg = Paint().apply {
             color = COLOR_GOLD_ACCENT
             isAntiAlias = true
@@ -409,7 +429,7 @@ object PosterGenerator {
 
         val ctaTextPaint = TextPaint().apply {
             color = Color.parseColor("#041E18")
-            textSize = 21f
+            textSize = 20.5f
             typeface = getUrduTypeface(context)
             textAlign = Paint.Align.CENTER
             isFakeBoldText = true
@@ -417,25 +437,25 @@ object PosterGenerator {
         }
         val ctaTextY = ctaRect.centerY() - ((ctaTextPaint.descent() + ctaTextPaint.ascent()) / 2f)
         canvas.drawText(
-            "🎁 GET REWARDS  •  15s Timer (Toolyfi.com)  •  APKPure: 15 Seconds 4 Allah",
-            cx,
+            "🎁 GET REWARDS  •  15s Timer (Toolyfi.com)",
+            leftCx,
             ctaTextY,
             ctaTextPaint
         )
 
-        // Line 3: Website & Brand Signature
+        // Line 3: Official Full URL Signature
         val urlText = TextPaint().apply {
             color = COLOR_TEXT_MUTED
-            textSize = 18.5f
+            textSize = 17f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            letterSpacing = 0.04f
+            letterSpacing = 0.02f
             textAlign = Paint.Align.CENTER
             isAntiAlias = true
         }
         canvas.drawText(
-            "🌐 toolyfi.com/15-Seconds-For-ALLAH  •  VORTEX SHORTS  •  #15Seconds4Allah",
-            cx,
-            boxTop + 166f,
+            "🌐 https://toolyfi.com/15-Seconds-For-ALLAH/",
+            leftCx,
+            boxTop + 168f,
             urlText
         )
     }

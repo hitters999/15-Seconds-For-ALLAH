@@ -101,28 +101,25 @@ object NotificationHelper {
    * 3. Shows EXCLUSIVELY the non-blocking floating 5-second popup banner without opening MainActivity.
    */
   fun showDhikrNotification(context: Context, dhikr: DhikrItem) {
-    // 1. Automatically award +10 points for this popup appearance
-    recordPopupPointsInDatabase(context, dhikr)
-
-    // 2. Play requested "Beep" sound
+    // 1. Play requested "Beep" sound
     try {
       SoundAndHaptics(context).playBeep()
     } catch (_: Exception) {}
 
-    // 3. Cancel any accidental status bar notification
+    // 2. Cancel any accidental status bar notification
     try {
       NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
     } catch (_: Exception) {}
 
-    // 4. Strictly launch the non-blocking floating top popup window
+    // 3. Strictly launch the non-blocking floating top popup window (Points are transferred when user clicks GET REWARDS and spends 15s on Toolyfi.com)
     try {
       FloatingPopupManager.showFloatingPopup(context, dhikr)
     } catch (_: Exception) {}
   }
 
   /**
-   * Increments the user's spiritual score by +10 points and records a moment log
-   * every time a reminder popup is successfully shown on screen.
+   * Credits +10 points (10 Paisa PKR) into the user's Wallet & Google Account database
+   * ONLY after the user completes a 15-second session on the Toolyfi.com page.
    */
   fun recordPopupPointsInDatabase(context: Context, dhikr: DhikrItem) {
     val appContext = context.applicationContext
@@ -133,9 +130,9 @@ object NotificationHelper {
         dao.insertMomentLog(
           MomentLogEntity(
             dhikrId = dhikr.id,
-            title = dhikr.transliteration.ifBlank { "Popup Dhikr" },
-            category = "Popup Reminder",
-            durationSeconds = getPopupDurationSeconds(appContext),
+            title = dhikr.transliteration.ifBlank { "Toolyfi 15s Reward" },
+            category = "Toolyfi 15s Reward",
+            durationSeconds = 15,
             timestamp = System.currentTimeMillis(),
             dateKey = dateKey
           )
@@ -152,18 +149,21 @@ object NotificationHelper {
         val updated = current.copy(totalScore = newScore, spiritualRank = rank)
         dao.insertOrUpdateUserSettings(updated)
 
-        if (updated.isSignedIn) {
-          val identifier = if (updated.userPhone.isNotBlank()) updated.userPhone else updated.userEmail
-          if (identifier.isNotBlank()) {
-            dao.insertUserAccount(
-              UserAccountEntity(
-                identifier = identifier,
-                displayName = updated.userName,
-                accountType = updated.authProvider,
-                totalScore = newScore
-              )
+        if (updated.isSignedIn && updated.userEmail.isNotBlank()) {
+          val existing = dao.getUserAccountDirect(updated.userEmail)
+          val sessions = (existing?.completedSessions ?: 0) + 1
+          val joinedAt = existing?.joinedTimestamp ?: System.currentTimeMillis()
+          dao.insertUserAccount(
+            UserAccountEntity(
+              identifier = updated.userEmail,
+              displayName = updated.userName,
+              accountType = "Google",
+              totalScore = newScore,
+              completedSessions = sessions,
+              pkrBalance = newScore * 0.01,
+              joinedTimestamp = joinedAt
             )
-          }
+          )
         }
       } catch (_: Exception) {}
     }

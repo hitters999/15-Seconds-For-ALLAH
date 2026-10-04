@@ -50,6 +50,9 @@ interface MomentDao {
   @Query("SELECT * FROM registered_accounts ORDER BY joinedTimestamp DESC")
   fun getAllRegisteredAccounts(): Flow<List<UserAccountEntity>>
 
+  @Query("SELECT * FROM registered_accounts WHERE identifier = :identifier LIMIT 1")
+  suspend fun getUserAccountDirect(identifier: String): UserAccountEntity?
+
   @Insert(onConflict = OnConflictStrategy.REPLACE)
   suspend fun insertUserAccount(account: UserAccountEntity)
 

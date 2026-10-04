@@ -3,6 +3,8 @@ package com.example.util
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
+import com.example.data.DhikrCatalog
 import com.example.data.DhikrItem
 import com.example.notification.NotificationHelper
 
@@ -11,6 +13,10 @@ object ShareHelper {
   private const val PREFS_DOWNLOAD_LINKS = "app_download_links_prefs"
   private const val KEY_APKPURE_URL = "apkpure_download_url"
   private const val KEY_WEB_PORTAL_URL = "web_portal_url"
+
+  // Pending 15-Second Toolyfi Web Reward Session Keys
+  private const val KEY_PENDING_REWARD_START_MS = "pending_reward_start_ms"
+  private const val KEY_PENDING_REWARD_DHIKR_ID = "pending_reward_dhikr_id"
 
   const val DEFAULT_APKPURE_URL = "https://apkpure.com/p/com.aistudio.fifteenseconds.allah"
   const val DEFAULT_WEB_PORTAL_URL = "https://toolyfi.com/15-Seconds-For-ALLAH/"
@@ -27,12 +33,27 @@ object ShareHelper {
   }
 
   fun getWebPortalUrl(context: Context): String {
-    val prefs = context.getSharedPreferences(PREFS_DOWNLOAD_LINKS, Context.MODE_PRIVATE)
-    return prefs.getString(KEY_WEB_PORTAL_URL, DEFAULT_WEB_PORTAL_URL) ?: DEFAULT_WEB_PORTAL_URL
+    return DEFAULT_WEB_PORTAL_URL
   }
 
+  /**
+   * Starts a 15-second reward session on the Toolyfi.com page.
+   * Points are ONLY transferred when the user returns after spending at least 15 seconds on Toolyfi.com.
+   */
   fun openWebTimerPage(context: Context, dhikr: DhikrItem, userIdentifier: String = "") {
     try {
+      val prefs = context.getSharedPreferences(PREFS_DOWNLOAD_LINKS, Context.MODE_PRIVATE)
+      prefs.edit()
+        .putLong(KEY_PENDING_REWARD_START_MS, System.currentTimeMillis())
+        .putString(KEY_PENDING_REWARD_DHIKR_ID, dhikr.id)
+        .apply()
+
+      Toast.makeText(
+        context,
+        "Toolyfi پیج پر 15 سیکنڈ مکمل کریں تاکہ +10 پوائنٹس (10 پیسے) آپ کے والٹ میں ٹرانسفر ہو جائیں!",
+        Toast.LENGTH_LONG
+      ).show()
+
       val baseUrl = getWebPortalUrl(context)
       val uri = Uri.parse(baseUrl).buildUpon()
         .appendQueryParameter("id", dhikr.id)
@@ -48,14 +69,48 @@ object ShareHelper {
     } catch (_: Exception) {}
   }
 
+  /**
+   * Called in MainActivity.onResume() when the user returns to the App from Toolyfi.com.
+   * Verifies that at least 15 seconds were spent on the Toolyfi.com page before transferring points.
+   */
+  fun verifyAndCreditWebTimerSession(context: Context) {
+    val prefs = context.getSharedPreferences(PREFS_DOWNLOAD_LINKS, Context.MODE_PRIVATE)
+    val startMs = prefs.getLong(KEY_PENDING_REWARD_START_MS, 0L)
+    if (startMs <= 0L) return
+
+    val dhikrId = prefs.getString(KEY_PENDING_REWARD_DHIKR_ID, "") ?: ""
+    // Clear pending session immediately so it cannot be claimed twice
+    prefs.edit()
+      .remove(KEY_PENDING_REWARD_START_MS)
+      .remove(KEY_PENDING_REWARD_DHIKR_ID)
+      .apply()
+
+    val elapsedSeconds = (System.currentTimeMillis() - startMs) / 1000L
+    if (elapsedSeconds >= 15L) {
+      val item = DhikrCatalog.items.find { it.id == dhikrId } ?: DhikrCatalog.items.first()
+      NotificationHelper.recordPopupPointsInDatabase(context, item)
+      Toast.makeText(
+        context,
+        "ماشاء اللہ! Toolyfi پیج پر 15 سیکنڈ مکمل کرنے پر +10 پوائنٹس (10 پیسے ہدیہ) آپ کے والٹ میں ٹرانسفر ہو گئے ✓",
+        Toast.LENGTH_LONG
+      ).show()
+    } else {
+      Toast.makeText(
+        context,
+        "ریوارڈ کے لیے Toolyfi پیج پر پورے 15 سیکنڈ گزارنا ضروری ہے! (آپ نے صرف ${elapsedSeconds}s گزارے)",
+        Toast.LENGTH_LONG
+      ).show()
+    }
+  }
+
   fun formatShareMessage(dhikr: DhikrItem, context: Context? = null): String {
     val bismillah = if (dhikr.isQuranic) "۞ بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ ۞\n\n" else ""
     val apkPureLink = context?.let { getApkPureUrl(it) } ?: DEFAULT_APKPURE_URL
     val webLink = context?.let { getWebPortalUrl(it) } ?: DEFAULT_WEB_PORTAL_URL
 
     return """
-✨ 15 Seconds for Allah • ۱۵ سیکنڈز اللہ کے لیے ✨
-🪝 دنیا کے کاموں میں ہر 15 منٹ بعد صرف 5 سیکنڈ کا خودکار ذکر پاپ اپ — روحانی سکون بھی اور ہر پوائنٹ پر حوصلہ افزائی ہدیہ (1 Point = 1 Paisa PKR) بھی!
+✨ 15 Seconds for Allah • ثواب بھی ، Rewards بھی ✨
+🪝 ہر 15 منٹ بعد صرف 5 سیکنڈ کا خودکار ذکر پاپ اپ — 15 سیکنڈ ٹائمر مکمل کریں اور ہر پوائنٹ پر حوصلہ افزائی ہدیہ (1 Point = 1 Paisa PKR) پائیں!
 
 $bismillah${dhikr.arabic}
 
@@ -75,11 +130,7 @@ $webLink
     """.trimIndent()
   }
 
-  // Shares a high-resolution visual poster image and awards bonus points for spreading Dhikr
   fun shareDhikrPoster(context: Context, dhikr: DhikrItem, specificPackage: String? = null) {
-    // Award +10 points for sharing Sadqah Jariyah poster
-    NotificationHelper.recordPopupPointsInDatabase(context, dhikr)
-
     val posterUri: Uri? = PosterGenerator.generateDhikrPoster(context, dhikr)
     val caption = formatShareMessage(dhikr, context)
 
@@ -98,7 +149,7 @@ $webLink
         if (specificPackage != null) {
           context.startActivity(sendIntent)
         } else {
-          val chooser = Intent.createChooser(sendIntent, "پوسٹر شیئر کریں (+10 پوائنٹس ہدیہ)")
+          val chooser = Intent.createChooser(sendIntent, "پوسٹر شیئر کریں (Share Poster)")
           chooser.flags = Intent.FLAG_ACTIVITY_NEW_TASK
           context.startActivity(chooser)
         }
@@ -172,7 +223,7 @@ $webLink
     val webLink = getWebPortalUrl(context)
     val caption = """
 الحمد للہ! 15 Seconds for Allah ایپ میں میری $streak دن کی مسلسل اسٹریک اور $score پوائنٹس (ہدیہ والٹ: Rs. $pkr PKR) مکمل ہوئے!
-🪝 آپ بھی مفت ایپ ڈاؤن لوڈ کریں، ہر ذکر پاپ اپ پر پوائنٹس اور حوصلہ افزائی ہدیہ پائیں:
+✨ ثواب بھی ، Rewards بھی! آپ بھی مفت ایپ ڈاؤن لوڈ کریں:
 📥 APKPure: $apkPureLink
 🌐 Web: $webLink
 #15Seconds4Allah #DhikrStreak #Toolyfi

@@ -271,9 +271,7 @@ fun ProfileScreen(
               modifier = Modifier
                 .clip(RoundedCornerShape(10.dp))
                 .clickable {
-                  tempName = userSettings.userName
-                  tempIdentifier = if (userSettings.userPhone.isNotBlank()) userSettings.userPhone else userSettings.userEmail
-                  showAuthDialog = true
+                  launchGoogleSignIn()
                 }
             ) {
               Row(
@@ -288,7 +286,7 @@ fun ProfileScreen(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                  text = if (userSettings.isSignedIn) "اکاؤنٹ تبدیل کریں" else "لاگ ان / سائن اپ",
+                  text = if (userSettings.isSignedIn) "گوگل اکاؤنٹ تبدیل کریں" else "گوگل لاگ ان (Google)",
                   fontFamily = FontFamily.SansSerif,
                   fontWeight = FontWeight.Bold,
                   fontSize = 11.sp,
@@ -553,13 +551,12 @@ fun ProfileScreen(
                 .clip(RoundedCornerShape(12.dp))
                 .clickable {
                   val currentDhikr = viewModel.rotatingFeaturedDhikr.value
-                  val identifier = if (userSettings.userPhone.isNotBlank()) userSettings.userPhone else userSettings.userEmail.ifBlank { userSettings.userName }
-                  NotificationHelper.recordPopupPointsInDatabase(context, currentDhikr)
+                  val identifier = userSettings.userEmail.ifBlank { userSettings.userName }
                   ShareHelper.openWebTimerPage(context, currentDhikr, identifier)
                 }
             ) {
               Text(
-                text = "🌐 Toolyfi.com پر 15s ذکر (+10 Pts)",
+                text = "🎁 GET REWARDS • 15s (Toolyfi.com)",
                 fontFamily = UrduFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 11.5.sp,
@@ -1024,7 +1021,7 @@ fun ProfileScreen(
     }
   }
 
-  // Multi-Mode Account Setup Dialog (Google, Mobile Number, Email)
+  // Google Account Setup Dialog (Only Google Sign-In)
   if (showAuthDialog) {
     AlertDialog(
       onDismissRequest = { showAuthDialog = false },
@@ -1032,156 +1029,52 @@ fun ProfileScreen(
         Row(verticalAlignment = Alignment.CenterVertically) {
           Icon(Icons.Filled.AccountCircle, contentDescription = null, tint = InkTeal)
           Spacer(modifier = Modifier.width(8.dp))
-          Text("اکاؤنٹ سیٹ اپ (Connect Account)", fontFamily = FontFamily.Serif, color = InkTeal)
+          Text("گوگل اکاؤنٹ سائن ان (Google Login)", fontFamily = FontFamily.Serif, color = InkTeal)
         }
       },
       text = {
         Column {
-          TabRow(selectedTabIndex = selectedAuthTab) {
-            Tab(selected = selectedAuthTab == 0, onClick = { selectedAuthTab = 0 }, text = { Text("Google", fontFamily = FontFamily.Serif, fontSize = 11.5.sp) })
-            Tab(selected = selectedAuthTab == 1, onClick = { selectedAuthTab = 1 }, text = { Text("موبائل نمبر", fontFamily = UrduFontFamily, fontSize = 11.5.sp) })
-            Tab(selected = selectedAuthTab == 2, onClick = { selectedAuthTab = 2 }, text = { Text("Email", fontFamily = FontFamily.Serif, fontSize = 11.5.sp) })
-          }
-
-          Spacer(modifier = Modifier.height(14.dp))
-
-          when (selectedAuthTab) {
-            0 -> {
-              Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = Color(0xFFF9FBFB),
-                border = BorderStroke(1.dp, BronzeGold.copy(alpha = 0.35f)),
-                modifier = Modifier.fillMaxWidth()
-              ) {
-                Column(
-                  modifier = Modifier.padding(14.dp),
-                  horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                  Text(
-                    text = "گوگل اکاؤنٹ سے خودکار کنکشن",
-                    fontFamily = UrduFontFamily,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = InkTeal,
-                    textAlign = TextAlign.Center
-                  )
-                  Spacer(modifier = Modifier.height(4.dp))
-                  Text(
-                    text = "اپنے موبائل میں موجود گوگل اکاؤنٹ سے منسلک ہوں تاکہ آپ کا اسکور، محفوظ آیات اور تسلسل محفوظ رہیں۔",
-                    fontFamily = UrduFontFamily,
-                    fontSize = 11.5.sp,
-                    color = TextSoft,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 18.sp
-                  )
-                  Spacer(modifier = Modifier.height(12.dp))
-
-                  // Prominent Google Sign-In Action Button
-                  Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color.White,
-                    border = BorderStroke(1.2.dp, Color(0xFFD4AF37)),
-                    shadowElevation = 2.dp,
-                    modifier = Modifier
-                      .fillMaxWidth()
-                      .clip(RoundedCornerShape(12.dp))
-                      .clickable { launchGoogleSignIn() }
-                      .testTag("auth_dialog_google_btn")
-                  ) {
-                    Row(
-                      modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
-                      verticalAlignment = Alignment.CenterVertically,
-                      horizontalArrangement = Arrangement.Center
-                    ) {
-                      Text(
-                        text = "G",
-                        fontFamily = FontFamily.Serif,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = Color(0xFF4285F4)
-                      )
-                      Spacer(modifier = Modifier.width(10.dp))
-                      Text(
-                        text = "موبائل گوگل اکاؤنٹ منتخب کریں (Sign In)",
-                        fontFamily = UrduFontFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
-                        color = Color(0xFF1F2937)
-                      )
-                    }
-                  }
-
-                  Spacer(modifier = Modifier.height(12.dp))
-
-                  Text(
-                    text = "یا اگر چاہیں تو دستی درج کریں:",
-                    fontFamily = UrduFontFamily,
-                    fontSize = 10.5.sp,
-                    color = TextSoft
-                  )
-                  Spacer(modifier = Modifier.height(6.dp))
-                  OutlinedTextField(
-                    value = tempName,
-                    onValueChange = { tempName = it },
-                    label = { Text("آپ کا نام (Your Name)", fontFamily = UrduFontFamily) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                  )
-                  Spacer(modifier = Modifier.height(6.dp))
-                  OutlinedTextField(
-                    value = tempIdentifier,
-                    onValueChange = { tempIdentifier = it },
-                    label = { Text("Google Email", fontFamily = FontFamily.Serif) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                  )
-                }
-              }
-            }
-            1 -> {
+          Surface(
+            shape = RoundedCornerShape(14.dp),
+            color = Color(0xFFF9FBFB),
+            border = BorderStroke(1.dp, BronzeGold.copy(alpha = 0.35f)),
+            modifier = Modifier.fillMaxWidth()
+          ) {
+            Column(
+              modifier = Modifier.padding(14.dp),
+              horizontalAlignment = Alignment.CenterHorizontally
+            ) {
               Text(
-                text = "اپنا موبائل نمبر درج کریں (SMS تصدیق کے ساتھ لاگ ان کریں):",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 11.5.sp,
-                color = TextSoft
+                text = "گوگل اکاؤنٹ سے سائن ان کریں",
+                fontFamily = UrduFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                color = InkTeal,
+                textAlign = TextAlign.Center
               )
-              Spacer(modifier = Modifier.height(10.dp))
+              Spacer(modifier = Modifier.height(4.dp))
+              Text(
+                text = "آپ کا گوگل ای میل ڈیٹا بیس میں محفوظ ہو جائے گا اور آپ کے تمام پوائنٹس اور ہدیہ والٹ (PKR) کا حساب کتاب اسی اکاؤنٹ میں جمع ہوگا۔",
+                fontFamily = UrduFontFamily,
+                fontSize = 11.5.sp,
+                color = TextSoft,
+                textAlign = TextAlign.Center,
+                lineHeight = 18.sp
+              )
+              Spacer(modifier = Modifier.height(12.dp))
+
               OutlinedTextField(
                 value = tempName,
                 onValueChange = { tempName = it },
-                label = { Text("آپ کا نام") },
+                label = { Text("گوگل اکاؤنٹ کا نام (Google Name)", fontFamily = UrduFontFamily) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
               )
-              Spacer(modifier = Modifier.height(8.dp))
+              Spacer(modifier = Modifier.height(6.dp))
               OutlinedTextField(
                 value = tempIdentifier,
                 onValueChange = { tempIdentifier = it },
-                label = { Text("موبائل نمبر (e.g. +923001234567)") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-              )
-            }
-            2 -> {
-              Text(
-                text = "اپنا ای میل پتہ درج کریں:",
-                fontFamily = FontFamily.SansSerif,
-                fontSize = 11.5.sp,
-                color = TextSoft
-              )
-              Spacer(modifier = Modifier.height(10.dp))
-              OutlinedTextField(
-                value = tempName,
-                onValueChange = { tempName = it },
-                label = { Text("آپ کا نام") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-              )
-              Spacer(modifier = Modifier.height(8.dp))
-              OutlinedTextField(
-                value = tempIdentifier,
-                onValueChange = { tempIdentifier = it },
-                label = { Text("ای میل پتہ (Email Address)") },
+                label = { Text("Google Email (e.g. yourname@gmail.com)", fontFamily = FontFamily.Serif) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
               )
@@ -1191,17 +1084,17 @@ fun ProfileScreen(
       },
       confirmButton = {
         TextButton(onClick = {
-          val type = when (selectedAuthTab) {
-            0 -> "Google"
-            1 -> "Phone"
-            else -> "Email"
+          val email = tempIdentifier.trim().lowercase(Locale.US)
+          if (email.contains("@")) {
+            val name = tempName.ifBlank { email.substringBefore("@") }
+            viewModel.updateAccountProfile(email, name, "Google")
+            showAuthDialog = false
+            Toast.makeText(context, "گوگل اکاؤنٹ ($email) ڈیٹا بیس میں محفوظ ہو گیا ✓", Toast.LENGTH_LONG).show()
+          } else {
+            Toast.makeText(context, "براہِ کرم درست Google Email درج کریں", Toast.LENGTH_SHORT).show()
           }
-          val id = if (tempIdentifier.isNotBlank()) tempIdentifier else "user@15secondsforallah.com"
-          val name = if (tempName.isNotBlank()) tempName else "ذاکرِ الٰہی"
-          viewModel.updateAccountProfile(id, name, type)
-          showAuthDialog = false
         }) {
-          Text("محفوظ اور منسلک کریں", color = BronzeGold, fontWeight = FontWeight.Bold)
+          Text("گوگل اکاؤنٹ منسلک کریں", color = BronzeGold, fontWeight = FontWeight.Bold)
         }
       },
       dismissButton = {

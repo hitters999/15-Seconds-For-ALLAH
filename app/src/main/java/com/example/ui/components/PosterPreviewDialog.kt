@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,12 +54,14 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.R
 import com.example.data.DhikrItem
 import com.example.ui.theme.BronzeGold
 import com.example.ui.theme.BronzeGoldLight
@@ -115,15 +118,15 @@ fun PosterPreviewDialog(
           verticalAlignment = Alignment.CenterVertically
         ) {
           Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
+            Image(
+              painter = painterResource(id = R.drawable.app_brand_logo),
+              contentDescription = "15 Seconds for Allah Logo",
               modifier = Modifier
-                .size(36.dp)
+                .size(38.dp)
                 .clip(CircleShape)
-                .background(BronzeGold.copy(alpha = 0.18f)),
-              contentAlignment = Alignment.Center
-            ) {
-              Text("✨", fontSize = 16.sp)
-            }
+                .border(1.2.dp, BronzeGold, CircleShape),
+              contentScale = ContentScale.Crop
+            )
             Spacer(modifier = Modifier.width(10.dp))
             Column {
               Text(

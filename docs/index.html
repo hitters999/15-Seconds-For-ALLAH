@@ -68,6 +68,9 @@
   }
   </script>
 
+  <link rel="icon" type="image/png" href="logo.png" />
+  <meta property="og:image" content="https://toolyfi.com/15-Seconds-For-ALLAH/logo.png" />
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@700&family=Noto+Nastaliq+Urdu:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
@@ -424,7 +427,7 @@
   <nav class="navbar">
     <div class="nav-inner">
       <a href="index.html" class="brand-box">
-        <div class="logo-circle">☪</div>
+        <img src="logo.png" alt="15 Seconds for Allah Logo" style="width:44px;height:44px;border-radius:50%;border:1.5px solid var(--gold);object-fit:cover;" />
         <div>
           <span class="brand-name">15 SECONDS 4 ALLAH</span>
           <span class="brand-sub">Powered by Toolyfi.com • Vortex Shorts</span>
@@ -453,8 +456,11 @@
       <!-- 1. Interactive 15-Second Sacred Timer & Ayah/Hadith Card -->
       <section class="card" style="text-align:center;">
         <div class="timer-header">
-          <span class="badge-pill">⏱️ 15 سیکنڈ لائیو روحانی ٹائمر</span>
-          <span class="badge-pill" id="sessionCounterBadge">+10 پوائنٹس (10 پیسے ہدیہ) فی ذکر</span>
+          <span style="display:inline-flex;align-items:center;gap:8px;">
+            <img src="logo.png" alt="Logo" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--gold);" />
+            <span class="badge-pill">⏱️ 15 سیکنڈ لائیو روحانی ٹائمر</span>
+          </span>
+          <span class="badge-pill" id="sessionCounterBadge">✨ ثواب بھی ، Rewards بھی</span>
         </div>
 
         <div class="timer-ring">
@@ -473,8 +479,10 @@
 
         <div class="action-row">
           <button class="btn btn-gold" onclick="nextDhikrAndRestart()">🔄 اگلا ذکر اور نیا 15s ٹائمر (+10 Pts)</button>
-          <button class="btn btn-whatsapp" onclick="shareCurrentOnWhatsApp()">📤 واٹس ایپ شیئر (+20 بونس پوائنٹس)</button>
+          <button class="btn btn-whatsapp" onclick="shareCurrentOnWhatsApp()">📤 واٹس ایپ شیئر</button>
+          <button class="btn btn-teal" onclick="generateAndDownloadWebPoster()">🖼️ پوسٹر ڈاؤن لوڈ و شیئر</button>
         </div>
+        <canvas id="webPosterCanvas" width="1080" height="1080" style="display:none;"></canvas>
       </section>
 
       <!-- 2. Live Hadya Wallet (1 Point = 1 Paisa) & Official APK Download Hub -->
@@ -483,11 +491,11 @@
         <p style="font-size:13px;color:#CBD5E1;text-align:center;">1 پوائنٹ = 1 پیسہ (100 Points = Rs. 1 PKR)</p>
 
         <div class="wallet-balance-box">
-          <div class="pkr-big" id="walletPkrDisplay">Rs. 0.50 PKR</div>
-          <div class="pts-sub" id="walletPtsDisplay">50 Points Earned • Active Account</div>
+          <div class="pkr-big" id="walletPkrDisplay">Rs. 0.00 PKR</div>
+          <div class="pts-sub" id="walletPtsDisplay">0 Points Earned • Active Account</div>
         </div>
 
-        <input type="text" id="userAccountInput" class="input-field" placeholder="اپنا نام یا JazzCash / EasyPaisa نمبر درج کریں" onchange="saveUserAccount()" />
+        <input type="email" id="userAccountInput" class="input-field" placeholder="Google Email (e.g. yourname@gmail.com)" onchange="saveUserAccount()" />
 
         <a class="btn btn-green" style="width:100%;margin-bottom:10px;" href="https://apkpure.com/p/com.aistudio.fifteenseconds.allah" target="_blank">
           📥 Download Official App on APKPure (Verified)
@@ -591,7 +599,7 @@
     let remainingSeconds = 15;
 
     function getPoints() {
-      return parseInt(localStorage.getItem('toolyfi_user_pts') || '50', 10);
+      return parseInt(localStorage.getItem('toolyfi_user_pts') || '0', 10);
     }
 
     function addPoints(pts, sourceLabel) {
@@ -666,9 +674,67 @@
       const arabic = document.getElementById('arabicContent').textContent;
       const urdu = document.getElementById('urduContent').textContent;
       const source = document.getElementById('sourceContent').textContent;
-      addPoints(20, 'WhatsApp Share: ' + source);
-      const text = `✨ 15 Seconds for Allah • ۱۵ سیکنڈز اللہ کے لیے ✨\n🪝 ہر 15 منٹ بعد خودکار ذکر پاپ اپ اور ہر پوائنٹ پر حوصلہ افزائی ہدیہ (1 Point = 1 Paisa PKR)!\n\n${arabic}\n\n📖 ترجمہ: ${urdu}\n${source}\n\n📥 مفت ایپ اور آن لائن ٹائمر:\nhttps://toolyfi.com/15-Seconds-For-ALLAH/`;
+      const text = `✨ 15 Seconds for Allah • ثواب بھی ، Rewards بھی ✨\n🪝 ہر 15 منٹ بعد خودکار ذکر پاپ اپ اور ہر پوائنٹ پر حوصلہ افزائی ہدیہ (1 Point = 1 Paisa PKR)!\n\n${arabic}\n\n📖 ترجمہ: ${urdu}\n${source}\n\n🎁 GET REWARDS & 15s Timer:\nhttps://toolyfi.com/15-Seconds-For-ALLAH/`;
       window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+    }
+
+    function generateAndDownloadWebPoster() {
+      const canvas = document.getElementById('webPosterCanvas');
+      const ctx = canvas.getContext('2d');
+      const arabic = document.getElementById('arabicContent').textContent;
+      const urdu = document.getElementById('urduContent').textContent;
+      const source = document.getElementById('sourceContent').textContent;
+
+      // Background
+      const grad = ctx.createRadialGradient(540, 420, 80, 540, 540, 680);
+      grad.addColorStop(0, '#113026');
+      grad.addColorStop(1, '#05100D');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 1080, 1080);
+
+      // Gold Border
+      ctx.strokeStyle = '#E5C07B';
+      ctx.lineWidth = 5;
+      ctx.strokeRect(36, 36, 1008, 1008);
+
+      // Header Slogan
+      ctx.fillStyle = '#E5C07B';
+      ctx.font = 'bold 30px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('15 SECONDS 4 ALLAH • ثواب بھی ، Rewards بھی', 540, 115);
+
+      // Arabic
+      ctx.fillStyle = '#FDE68A';
+      ctx.font = 'bold 46px Amiri, serif';
+      ctx.fillText(arabic.slice(0, 75), 540, 380);
+
+      // Urdu
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '32px "Noto Nastaliq Urdu", serif';
+      ctx.fillText(urdu.slice(0, 85), 540, 540);
+
+      // Source
+      ctx.fillStyle = '#E5C07B';
+      ctx.font = 'bold 26px "Noto Nastaliq Urdu", sans-serif';
+      ctx.fillText(source, 540, 660);
+
+      // Bottom CTA Box
+      ctx.fillStyle = '#09221B';
+      ctx.fillRect(70, 820, 940, 180);
+      ctx.strokeStyle = '#E5C07B';
+      ctx.strokeRect(70, 820, 940, 180);
+
+      ctx.fillStyle = '#FDE68A';
+      ctx.font = 'bold 26px sans-serif';
+      ctx.fillText('🎁 GET REWARDS • 15s Timer • 1 Point = 1 Paisa PKR', 540, 880);
+      ctx.fillStyle = '#4FD1C5';
+      ctx.font = 'bold 24px sans-serif';
+      ctx.fillText('🌐 https://toolyfi.com/15-Seconds-For-ALLAH/', 540, 945);
+
+      const link = document.createElement('a');
+      link.download = '15Seconds4Allah_Poster.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
     }
 
     function requestWithdrawal() {

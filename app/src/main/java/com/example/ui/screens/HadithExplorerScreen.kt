@@ -6,7 +6,9 @@ import android.content.Context
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -62,9 +64,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -73,12 +77,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.DhikrItem
 import com.example.data.HadithCollections
 import com.example.data.HadithItemDetail
 import com.example.ui.MainViewModel
 import com.example.ui.Screen
 import com.example.ui.components.ParchmentBackground
+import com.example.ui.components.PosterPreviewDialog
 import com.example.ui.theme.ArabicFontFamily
 import com.example.ui.theme.BronzeGold
 import com.example.ui.theme.BronzeGoldLight
@@ -129,8 +135,10 @@ fun HadithExplorerScreen(
   val hadithDetail by viewModel.currentHadithDetail.collectAsState()
   val isLoading by viewModel.hadithLoading.collectAsState()
   val errorMessage by viewModel.hadithErrorMessage.collectAsState()
+  val userSettings by viewModel.userSettings.collectAsState()
 
   var inputNumberText by remember(currentNumber) { mutableStateOf(currentNumber.toString()) }
+  var previewPosterItem by remember { mutableStateOf<DhikrItem?>(null) }
 
   // Theme Colors
   val cardBg = if (isDark) DarkCardSurface else ParchmentCard
@@ -171,7 +179,17 @@ fun HadithExplorerScreen(
           )
         }
 
-        Spacer(modifier = Modifier.width(6.dp))
+        Image(
+          painter = painterResource(id = R.drawable.app_brand_logo),
+          contentDescription = "15 Seconds for Allah Logo",
+          modifier = Modifier
+            .size(38.dp)
+            .clip(CircleShape)
+            .border(1.2.dp, goldColor, CircleShape),
+          contentScale = ContentScale.Crop
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
 
         Column(modifier = Modifier.weight(1f)) {
           Text(
@@ -586,7 +604,7 @@ fun HadithExplorerScreen(
                     Text("۱۵ سیکنڈ غور", fontFamily = UrduFontFamily, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                   }
 
-                  // WhatsApp Poster Generator
+                  // WhatsApp Poster Preview & Share
                   Button(
                     onClick = {
                       val dhikrItem = DhikrItem(
@@ -602,15 +620,15 @@ fun HadithExplorerScreen(
                         defaultDurationSeconds = 15,
                         isQuranic = false
                       )
-                      ShareHelper.shareDhikrPoster(context, dhikrItem)
+                      previewPosterItem = dhikrItem
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E8E5A)),
                     shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.weight(1.2f).height(42.dp)
+                    modifier = Modifier.weight(1.3f).height(42.dp)
                   ) {
                     Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(14.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("پوسٹر", fontFamily = UrduFontFamily, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("پوسٹر شیئر", fontFamily = UrduFontFamily, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                   }
 
                   // Copy Hadith
@@ -641,7 +659,7 @@ ${hadith.urduText}
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Instant Points Claim for Hadith Recitation
+                // GET REWARDS (15s Toolyfi Timer) for Hadith Recitation
                 Button(
                   onClick = {
                     val dhikrItem = DhikrItem(
@@ -657,7 +675,8 @@ ${hadith.urduText}
                       defaultDurationSeconds = 15,
                       isQuranic = false
                     )
-                    viewModel.claimMomentPoints(dhikrItem)
+                    val id = userSettings.userEmail.ifBlank { userSettings.userName }
+                    ShareHelper.openWebTimerPage(context, dhikrItem, id)
                   },
                   colors = ButtonDefaults.buttonColors(containerColor = Gold, contentColor = Color(0xFF1B1305)),
                   shape = RoundedCornerShape(12.dp),
@@ -666,10 +685,8 @@ ${hadith.urduText}
                     .height(44.dp)
                     .testTag("hadith_claim_points_button")
                 ) {
-                  Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = Color(0xFF1B1305), modifier = Modifier.size(17.dp))
-                  Spacer(modifier = Modifier.width(6.dp))
                   Text(
-                    text = "✓ حدیث کا مطالعہ مکمل کیا (+10 حسنات حاصل کریں)",
+                    text = "🎁 GET REWARDS • ثواب بھی ، Rewards بھی (15s Web Timer)",
                     fontFamily = UrduFontFamily,
                     fontSize = 12.5.sp,
                     fontWeight = FontWeight.Bold,
@@ -682,6 +699,13 @@ ${hadith.urduText}
         }
       }
     }
+  }
+
+  if (previewPosterItem != null) {
+    PosterPreviewDialog(
+      dhikr = previewPosterItem!!,
+      onDismiss = { previewPosterItem = null }
+    )
   }
 }
 }

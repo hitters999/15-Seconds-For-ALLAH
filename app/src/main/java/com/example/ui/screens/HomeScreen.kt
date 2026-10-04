@@ -166,11 +166,12 @@ fun HomeScreen(
        * MAIN PAGE HADYA WALLET (Points & Rupees Earning + GET REWARDS 15s Web Timer)
        */
       item {
-        val identifier = if (userSettings.userPhone.isNotBlank()) userSettings.userPhone else userSettings.userEmail.ifBlank { userSettings.userName }
+        val identifier = userSettings.userEmail.ifBlank { userSettings.userName }
         MainPageHadyaWalletCard(
           totalScore = totalScore,
+          isSignedIn = userSettings.isSignedIn,
+          userEmail = userSettings.userEmail,
           onGetRewardsWebTimer = {
-            viewModel.claimMomentPoints(featuredItem)
             ShareHelper.openWebTimerPage(context, featuredItem, identifier)
           },
           onOpenWalletDetails = {
@@ -202,14 +203,13 @@ fun HomeScreen(
        * MAIN 15 SECOND HERO
        */
       item {
-        val identifier = if (userSettings.userPhone.isNotBlank()) userSettings.userPhone else userSettings.userEmail.ifBlank { userSettings.userName }
+        val identifier = userSettings.userEmail.ifBlank { userSettings.userName }
         PremiumMomentHero(
           timerState = timerState,
           onStart = {
             viewModel.startCurrentMoment()
           },
           onQuickClaim = {
-            viewModel.claimMomentPoints(featuredItem)
             ShareHelper.openWebTimerPage(context, featuredItem, identifier)
           }
         )
@@ -219,7 +219,7 @@ fun HomeScreen(
        * FEATURED DHIKR
        */
       item {
-        val identifier = if (userSettings.userPhone.isNotBlank()) userSettings.userPhone else userSettings.userEmail.ifBlank { userSettings.userName }
+        val identifier = userSettings.userEmail.ifBlank { userSettings.userName }
         PremiumSectionTitle(
           eyebrow = "DAILY REFLECTION • آج کا لمحہ",
           title = "A Moment Worth Remembering"
@@ -242,7 +242,6 @@ fun HomeScreen(
                 viewModel.navigateTo(Screen.HadithExplorer)
               },
               onQuickClaim = {
-                viewModel.claimMomentPoints(featuredItem)
                 ShareHelper.openWebTimerPage(context, featuredItem, identifier)
               }
             )
@@ -1001,6 +1000,8 @@ private fun FeaturedDhikrCard(
 @Composable
 private fun MainPageHadyaWalletCard(
   totalScore: Int,
+  isSignedIn: Boolean,
+  userEmail: String,
   onGetRewardsWebTimer: () -> Unit,
   onOpenWalletDetails: () -> Unit
 ) {
@@ -1035,7 +1036,7 @@ private fun MainPageHadyaWalletCard(
             color = SoftGold
           )
           Text(
-            text = "1 پوائنٹ = 1 پیسہ • 15 سیکنڈ ویب ٹائمر مکمل کریں",
+            text = if (isSignedIn && userEmail.isNotBlank()) "✓ Google: $userEmail" else "1 پوائنٹ = 1 پیسہ • Toolyfi پر 15s گزارنے پر ریوارڈ",
             fontFamily = UrduFontFamily,
             fontSize = 11.sp,
             color = Color(0xFFCBD5E1)
@@ -1122,7 +1123,36 @@ private fun MainPageHadyaWalletCard(
         }
       }
 
-      Spacer(modifier = Modifier.height(12.dp))
+      Spacer(modifier = Modifier.height(10.dp))
+
+      if (!isSignedIn) {
+        Surface(
+          shape = RoundedCornerShape(12.dp),
+          color = Color.White,
+          border = BorderStroke(1.dp, Gold),
+          modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable { onOpenWalletDetails() }
+        ) {
+          Row(
+            modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+          ) {
+            Text("G", fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF4285F4))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+              text = "گوگل لاگ ان سے اپنا ہدیہ اکاؤنٹ جوڑیں (Google Login)",
+              fontFamily = UrduFontFamily,
+              fontWeight = FontWeight.Bold,
+              fontSize = 11.5.sp,
+              color = Color(0xFF1F2937)
+            )
+          }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+      }
 
       // Direct "GET REWARDS" Button connected to Toolyfi 15-Second Timer Page
       Button(

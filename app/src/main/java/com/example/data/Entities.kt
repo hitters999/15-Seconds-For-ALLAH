@@ -26,28 +26,30 @@ data class BookmarkEntity(
 data class UserSettingsEntity(
   @PrimaryKey
   val id: Int = 1,
-  val userName: String = "خادمِ ذکر (Servant of Allah)",
-  val userEmail: String = "guest@15secondsforallah.com",
+  val userName: String = "Guest (سائن ان نہیں)",
+  val userEmail: String = "",
   val userPhone: String = "",
   val reminderInterval: String = "Every 1 hour (1 گھنٹہ بعد)",
   val dailyGoal: Int = 8,
   val hapticsEnabled: Boolean = true,
   val soundEnabled: Boolean = true,
   val isDarkMode: Boolean? = null,
-  val totalScore: Int = 340,
-  val spiritualRank: String = "صاحبِ استقامت (Master of Devotion)",
+  val totalScore: Int = 0,
+  val spiritualRank: String = "مبتدی (Seeker of Peace)",
   val isSignedIn: Boolean = false,
-  val authProvider: String = "Guest", // "Google", "Email", "Phone", "Guest"
+  val authProvider: String = "Guest", // "Google" or "Guest"
   val selectedTimezone: String = "Asia/Karachi"
 )
 
 @Entity(tableName = "registered_accounts")
 data class UserAccountEntity(
   @PrimaryKey
-  val identifier: String, // email or phone
+  val identifier: String, // Google Email
   val displayName: String,
-  val accountType: String, // "Google", "Email", "Phone"
+  val accountType: String = "Google",
   val totalScore: Int = 0,
+  val completedSessions: Int = 0,
+  val pkrBalance: Double = 0.0,
   val joinedTimestamp: Long = System.currentTimeMillis()
 )
 
@@ -63,4 +65,3 @@ data class HadithEntity(
   val isBookmarked: Boolean = false,
   val cachedAt: Long = System.currentTimeMillis()
 )
-

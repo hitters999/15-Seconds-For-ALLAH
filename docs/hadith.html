@@ -118,7 +118,10 @@
 <body>
   <nav class="navbar">
     <div class="nav-inner">
-      <a href="index.html" style="color:var(--gold);text-decoration:none;font-weight:800;font-family:'Inter',sans-serif;">☪ 15 SECONDS 4 ALLAH</a>
+      <a href="index.html" style="color:var(--gold);text-decoration:none;font-weight:800;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:8px;">
+        <img src="logo.png" alt="Logo" style="width:36px;height:36px;border-radius:50%;border:1.5px solid var(--gold);" />
+        <span>15 SECONDS 4 ALLAH</span>
+      </a>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <a href="index.html" class="nav-link">🏠 ہوم اور 15s ٹائمر</a>
         <a href="hadith.html" class="nav-link active">📚 36,000+ احادیث</a>
@@ -154,11 +157,21 @@
       <div id="hadithRef" style="color:var(--cyan);font-size:14px;">صحیح البخاری • حدیث نمبر 1</div>
       <div class="arabic" id="hadithArabic">إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى...</div>
       <div class="urdu" id="hadithUrdu">اعمال کا دارومدار نیتوں پر ہے اور ہر شخص کے لیے وہی ہے جس کی اس نے نیت کی...</div>
-      <a href="index.html" class="btn" style="display:inline-block;text-decoration:none;margin-top:10px;">⏱️ 15 سیکنڈ ٹائمر اور ہدیہ والٹ کھولیں (+10 Pts)</a>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px;">
+        <a href="index.html" class="btn" style="text-decoration:none;">🎁 GET REWARDS • 15s Timer (+10 Pts)</a>
+        <button class="btn" style="background:#25D366;color:#fff;" onclick="shareHadithWhatsApp()">📤 واٹس ایپ پر حدیث شیئر کریں</button>
+      </div>
     </div>
   </main>
 
   <script>
+    function shareHadithWhatsApp() {
+      const ref = document.getElementById('hadithRef').textContent;
+      const ara = document.getElementById('hadithArabic').textContent;
+      const urd = document.getElementById('hadithUrdu').textContent;
+      const text = `✨ 15 Seconds for Allah • ثواب بھی ، Rewards بھی ✨\n📖 ${ref}\n\n${ara}\n\nترجمہ: ${urd}\n\n🎁 GET REWARDS & 15s Timer:\nhttps://toolyfi.com/15-Seconds-For-ALLAH/`;
+      window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
+    }
     let currentBook = 'bukhari';
     let currentBookTitle = 'صحیح البخاری';
 

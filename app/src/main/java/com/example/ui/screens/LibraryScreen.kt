@@ -1,6 +1,8 @@
 package com.example.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -44,23 +47,30 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.DhikrCatalog
 import com.example.data.DhikrItem
 import com.example.ui.MainViewModel
 import com.example.ui.Screen
 import com.example.ui.components.BismillahCalligraphyHeader
 import com.example.ui.components.ParchmentBackground
+import com.example.ui.components.PosterPreviewDialog
 import com.example.ui.theme.ArabicFontFamily
 import com.example.ui.theme.BronzeGold
 import com.example.ui.theme.BronzeGoldLight
@@ -89,8 +99,10 @@ fun LibraryScreen(
   val allItems by viewModel.allItems.collectAsState()
   val searchQuery by viewModel.searchQuery.collectAsState()
   val selectedCategory by viewModel.selectedCategory.collectAsState()
+  val userSettings by viewModel.userSettings.collectAsState()
   val context = LocalContext.current
   val isDark = isSystemInDarkTheme()
+  var previewPosterItem by remember { mutableStateOf<DhikrItem?>(null) }
 
   val cardBg = if (isDark) DarkCardSurface else ParchmentCard
   val cardBorder = if (isDark) DarkCardBorder else ParchmentBorder
@@ -132,21 +144,38 @@ fun LibraryScreen(
         .padding(bottom = 80.dp)
         .testTag("library_screen")
     ) {
-      Column(modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp)) {
-        Text(
-          text = "Sacred Library • مقدس ذخیرہ",
-          fontFamily = FontFamily.Serif,
-          fontSize = 22.sp,
-          fontWeight = FontWeight.Bold,
-          color = titleColor
+      Row(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 22.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Image(
+          painter = painterResource(id = R.drawable.app_brand_logo),
+          contentDescription = "15 Seconds for Allah Logo",
+          modifier = Modifier
+            .size(46.dp)
+            .clip(CircleShape)
+            .border(1.4.dp, goldColor, CircleShape),
+          contentScale = ContentScale.Crop
         )
-        Spacer(modifier = Modifier.height(3.dp))
-        Text(
-          text = "${allItems.size}+ تمام اذکار، دعائیں اور 30ویں سپارے کی آیات مع اردو ترجمہ",
-          fontFamily = UrduFontFamily,
-          fontSize = 13.sp,
-          color = subtitleColor
-        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+          Text(
+            text = "Sacred Library • مقدس ذخیرہ",
+            fontFamily = FontFamily.Serif,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = titleColor
+          )
+          Spacer(modifier = Modifier.height(2.dp))
+          Text(
+            text = "${allItems.size}+ تمام اذکار، دعائیں اور آیات مع پوسٹر شیئر آپشن",
+            fontFamily = UrduFontFamily,
+            fontSize = 12.sp,
+            color = subtitleColor
+          )
+        }
       }
 
       // 36,000+ Complete Hadith Explorer Banner
@@ -346,13 +375,23 @@ fun LibraryScreen(
             goldColor = goldColor,
             onSelect = { viewModel.selectDhikrForMoment(item, startImmediately = true) },
             onBookmark = { viewModel.toggleBookmark(item.id) },
-            onSharePoster = { ShareHelper.shareDhikrPoster(context, item) },
-            onClaim = { viewModel.claimMomentPoints(item) }
+            onSharePoster = { previewPosterItem = item },
+            onClaim = {
+              val id = userSettings.userEmail.ifBlank { userSettings.userName }
+              ShareHelper.openWebTimerPage(context, item, id)
+            }
           )
           Spacer(modifier = Modifier.height(10.dp))
         }
       }
     }
+  }
+
+  if (previewPosterItem != null) {
+    PosterPreviewDialog(
+      dhikr = previewPosterItem!!,
+      onDismiss = { previewPosterItem = null }
+    )
   }
 }
 
@@ -513,28 +552,35 @@ private fun DhikrItemCard(
 
       Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
       ) {
         Button(
           onClick = onSelect,
           colors = ButtonDefaults.buttonColors(containerColor = InkTeal),
           shape = RoundedCornerShape(10.dp),
-          modifier = Modifier.weight(1.2f).height(38.dp)
+          modifier = Modifier.weight(1f).height(40.dp)
         ) {
-          Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(15.dp))
-          Spacer(modifier = Modifier.width(4.dp))
-          Text("۱۵ سیکنڈ ذکر", fontFamily = UrduFontFamily, fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+          Text("15s ذکر", fontFamily = UrduFontFamily, fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
         }
 
-        OutlinedButton(
-          onClick = onClaim,
+        Button(
+          onClick = onSharePoster,
+          colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E8E5A), contentColor = Color.White),
           shape = RoundedCornerShape(10.dp),
-          border = BorderStroke(1.dp, goldColor),
-          modifier = Modifier.weight(1.2f).height(38.dp)
+          modifier = Modifier.weight(1.15f).height(40.dp)
         ) {
-          Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = goldColor, modifier = Modifier.size(15.dp))
+          Icon(Icons.Filled.Share, contentDescription = null, modifier = Modifier.size(14.dp))
           Spacer(modifier = Modifier.width(4.dp))
-          Text("✓ پڑھ لیا (+10)", fontFamily = UrduFontFamily, fontSize = 11.5.sp, fontWeight = FontWeight.Bold, color = if (isDark) goldColor else InkTeal)
+          Text("پوسٹر شیئر", fontFamily = UrduFontFamily, fontSize = 11.5.sp, fontWeight = FontWeight.Bold)
+        }
+
+        Button(
+          onClick = onClaim,
+          colors = ButtonDefaults.buttonColors(containerColor = goldColor, contentColor = Color(0xFF071714)),
+          shape = RoundedCornerShape(10.dp),
+          modifier = Modifier.weight(1.25f).height(40.dp)
+        ) {
+          Text("🎁 GET REWARDS", fontFamily = FontFamily.SansSerif, fontSize = 10.5.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF071714))
         }
       }
     }
