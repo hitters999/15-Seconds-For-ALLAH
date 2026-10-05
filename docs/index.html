@@ -801,25 +801,66 @@
       shareCurrentOnWhatsApp();
     }
 
+    function wrapCanvasText(ctx, text, maxWidth) {
+      const words = text.trim().split(/\s+/);
+      const lines = [];
+      let currentLine = '';
+      for (let i = 0; i < words.length; i++) {
+        const testLine = currentLine ? currentLine + ' ' + words[i] : words[i];
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > maxWidth && currentLine) {
+          lines.push(currentLine);
+          currentLine = words[i];
+        } else {
+          currentLine = testLine;
+        }
+      }
+      if (currentLine) lines.push(currentLine);
+      return lines;
+    }
+
     function generateAndDownloadWebPoster() {
       const canvas = document.getElementById('webPosterCanvas');
       const ctx = canvas.getContext('2d');
-      const arabic = document.getElementById('arabicContent').textContent;
-      const urdu = document.getElementById('urduContent').textContent;
-      const source = document.getElementById('sourceContent').textContent;
+      const arabic = document.getElementById('arabicContent').textContent.trim();
+      const urdu = document.getElementById('urduContent').textContent.trim();
+      const source = document.getElementById('sourceContent').textContent.trim();
 
       const drawPosterAndTrigger = (logoImg) => {
+        const contentMaxWidth = 920;
+
+        // 1. Smart Auto Font Sizing based on length
+        const araFontSize = arabic.length < 90 ? 44 : (arabic.length < 220 ? 36 : (arabic.length < 500 ? 30 : 25));
+        const urdFontSize = urdu.length < 110 ? 31 : (urdu.length < 250 ? 27 : (urdu.length < 550 ? 24 : 21));
+
+        ctx.font = `bold ${araFontSize}px Amiri, serif`;
+        const araLines = wrapCanvasText(ctx, arabic, contentMaxWidth);
+        const araLineHeight = Math.round(araFontSize * 1.65);
+
+        ctx.font = `${urdFontSize}px "Noto Nastaliq Urdu", serif`;
+        const urdLines = wrapCanvasText(ctx, urdu, contentMaxWidth);
+        const urdLineHeight = Math.round(urdFontSize * 1.9);
+
+        // 2. Calculate Dynamic Poster Height (Auto-expands for long Hadiths!)
+        const topStartY = 220;
+        const araBlockH = araLines.length * araLineHeight;
+        const urdBlockH = urdLines.length * urdLineHeight;
+        const requiredHeight = Math.max(1080, topStartY + araBlockH + 45 + urdBlockH + 65 + 70 + 250);
+
+        canvas.width = 1080;
+        canvas.height = requiredHeight;
+
         // Background
-        const grad = ctx.createRadialGradient(540, 420, 80, 540, 540, 680);
+        const grad = ctx.createRadialGradient(540, requiredHeight * 0.4, 80, 540, requiredHeight * 0.5, Math.max(680, requiredHeight * 0.75));
         grad.addColorStop(0, '#113026');
         grad.addColorStop(1, '#05100D');
         ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 1080, 1080);
+        ctx.fillRect(0, 0, 1080, requiredHeight);
 
         // Gold Border
         ctx.strokeStyle = '#E5C07B';
         ctx.lineWidth = 5;
-        ctx.strokeRect(36, 36, 1008, 1008);
+        ctx.strokeRect(36, 36, 1008, requiredHeight - 72);
 
         // Top Brand Pill + Official Logo
         ctx.fillStyle = 'rgba(255,255,255,0.12)';
@@ -838,37 +879,49 @@
         ctx.textAlign = 'center';
         ctx.fillText('15 SECONDS 4 ALLAH • ثواب بھی ، Rewards بھی', 565, 112);
 
-        // Arabic
+        // Draw Complete Multi-line Arabic (Never Cut Off!)
+        let curY = topStartY;
         ctx.fillStyle = '#FDE68A';
-        ctx.font = 'bold 46px Amiri, serif';
-        ctx.fillText(arabic.slice(0, 75), 540, 380);
+        ctx.font = `bold ${araFontSize}px Amiri, serif`;
+        for (const line of araLines) {
+          ctx.fillText(line, 540, curY);
+          curY += araLineHeight;
+        }
 
-        // Urdu
+        curY += 28;
+
+        // Draw Complete Multi-line Urdu (Never Cut Off!)
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = '32px "Noto Nastaliq Urdu", serif';
-        ctx.fillText(urdu.slice(0, 85), 540, 540);
+        ctx.font = `${urdFontSize}px "Noto Nastaliq Urdu", serif`;
+        for (const line of urdLines) {
+          ctx.fillText(line, 540, curY);
+          curY += urdLineHeight;
+        }
+
+        curY += 24;
 
         // Source
         ctx.fillStyle = '#E5C07B';
         ctx.font = 'bold 26px "Noto Nastaliq Urdu", sans-serif';
-        ctx.fillText(source, 540, 660);
+        ctx.fillText(source, 540, curY);
 
-        // Bottom CTA Box
+        // Bottom CTA Box at Dynamic Bottom
+        const footerTop = requiredHeight - 235;
         ctx.fillStyle = '#09221B';
-        ctx.fillRect(70, 820, 940, 180);
+        ctx.fillRect(70, footerTop, 940, 180);
         ctx.strokeStyle = '#E5C07B';
-        ctx.strokeRect(70, 820, 940, 180);
+        ctx.strokeRect(70, footerTop, 940, 180);
 
         if (logoImg) {
-          ctx.drawImage(logoImg, 90, 850, 110, 110);
+          ctx.drawImage(logoImg, 90, footerTop + 30, 110, 110);
         }
 
         ctx.fillStyle = '#FDE68A';
         ctx.font = 'bold 26px sans-serif';
-        ctx.fillText('🎁 GET REWARDS • 15s Timer • 1 Point = 1 Paisa PKR', 560, 880);
+        ctx.fillText('🎁 GET REWARDS • 15s Timer • 1 Point = 1 Paisa PKR', 560, footerTop + 65);
         ctx.fillStyle = '#4FD1C5';
         ctx.font = 'bold 24px sans-serif';
-        ctx.fillText('🌐 https://toolyfi.com/15-Seconds-For-ALLAH/', 560, 945);
+        ctx.fillText('🌐 https://toolyfi.com/15-Seconds-For-ALLAH/', 560, footerTop + 128);
 
         const dataUrl = canvas.toDataURL('image/png');
         const link = document.createElement('a');

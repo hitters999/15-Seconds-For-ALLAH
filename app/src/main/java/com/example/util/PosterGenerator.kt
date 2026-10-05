@@ -26,7 +26,8 @@ typealias ViralPosterGenerator = PosterGenerator
 object PosterGenerator {
 
     private const val POSTER_WIDTH = 1080
-    private const val POSTER_HEIGHT = 1080
+    private const val MIN_POSTER_HEIGHT = 1080
+    private const val MAX_POSTER_HEIGHT = 3600
 
     // Viral Color Palette
     private val COLOR_BG_CENTER = Color.parseColor("#113026") // Deep Emerald
@@ -59,21 +60,170 @@ object PosterGenerator {
         }
     }
 
+    /**
+     * Auto-Sizing Dynamic Poster Generator:
+     * Automatically adjusts font size for readability AND dynamically expands poster height
+     * from 1080px up to 3600px so even the longest Sahih Bukhari / Muslim Hadiths never cut off
+     * or overlap with the footer!
+     */
     fun generateDhikrPosterBitmap(context: Context, dhikr: DhikrItem): Bitmap {
-        val bitmap = Bitmap.createBitmap(POSTER_WIDTH, POSTER_HEIGHT, Bitmap.Config.ARGB_8888)
+        val cx = POSTER_WIDTH / 2f
+        val contentWidth = (POSTER_WIDTH - 124).coerceAtLeast(800)
+        val layoutLeft = cx - (contentWidth / 2f)
+
+        val arabicText = dhikr.arabic.trim()
+        val urduText = dhikr.translationUrdu.trim().ifBlank { dhikr.translation.trim() }
+
+        // 1. Smart Auto-Font Size Selection based on character length (Never too tiny, never cut off)
+        val totalChars = arabicText.length + urduText.length
+        var arabicSize = when {
+            arabicText.length < 70 -> 64f
+            arabicText.length < 160 -> 52f
+            arabicText.length < 320 -> 42f
+            arabicText.length < 600 -> 35f
+            arabicText.length < 1000 -> 30f
+            else -> 26f
+        }
+
+        var urduSize = when {
+            urduText.length < 90 -> 34f
+            urduText.length < 200 -> 30f
+            urduText.length < 400 -> 26f
+            urduText.length < 800 -> 23f
+            else -> 20.5f
+        }
+
+        val arabicPaint = TextPaint().apply {
+            color = COLOR_GOLD_ACCENT
+            typeface = getArabicTypeface(context)
+            textAlign = Paint.Align.LEFT
+            isFakeBoldText = true
+            isAntiAlias = true
+            setShadowLayer(8f, 0f, 4f, Color.parseColor("#55000000"))
+        }
+
+        val urduPaint = TextPaint().apply {
+            color = COLOR_TEXT_WHITE
+            typeface = getUrduTypeface(context)
+            textAlign = Paint.Align.LEFT
+            isAntiAlias = true
+            setShadowLayer(4f, 0f, 2f, Color.parseColor("#60000000"))
+        }
+
+        var arabicLayout: StaticLayout
+        var urduLayout: StaticLayout
+
+        // Fine-tune font size if total height is slightly over 1080px so short/medium items fit cleanly,
+        // while allowing long Hadiths to expand the poster height naturally with readable text!
+        while (true) {
+            arabicPaint.textSize = arabicSize
+            urduPaint.textSize = urduSize
+            arabicLayout = createCenteredLayout(arabicText, arabicPaint, contentWidth, 1.32f)
+            urduLayout = createCenteredLayout(urduText, urduPaint, contentWidth, 1.40f)
+
+            val bismillahExtra = if (dhikr.isQuranic) 56 else 0
+            val estimatedTotalHeight = 205 + bismillahExtra + arabicLayout.height + 32 + urduLayout.height + 34 + 62 + 36 + 260
+
+            // If it's a medium text that almost fits in 1080 or 1350, shrink slightly down to readable min sizes
+            val minReadableArabic = if (totalChars > 500) 26f else 32f
+            val minReadableUrdu = if (totalChars > 500) 20f else 23f
+
+            if (estimatedTotalHeight <= MIN_POSTER_HEIGHT || (arabicSize <= minReadableArabic && urduSize <= minReadableUrdu)) {
+                break
+            }
+            if (arabicSize > minReadableArabic) arabicSize -= 2f
+            if (urduSize > minReadableUrdu) urduSize -= 1f
+        }
+
+        // 2. Calculate Exact Required Dynamic Poster Height (Auto-Expand!)
+        val bismillahSpace = if (dhikr.isQuranic) 56 else 0
+        val requiredHeight = (
+            205 +
+            bismillahSpace +
+            arabicLayout.height +
+            32 +
+            urduLayout.height +
+            34 +
+            62 + // Source reference pill height
+            38 + // Margin before footer
+            262  // Footer height + bottom frame padding
+        ).coerceIn(MIN_POSTER_HEIGHT, MAX_POSTER_HEIGHT)
+
+        val bitmap = Bitmap.createBitmap(POSTER_WIDTH, requiredHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-        // 1. Premium Dark Radial Background + Golden Frame Lines
-        drawDarkPremiumBackground(canvas, POSTER_WIDTH, POSTER_HEIGHT)
+        // 3. Draw Background & Frame for Dynamic Height
+        drawDarkPremiumBackground(canvas, POSTER_WIDTH, requiredHeight)
 
-        // 2. Top App Branding + Emotional Hook Header
+        // 4. Draw Top App Branding + Hook Header
         drawBrandedHookHeader(context, canvas, POSTER_WIDTH)
 
-        // 3. Central Hero Content (Arabic, Urdu & Source Reference Pill)
-        drawMainContent(context, canvas, dhikr)
+        // 5. Draw Full Uncut Central Content (Bismillah + Complete Arabic + Complete Urdu + Source Pill)
+        var currentY = 205f
 
-        // 4. Bottom Viral Hook Box (Points, 1 Point = 1 Paisa Hadya, APKPure & Toolyfi Download CTA)
-        drawViralDownloadHookFooter(context, canvas, POSTER_WIDTH, POSTER_HEIGHT)
+        if (dhikr.isQuranic) {
+            val bismillahPaint = TextPaint().apply {
+                color = COLOR_TEXT_MUTED
+                textSize = 30f
+                typeface = getArabicTypeface(context)
+                textAlign = Paint.Align.CENTER
+                isAntiAlias = true
+            }
+            canvas.drawText("۞ بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ ۞", cx, currentY, bismillahPaint)
+            currentY += 54f
+        }
+
+        // Draw Complete Arabic Layout
+        canvas.save()
+        canvas.translate(layoutLeft, currentY)
+        arabicLayout.draw(canvas)
+        canvas.restore()
+
+        currentY += arabicLayout.height + 32f
+
+        // Subtle Gold Divider Line between Arabic & Urdu
+        val divPaint = Paint().apply {
+            color = COLOR_GOLD_ACCENT
+            strokeWidth = 1.5f
+            alpha = 95
+            isAntiAlias = true
+        }
+        canvas.drawLine(cx - 160f, currentY - 14f, cx + 160f, currentY - 14f, divPaint)
+
+        // Draw Complete Urdu Layout
+        canvas.save()
+        canvas.translate(layoutLeft, currentY)
+        urduLayout.draw(canvas)
+        canvas.restore()
+
+        currentY += urduLayout.height + 32f
+
+        // Source Reference Pill (Positioned dynamically right below Urdu text, never overlapping!)
+        val sourcePaint = TextPaint().apply {
+            color = COLOR_BG_CENTER
+            textSize = 22f
+            typeface = getUrduTypeface(context)
+            textAlign = Paint.Align.CENTER
+            isAntiAlias = true
+        }
+        val sourceText = "📖 حوالہ: ${dhikr.source}"
+        val textWidth = sourcePaint.measureText(sourceText)
+        val pillWidth = (textWidth + 68f).coerceAtMost(POSTER_WIDTH - 110f)
+
+        val sourceBgPaint = Paint().apply {
+            color = COLOR_GOLD_ACCENT
+            isAntiAlias = true
+        }
+        val maxPillTop = requiredHeight - 262f - 62f
+        val pillTop = currentY.coerceAtMost(maxPillTop)
+        val sourceRect = RectF(cx - pillWidth / 2f, pillTop, cx + pillWidth / 2f, pillTop + 52f)
+        canvas.drawRoundRect(sourceRect, 26f, 26f, sourceBgPaint)
+
+        val textY = sourceRect.centerY() - ((sourcePaint.descent() + sourcePaint.ascent()) / 2f)
+        canvas.drawText(sourceText, cx, textY, sourcePaint)
+
+        // 6. Draw Bottom Viral Hook Box + QR Code at Dynamic Bottom
+        drawViralDownloadHookFooter(context, canvas, POSTER_WIDTH, requiredHeight)
 
         return bitmap
     }
@@ -96,10 +246,10 @@ object PosterGenerator {
         rank: String
     ): Uri? {
         return try {
-            val bitmap = Bitmap.createBitmap(POSTER_WIDTH, POSTER_HEIGHT, Bitmap.Config.ARGB_8888)
+            val bitmap = Bitmap.createBitmap(POSTER_WIDTH, MIN_POSTER_HEIGHT, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(bitmap)
 
-            drawDarkPremiumBackground(canvas, POSTER_WIDTH, POSTER_HEIGHT)
+            drawDarkPremiumBackground(canvas, POSTER_WIDTH, MIN_POSTER_HEIGHT)
             drawBrandedHookHeader(context, canvas, POSTER_WIDTH)
 
             val cx = POSTER_WIDTH / 2f
@@ -163,7 +313,7 @@ object PosterGenerator {
             val statsTextY = statsRect.centerY() - ((statsPaint.descent() + statsPaint.ascent()) / 2f)
             canvas.drawText(statsText, cx, statsTextY, statsPaint)
 
-            drawViralDownloadHookFooter(context, canvas, POSTER_WIDTH, POSTER_HEIGHT)
+            drawViralDownloadHookFooter(context, canvas, POSTER_WIDTH, MIN_POSTER_HEIGHT)
 
             saveBitmapToCache(context, bitmap, "viral_streak_${streakDays}")
         } catch (e: Exception) {
@@ -179,7 +329,7 @@ object PosterGenerator {
     private fun drawDarkPremiumBackground(canvas: Canvas, width: Int, height: Int) {
         val bgPaint = Paint().apply {
             shader = RadialGradient(
-                width / 2f, height / 2.4f, width * 0.82f,
+                width / 2f, height / 2.4f, maxOf(width, height) * 0.78f,
                 intArrayOf(COLOR_BG_CENTER, COLOR_BG_EDGE),
                 null,
                 Shader.TileMode.CLAMP
@@ -265,100 +415,6 @@ object PosterGenerator {
             165f,
             hookSubPaint
         )
-    }
-
-    private fun drawMainContent(context: Context, canvas: Canvas, dhikr: DhikrItem) {
-        val cx = POSTER_WIDTH / 2f
-        val contentWidth = POSTER_WIDTH - 130f
-        val layoutLeft = cx - (contentWidth / 2f)
-        var currentY = 205f
-
-        // Bismillah (If Quranic)
-        if (dhikr.isQuranic) {
-            val bismillahPaint = TextPaint().apply {
-                color = COLOR_TEXT_MUTED
-                textSize = 30f
-                typeface = getArabicTypeface(context)
-                textAlign = Paint.Align.CENTER
-                isAntiAlias = true
-            }
-            canvas.drawText("۞ بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ ۞", cx, currentY, bismillahPaint)
-            currentY += 56f
-        }
-
-        // Arabic Calligraphy (Hero Section - Gold Color for high impact)
-        val arabicPaint = TextPaint().apply {
-            color = COLOR_GOLD_ACCENT
-            typeface = getArabicTypeface(context)
-            textAlign = Paint.Align.LEFT
-            isFakeBoldText = true
-            isAntiAlias = true
-            setShadowLayer(8f, 0f, 4f, Color.parseColor("#55000000"))
-        }
-
-        var arabicSize = 70f
-        var arabicLayout: StaticLayout
-        while (true) {
-            arabicPaint.textSize = arabicSize
-            arabicLayout = createCenteredLayout(dhikr.arabic, arabicPaint, contentWidth.toInt(), 1.35f)
-            if (arabicLayout.height <= 275f || arabicSize <= 28f) break
-            arabicSize -= 2f
-        }
-
-        canvas.save()
-        canvas.translate(layoutLeft, currentY)
-        arabicLayout.draw(canvas)
-        canvas.restore()
-
-        currentY += arabicLayout.height + 34f
-
-        // Urdu Translation (Clean White)
-        val urduPaint = TextPaint().apply {
-            color = COLOR_TEXT_WHITE
-            typeface = getUrduTypeface(context)
-            textAlign = Paint.Align.LEFT
-            isAntiAlias = true
-            setShadowLayer(4f, 0f, 2f, Color.parseColor("#60000000"))
-        }
-
-        var urduSize = 33f
-        var urduLayout: StaticLayout
-        while (true) {
-            urduPaint.textSize = urduSize
-            urduLayout = createCenteredLayout(dhikr.translationUrdu, urduPaint, contentWidth.toInt(), 1.42f)
-            if (urduLayout.height <= 195f || urduSize <= 19f) break
-            urduSize -= 1f
-        }
-
-        canvas.save()
-        canvas.translate(layoutLeft, currentY)
-        urduLayout.draw(canvas)
-        canvas.restore()
-
-        currentY += urduLayout.height + 32f
-
-        // Source Reference Pill (Centered & Elegant)
-        val sourcePaint = TextPaint().apply {
-            color = COLOR_BG_CENTER
-            textSize = 22f
-            typeface = getUrduTypeface(context)
-            textAlign = Paint.Align.CENTER
-            isAntiAlias = true
-        }
-        val sourceText = "📖 حوالہ: ${dhikr.source}"
-        val textWidth = sourcePaint.measureText(sourceText)
-        val pillWidth = (textWidth + 68f).coerceAtMost(POSTER_WIDTH - 120f)
-
-        val sourceBgPaint = Paint().apply {
-            color = COLOR_GOLD_ACCENT
-            isAntiAlias = true
-        }
-        val pillTop = currentY.coerceAtMost(735f)
-        val sourceRect = RectF(cx - pillWidth / 2f, pillTop, cx + pillWidth / 2f, pillTop + 52f)
-        canvas.drawRoundRect(sourceRect, 26f, 26f, sourceBgPaint)
-
-        val textY = sourceRect.centerY() - ((sourcePaint.descent() + sourcePaint.ascent()) / 2f)
-        canvas.drawText(sourceText, cx, textY, sourcePaint)
     }
 
     /**
