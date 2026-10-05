@@ -105,6 +105,7 @@ class MainActivity : ComponentActivity() {
     NotificationHelper.scheduleReminder(this)
 
     viewModel.handleIntent(intent)
+    ShareHelper.handleIncomingWebSyncIntent(this, intent)
 
     setContent {
       MyApplicationTheme {
@@ -121,6 +122,7 @@ class MainActivity : ComponentActivity() {
   override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
     viewModel.handleIntent(intent)
+    ShareHelper.handleIncomingWebSyncIntent(this, intent)
   }
 }
 

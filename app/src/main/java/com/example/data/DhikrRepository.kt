@@ -176,6 +176,63 @@ class DhikrRepository(
     )
   }
 
+  /**
+   * Synchronizes the user's account, points, and rupees from the Toolyfi Web Portal back into the Android App!
+   */
+  suspend fun syncAccountFromWeb(
+    email: String,
+    name: String,
+    webPoints: Int,
+    webSessions: Int
+  ) {
+    val current = dao.getUserSettingsDirect() ?: UserSettingsEntity()
+    val cleanEmail = email.trim().lowercase(Locale.US)
+    val isRealEmail = cleanEmail.isNotBlank() && cleanEmail != "guest" && cleanEmail != "web_visitor"
+    val existingAccount = if (isRealEmail) dao.getUserAccountDirect(cleanEmail) else null
+
+    val syncedScore = maxOf(current.totalScore, webPoints, existingAccount?.totalScore ?: 0)
+    val syncedSessions = maxOf(syncedScore / 10, webSessions, existingAccount?.completedSessions ?: 0)
+    val rank = when {
+      syncedScore >= 5000 -> "صاحبِ استقامت (Master League)"
+      syncedScore >= 2000 -> "ذاکرِ مداوم (Diamond League)"
+      syncedScore >= 800 -> "محبِ ذکر (Gold League)"
+      else -> "مبتدی (Seeker of Peace)"
+    }
+
+    val updatedName = when {
+      name.isNotBlank() && name != "Guest" && name != "Web_Visitor" -> name
+      current.userName.isNotBlank() && !current.userName.startsWith("Guest") -> current.userName
+      isRealEmail -> cleanEmail.substringBefore("@")
+      else -> current.userName
+    }
+
+    val updatedSettings = current.copy(
+      userName = updatedName,
+      userEmail = if (isRealEmail) cleanEmail else current.userEmail,
+      totalScore = syncedScore,
+      spiritualRank = rank,
+      isSignedIn = isRealEmail || current.isSignedIn,
+      authProvider = if (isRealEmail) "Google" else current.authProvider
+    )
+    dao.insertOrUpdateUserSettings(updatedSettings)
+
+    val accountKey = if (isRealEmail) cleanEmail else current.userEmail
+    if (accountKey.isNotBlank()) {
+      val joinedAt = existingAccount?.joinedTimestamp ?: System.currentTimeMillis()
+      dao.insertUserAccount(
+        UserAccountEntity(
+          identifier = accountKey,
+          displayName = updatedName,
+          accountType = "Google",
+          totalScore = syncedScore,
+          completedSessions = syncedSessions,
+          pkrBalance = syncedScore * 0.01,
+          joinedTimestamp = joinedAt
+        )
+      )
+    }
+  }
+
   suspend fun clearHistory() {
     dao.clearAllLogs()
     val current = dao.getUserSettingsDirect() ?: UserSettingsEntity()

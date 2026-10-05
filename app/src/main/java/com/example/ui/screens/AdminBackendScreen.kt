@@ -911,7 +911,7 @@ fun AdminBackendScreen(
                     OutlinedTextField(
                       value = apkPureUrlInput,
                       onValueChange = { apkPureUrlInput = it },
-                      label = { Text("APKPure Official Download Link (شیئرنگ کے لیے)", color = Color(0xFF94A3B8)) },
+                      label = { Text("Uptodown Official Download Link (شیئرنگ کے لیے)", color = Color(0xFF94A3B8)) },
                       singleLine = true,
                       colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
@@ -926,7 +926,7 @@ fun AdminBackendScreen(
                       onClick = {
                         if (apkPureUrlInput.startsWith("http")) {
                           ShareHelper.setApkPureUrl(context, apkPureUrlInput)
-                          Toast.makeText(context, "APKPure ڈاؤن لوڈ لنک تمام پوسٹرز اور شیئرز کے لیے اپڈیٹ ہو گیا ✓", Toast.LENGTH_SHORT).show()
+                          Toast.makeText(context, "Uptodown ڈاؤن لوڈ لنک تمام پوسٹرز اور شیئرز کے لیے اپڈیٹ ہو گیا ✓", Toast.LENGTH_SHORT).show()
                         } else {
                           Toast.makeText(context, "درست لنک درج کریں (https://...)", Toast.LENGTH_SHORT).show()
                         }
@@ -935,7 +935,7 @@ fun AdminBackendScreen(
                       shape = RoundedCornerShape(10.dp),
                       modifier = Modifier.fillMaxWidth()
                     ) {
-                      Text("📥 APKPure لنک محفوظ کریں (Update Download Link)", fontFamily = UrduFontFamily, fontWeight = FontWeight.Bold)
+                      Text("📥 Uptodown لنک محفوظ کریں (Update Download Link)", fontFamily = UrduFontFamily, fontWeight = FontWeight.Bold)
                     }
                   }
                 }

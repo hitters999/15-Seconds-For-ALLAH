@@ -582,10 +582,10 @@ fun HadithExplorerScreen(
                     onClick = {
                       val dhikrItem = DhikrItem(
                         id = "hadith_${hadith.bookId}_${hadith.hadithNumber}",
-                        arabic = hadith.arabicText.take(180),
+                        arabic = hadith.arabicText,
                         transliteration = "${hadith.bookNameEnglish} #${hadith.hadithNumber}",
-                        translationUrdu = hadith.urduText.take(220),
-                        translation = hadith.englishText.take(180),
+                        translationUrdu = hadith.urduText,
+                        translation = hadith.englishText,
                         contemplativeNote = "حدیث مبارکہ پر غور و فکر اور عمل کی نیت۔",
                         category = hadith.bookNameUrdu,
                         source = "${hadith.bookNameUrdu} ${hadith.hadithNumber}",
@@ -604,15 +604,15 @@ fun HadithExplorerScreen(
                     Text("۱۵ سیکنڈ غور", fontFamily = UrduFontFamily, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                   }
 
-                  // WhatsApp Poster Preview & Share
+                  // WhatsApp Poster Preview & Share (Full Uncut Hadith Text!)
                   Button(
                     onClick = {
                       val dhikrItem = DhikrItem(
                         id = "hadith_${hadith.bookId}_${hadith.hadithNumber}",
-                        arabic = hadith.arabicText.take(160),
+                        arabic = hadith.arabicText,
                         transliteration = "${hadith.bookNameEnglish} #${hadith.hadithNumber}",
-                        translationUrdu = hadith.urduText.take(180),
-                        translation = hadith.englishText.take(160),
+                        translationUrdu = hadith.urduText,
+                        translation = hadith.englishText,
                         contemplativeNote = "سنت نبویﷺ",
                         category = hadith.bookNameUrdu,
                         source = "${hadith.bookNameUrdu} ${hadith.hadithNumber}",
@@ -664,10 +664,10 @@ ${hadith.urduText}
                   onClick = {
                     val dhikrItem = DhikrItem(
                       id = "hadith_${hadith.bookId}_${hadith.hadithNumber}",
-                      arabic = hadith.arabicText.take(180),
+                      arabic = hadith.arabicText,
                       transliteration = "${hadith.bookNameEnglish} #${hadith.hadithNumber}",
-                      translationUrdu = hadith.urduText.take(220),
-                      translation = hadith.englishText.take(180),
+                      translationUrdu = hadith.urduText,
+                      translation = hadith.englishText,
                       contemplativeNote = "حدیث مبارکہ کا مطالعہ اور سنت پر عمل۔",
                       category = hadith.bookNameUrdu,
                       source = "${hadith.bookNameUrdu} ${hadith.hadithNumber}",

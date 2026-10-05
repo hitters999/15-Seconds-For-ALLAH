@@ -82,7 +82,7 @@
 <body>
   <div class="wrap">
     <div id="loginArea" class="card" style="text-align:center;">
-      <img src="logo.png" alt="15 Seconds for Allah Logo" style="width:68px;height:68px;border-radius:50%;border:2px solid #E5C07B;margin-bottom:10px;object-fit:cover;" />
+      <img src="logo.png" onerror="this.onerror=null;this.src='https://raw.githubusercontent.com/hitters999/15-Seconds-For-ALLAH/main/docs/logo.png';" alt="15 Seconds for Allah Logo" style="width:68px;height:68px;border-radius:50%;border:2px solid #E5C07B;margin-bottom:10px;object-fit:cover;" />
       <h1>🔒 ایڈمن چیک اینڈ بیلنس پورٹل (Admin Login)</h1>
       <p style="color:#94A3B8;font-size:13px;margin-bottom:12px;">Restricted Backend for 15 Seconds for Allah • Toolyfi.com</p>
       <input type="email" id="emailInput" placeholder="Admin Email (hitters999@gmail.com / umerm1992@gmail.com)" value="hitters999@gmail.com" />
@@ -93,7 +93,7 @@
     <div id="dashboardArea">
       <div class="card">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-          <img src="logo.png" alt="Logo" style="width:42px;height:42px;border-radius:50%;border:1.5px solid #E5C07B;" />
+          <img src="logo.png" onerror="this.onerror=null;this.src='https://raw.githubusercontent.com/hitters999/15-Seconds-For-ALLAH/main/docs/logo.png';" alt="Logo" style="width:42px;height:42px;border-radius:50%;border:1.5px solid #E5C07B;object-fit:cover;" />
           <h2 style="margin:0;">📊 آن لائن چیک اینڈ بیلنس (1 Point = 1 Paisa PKR)</h2>
         </div>
         <div class="stats-grid">
@@ -113,7 +113,23 @@
       </div>
 
       <div class="card">
-        <h2>👥 ویورز اور پوائنٹس ریکارڈ (Viewers Ledger)</h2>
+        <h2>👤 صارفین کے الگ الگ اکاؤنٹس (Per-User Accounts Ledger)</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Google Account / Email</th>
+              <th>Name</th>
+              <th>Total Points</th>
+              <th>Total Hadya (PKR)</th>
+              <th>15s Sessions</th>
+            </tr>
+          </thead>
+          <tbody id="accountsRows"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>👥 ویورز اور پوائنٹس ریکارڈ (Viewers Activity Log)</h2>
         <table>
           <thead>
             <tr>
@@ -145,11 +161,27 @@
     }
 
     function renderLedger() {
+      const accountsDb = JSON.parse(localStorage.getItem('toolyfi_accounts_db') || '{}');
+      const accountsList = Object.values(accountsDb);
       const logs = JSON.parse(localStorage.getItem('toolyfi_15s_logs') || '[]');
-      const totalPts = logs.reduce((acc, r) => acc + (r.points || 10), 0);
+      const totalPts = accountsList.length > 0
+        ? accountsList.reduce((acc, u) => acc + (u.points || 0), 0)
+        : logs.reduce((acc, r) => acc + (r.points || 10), 0);
+
       document.getElementById('totalSessions').textContent = logs.length;
       document.getElementById('totalPoints').textContent = totalPts;
       document.getElementById('totalPkr').textContent = 'Rs. ' + (totalPts * 0.01).toFixed(2);
+
+      const accTbody = document.getElementById('accountsRows');
+      accTbody.innerHTML = accountsList.map(u => `
+        <tr>
+          <td>${u.email}</td>
+          <td>${u.name || '-'}</td>
+          <td style="color:#E5C07B;font-weight:bold;">${u.points || 0} pts</td>
+          <td style="color:#10B981;font-weight:bold;">Rs. ${((u.points || 0) * 0.01).toFixed(2)} PKR</td>
+          <td>${u.sessions || 0}</td>
+        </tr>
+      `).join('');
 
       const tbody = document.getElementById('ledgerRows');
       tbody.innerHTML = logs.map(r => `

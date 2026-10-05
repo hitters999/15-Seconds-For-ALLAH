@@ -27,7 +27,7 @@ object PosterGenerator {
 
     private const val POSTER_WIDTH = 1080
     private const val MIN_POSTER_HEIGHT = 1080
-    private const val MAX_POSTER_HEIGHT = 3600
+    private const val MAX_POSTER_HEIGHT = 6500
 
     // Viral Color Palette
     private val COLOR_BG_CENTER = Color.parseColor("#113026") // Deep Emerald
