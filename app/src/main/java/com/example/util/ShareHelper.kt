@@ -82,6 +82,7 @@ object ShareHelper {
 
         val baseUrl = getWebPortalUrl(context)
         val uri = Uri.parse(baseUrl).buildUpon()
+          .appendQueryParameter("v", System.currentTimeMillis().toString())
           .appendQueryParameter("id", dhikr.id)
           .appendQueryParameter("arabic", safeArabic)
           .appendQueryParameter("urdu", safeUrdu)
